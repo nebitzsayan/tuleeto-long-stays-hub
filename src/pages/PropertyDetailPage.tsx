@@ -1,73 +1,131 @@
 
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, BedDouble, Bath, Square, Calendar, CheckCircle2, Phone, Mail } from "lucide-react";
+import { MapPin, BedDouble, Bath, Square, Calendar, CheckCircle2, Phone, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Mock property data
-const properties = [
-  {
-    id: 1,
-    title: "Modern Downtown Apartment",
-    location: "123 Main St, New York, NY",
-    price: 2500,
-    bedrooms: 2,
-    bathrooms: 1,
-    area: 850,
-    images: [
-      "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=800&h=500&q=80",
-      "https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=800&h=500&q=80",
-      "https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=800&h=500&q=80"
-    ],
-    type: "Apartment",
-    description: "This beautiful modern apartment is located in the heart of downtown. Walking distance to restaurants, shopping centers, and public transportation. The apartment features hardwood floors, stainless steel appliances, and a balcony with city views. Perfect for professionals or small families looking for a convenient urban lifestyle.",
-    features: [
-      "Air conditioning", 
-      "In-unit laundry", 
-      "Dishwasher", 
-      "Balcony", 
-      "Hardwood floors", 
-      "Stainless steel appliances", 
-      "Walk-in closet", 
-      "Pet friendly"
-    ],
-    availableFrom: "2025-05-01",
-    owner: {
-      name: "John Smith",
-      phone: "(555) 123-4567",
-      email: "john@example.com",
-      responseTime: "Usually responds within 1 day"
-    }
-  }
-];
+interface PropertyDetails {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  images: string[];
+  type: string;
+  features: string[];
+  available_from: string;
+  owner_id: string;
+  owner_email?: string;
+  owner_name?: string;
+  owner_phone?: string;
+}
 
 const PropertyDetailPage = () => {
-  const { id } = useParams();
-  const propertyId = parseInt(id || "1");
+  const { id } = useParams<{ id: string }>();
+  const [property, setProperty] = useState<PropertyDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
   
-  const property = properties.find(p => p.id === propertyId);
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        if (!id) {
+          setError("No property ID provided");
+          setLoading(false);
+          return;
+        }
+
+        // Fetch property details
+        const { data: propertyData, error: propertyError } = await supabase
+          .from("properties")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (propertyError) {
+          throw propertyError;
+        }
+
+        if (!propertyData) {
+          setError("Property not found");
+          setLoading(false);
+          return;
+        }
+
+        // Fetch owner profile
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("email, full_name")
+          .eq("id", propertyData.owner_id)
+          .single();
+
+        setProperty({
+          ...propertyData,
+          owner_email: profileData?.email || "Contact via Tuleeto",
+          owner_name: profileData?.full_name || "Property Owner",
+          owner_phone: "(555) 123-4567" // Mock phone number for demo
+        });
+      } catch (error: any) {
+        setError(error.message);
+        toast.error(`Error loading property: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperty();
+  }, [id]);
+
+  const handleContact = () => {
+    if (!user) {
+      toast.error("Please log in to contact property owners");
+      return;
+    }
+    toast.success("Your message has been sent! The owner will contact you soon.");
+  };
   
-  if (!property) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <h2 className="text-2xl font-semibold">Property not found</h2>
+          <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
         </div>
         <Footer />
       </div>
     );
   }
 
-  const handleContact = () => {
-    toast.success("Your message has been sent! The owner will contact you soon.");
-  };
-  
+  if (error || !property) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex flex-col items-center justify-center p-4">
+          <h2 className="text-2xl font-semibold mb-4">Property not found</h2>
+          <p className="text-gray-500 mb-6">{error || "This property may have been removed or doesn't exist."}</p>
+          <Link to="/listings">
+            <Button className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark">
+              Browse Other Properties
+            </Button>
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -96,7 +154,7 @@ const PropertyDetailPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <img 
-                  src={property.images[0]} 
+                  src={property.images[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=800&h=500&q=80"} 
                   alt={property.title} 
                   className="w-full h-[400px] object-cover rounded-t-lg"
                 />
@@ -148,18 +206,22 @@ const PropertyDetailPage = () => {
                     </TabsContent>
                     <TabsContent value="features">
                       <div className="grid grid-cols-2 gap-3">
-                        {property.features.map((feature, index) => (
-                          <div key={index} className="flex items-center">
-                            <CheckCircle2 className="h-4 w-4 text-tuleeto-orange mr-2" />
-                            <span>{feature}</span>
-                          </div>
-                        ))}
+                        {property.features && property.features.length > 0 ? (
+                          property.features.map((feature, index) => (
+                            <div key={index} className="flex items-center">
+                              <CheckCircle2 className="h-4 w-4 text-tuleeto-orange mr-2" />
+                              <span>{feature}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="col-span-2 text-gray-500">No specific features listed for this property.</div>
+                        )}
                       </div>
                     </TabsContent>
                     <TabsContent value="availability">
                       <div className="flex items-center mb-4">
                         <Calendar className="h-5 w-5 text-tuleeto-orange mr-2" />
-                        <span>Available from: <strong>{new Date(property.availableFrom).toLocaleDateString()}</strong></span>
+                        <span>Available from: <strong>{new Date(property.available_from).toLocaleDateString()}</strong></span>
                       </div>
                       <p className="text-gray-600">This property requires a minimum lease of 6 months.</p>
                     </TabsContent>
@@ -173,17 +235,17 @@ const PropertyDetailPage = () => {
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-4">Contact the Owner</h3>
                   <div className="mb-6">
-                    <h4 className="font-medium mb-1">{property.owner.name}</h4>
-                    <p className="text-sm text-gray-500 mb-3">{property.owner.responseTime}</p>
+                    <h4 className="font-medium mb-1">{property.owner_name}</h4>
+                    <p className="text-sm text-gray-500 mb-3">Usually responds within 1 day</p>
                     <Separator className="my-3" />
                     <div className="space-y-2">
                       <div className="flex items-center">
                         <Phone className="h-4 w-4 text-tuleeto-orange mr-2" />
-                        <span>{property.owner.phone}</span>
+                        <span>{property.owner_phone}</span>
                       </div>
                       <div className="flex items-center">
                         <Mail className="h-4 w-4 text-tuleeto-orange mr-2" />
-                        <span>{property.owner.email}</span>
+                        <span>{property.owner_email}</span>
                       </div>
                     </div>
                   </div>
@@ -193,6 +255,17 @@ const PropertyDetailPage = () => {
                   >
                     Contact Now
                   </Button>
+
+                  {property.owner_id === user?.id && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <p className="text-sm text-gray-500 mb-2">This is your listing</p>
+                      <Link to="/my-properties">
+                        <Button variant="outline" className="w-full">
+                          Manage Your Properties
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

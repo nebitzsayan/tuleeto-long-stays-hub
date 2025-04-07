@@ -1,8 +1,10 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { v4 as uuidv4 } from "uuid";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CheckCircle2, Upload, Home } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Upload, Home, Loader2, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   propertyType: z.string().min(1, { message: "Please select a property type" }),
@@ -46,8 +50,13 @@ const steps = [
 ];
 
 const ListPropertyPage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -65,20 +74,72 @@ const ListPropertyPage = () => {
       area: "",
       availableFrom: "",
       contactName: "",
-      contactEmail: "",
+      contactEmail: user?.email || "",
       contactPhone: "",
       agreeToTerms: false
     }
   });
 
-  const onSubmit = (data: FormValues) => {
-    toast.success("Your property has been listed!");
-    console.log({ ...data, photos });
-    // Here you would typically send the data to your API
-    // For now, we'll just show a success message
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 3000);
+  const onSubmit = async (data: FormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (!user) {
+        toast.error("You must be logged in to list a property");
+        return;
+      }
+      
+      if (photoUrls.length === 0) {
+        toast.error("Please upload at least one photo of your property");
+        return;
+      }
+      
+      // Prepare the location string
+      const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
+      
+      // Create features array
+      const features = ["Pet friendly", "Air conditioning", "In-unit laundry"];
+      
+      // Prepare property data
+      const propertyData = {
+        title: data.title,
+        description: data.description,
+        location: location,
+        price: parseInt(data.price),
+        bedrooms: parseInt(data.bedrooms),
+        bathrooms: parseFloat(data.bathrooms),
+        area: parseFloat(data.area),
+        type: data.propertyType,
+        features: features,
+        available_from: data.availableFrom,
+        images: photoUrls,
+        owner_id: user.id
+      };
+      
+      // Insert property into Supabase
+      const { data: insertedProperty, error } = await supabase
+        .from('properties')
+        .insert(propertyData)
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      
+      toast.success("Your property has been listed!");
+      
+      // Navigate to the property detail page
+      if (insertedProperty?.id) {
+        setTimeout(() => {
+          navigate(`/property/${insertedProperty.id}`);
+        }, 1500);
+      } else {
+        navigate("/my-properties");
+      }
+    } catch (error: any) {
+      toast.error(`Error listing property: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const nextStep = () => {
@@ -93,20 +154,64 @@ const ListPropertyPage = () => {
     }
   };
 
-  const handleAddPhoto = () => {
-    // Mock adding a photo - in real app would handle file upload
-    const mockPhotos = [
-      "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=200&h=150&q=80",
-      "https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=200&h=150&q=80",
-      "https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=200&h=150&q=80"
-    ];
+  const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileInput = event.target;
+    if (!fileInput.files || fileInput.files.length === 0) return;
     
-    const randomPhoto = mockPhotos[Math.floor(Math.random() * mockPhotos.length)];
-    if (photos.length < 5) {
-      setPhotos([...photos, randomPhoto]);
-      toast.success("Photo uploaded successfully!");
-    } else {
-      toast.error("Maximum 5 photos allowed.");
+    const file = fileInput.files[0];
+    
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size should be less than 5MB");
+      return;
+    }
+    
+    if (photos.length >= 5) {
+      toast.error("Maximum 5 photos allowed");
+      return;
+    }
+    
+    // Add photo preview
+    const preview = URL.createObjectURL(file);
+    setPhotos([...photos, { file, preview }]);
+    fileInput.value = '';
+  };
+  
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+  };
+  
+  const uploadPhotos = async () => {
+    if (photos.length === 0) return [];
+    
+    setIsUploading(true);
+    try {
+      const urls = [];
+      
+      for (const photo of photos) {
+        const fileExt = photo.file.name.split('.').pop();
+        const filePath = `${user?.id || 'anonymous'}/${uuidv4()}.${fileExt}`;
+        
+        const { error } = await supabase.storage
+          .from('property_images')
+          .upload(filePath, photo.file);
+        
+        if (error) throw error;
+        
+        const { data } = supabase.storage
+          .from('property_images')
+          .getPublicUrl(filePath);
+        
+        urls.push(data.publicUrl);
+      }
+      
+      setPhotoUrls(urls);
+      return urls;
+    } catch (error: any) {
+      toast.error(`Error uploading photos: ${error.message}`);
+      throw error;
+    } finally {
+      setIsUploading(false);
     }
   };
   
@@ -420,21 +525,40 @@ const ListPropertyPage = () => {
                         {photos.map((photo, i) => (
                           <div key={i} className="relative">
                             <img 
-                              src={photo} 
+                              src={photo.preview} 
                               alt={`Property photo ${i+1}`}
-                              className="w-20 h-20 object-cover rounded-md" 
+                              className="w-20 h-20 object-cover rounded-md"
                             />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                              onClick={() => handleRemovePhoto(i)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
                           </div>
                         ))}
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="w-20 h-20 flex flex-col items-center justify-center border-dashed"
-                          onClick={handleAddPhoto}
-                        >
-                          <Upload className="h-6 w-6 mb-1" />
-                          <span className="text-xs">Add</span>
-                        </Button>
+                        {photos.length < 5 && (
+                          <div className="relative">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              className="w-20 h-20 flex flex-col items-center justify-center border-dashed"
+                            >
+                              <Upload className="h-6 w-6 mb-1" />
+                              <span className="text-xs">Add</span>
+                            </Button>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              onChange={handleAddPhoto}
+                              disabled={photos.length >= 5}
+                            />
+                          </div>
+                        )}
                       </div>
                       <p className="text-xs text-gray-500">Upload up to 5 photos (Max 5MB each)</p>
                     </div>
@@ -524,6 +648,7 @@ const ListPropertyPage = () => {
                       variant="outline"
                       className="flex items-center"
                       onClick={prevStep}
+                      disabled={isUploading || isSubmitting}
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" /> Back
                     </Button>
@@ -536,15 +661,45 @@ const ListPropertyPage = () => {
                       type="button"
                       className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white flex items-center"
                       onClick={nextStep}
+                      disabled={isUploading}
                     >
                       Next <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   ) : (
                     <Button 
-                      type="submit"
+                      type="button"
                       className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
+                      disabled={isUploading || isSubmitting}
+                      onClick={async () => {
+                        try {
+                          if (!form.formState.isValid) {
+                            form.trigger();
+                            return;
+                          }
+                          
+                          // Upload photos first
+                          await uploadPhotos();
+                          
+                          // Submit the form
+                          form.handleSubmit(onSubmit)();
+                        } catch (error) {
+                          console.error("Error during submission:", error);
+                        }
+                      }}
                     >
-                      List My Property
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading Photos...
+                        </>
+                      ) : isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Listing Property...
+                        </>
+                      ) : (
+                        "List My Property"
+                      )}
                     </Button>
                   )}
                 </div>

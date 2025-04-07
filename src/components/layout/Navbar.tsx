@@ -1,11 +1,22 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, User, LogIn, House } from "lucide-react";
+import { Home, User, LogIn, House, LogOut, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +33,10 @@ const Navbar = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav
@@ -42,22 +57,60 @@ const Navbar = () => {
           >
             Find Rentals
           </Link>
-          <Link
-            to="/list-property"
-            className="text-gray-700 hover:text-tuleeto-orange transition-colors flex items-center gap-1"
-          >
-            <House className="h-4 w-4" /> Rent Your House
-          </Link>
-          <Link to="/login">
-            <Button variant="outline" className="flex items-center gap-1 border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
-              <LogIn className="h-4 w-4" /> Login
-            </Button>
-          </Link>
-          <Link to="/profile">
-            <Button variant="ghost" className="text-gray-700 hover:text-tuleeto-orange">
-              <User className="h-4 w-4" />
-            </Button>
-          </Link>
+          
+          {user ? (
+            <>
+              <Link
+                to="/list-property"
+                className="text-gray-700 hover:text-tuleeto-orange transition-colors flex items-center gap-1"
+              >
+                <House className="h-4 w-4" /> Rent Your House
+              </Link>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-gray-700 hover:text-tuleeto-orange">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem>
+                      <Link to="/profile" className="flex items-center w-full">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link to="/list-property" className="flex items-center w-full">
+                        <Plus className="mr-2 h-4 w-4" />
+                        <span>List a Property</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link to="/my-properties" className="flex items-center w-full">
+                        <House className="mr-2 h-4 w-4" />
+                        <span>My Properties</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Link to="/auth">
+              <Button variant="outline" className="flex items-center gap-1 border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
+                <LogIn className="h-4 w-4" /> Login
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Button */}

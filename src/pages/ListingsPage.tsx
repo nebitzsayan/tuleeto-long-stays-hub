@@ -5,83 +5,57 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PropertyFilter from "@/components/property/PropertyFilter";
 import PropertyListingCard, { PropertyType } from "@/components/property/PropertyListingCard";
-
-// Mock property data
-const allProperties: PropertyType[] = [
-  {
-    id: 1,
-    title: "Modern Downtown Apartment",
-    location: "New York, NY",
-    price: 2500,
-    bedrooms: 2,
-    bathrooms: 1,
-    area: 850,
-    image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "Apartment"
-  },
-  {
-    id: 2,
-    title: "Spacious Family House",
-    location: "Los Angeles, CA",
-    price: 3200,
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 1400,
-    image: "https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "House"
-  },
-  {
-    id: 3,
-    title: "Cozy Studio Apartment",
-    location: "Chicago, IL",
-    price: 1800,
-    bedrooms: 1,
-    bathrooms: 1,
-    area: 600,
-    image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "Studio"
-  },
-  {
-    id: 4,
-    title: "Downtown Loft with Views",
-    location: "Seattle, WA",
-    price: 2800,
-    bedrooms: 2,
-    bathrooms: 2,
-    area: 950,
-    image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "Loft"
-  },
-  {
-    id: 5,
-    title: "Suburban Family Home",
-    location: "Austin, TX",
-    price: 2200,
-    bedrooms: 4,
-    bathrooms: 3,
-    area: 2100,
-    image: "https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "House"
-  },
-  {
-    id: 6,
-    title: "Renovated Historic Apartment",
-    location: "Boston, MA",
-    price: 3500,
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 1200,
-    image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "Apartment"
-  }
-];
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ListingsPage = () => {
   const [searchParams] = useSearchParams();
-  const [filteredProperties, setFilteredProperties] = useState<PropertyType[]>(allProperties);
-
+  const [allProperties, setAllProperties] = useState<PropertyType[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<PropertyType[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch all properties
   useEffect(() => {
-    // Filter properties based on search parameters
+    const fetchProperties = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*');
+        
+        if (error) throw error;
+        
+        if (data) {
+          // Format the data to match the PropertyType
+          const properties = data.map(prop => ({
+            id: prop.id,
+            title: prop.title,
+            location: prop.location,
+            price: prop.price,
+            bedrooms: prop.bedrooms,
+            bathrooms: prop.bathrooms,
+            area: prop.area,
+            image: prop.images[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
+            type: prop.type
+          }));
+          
+          setAllProperties(properties);
+          setFilteredProperties(properties);
+        }
+      } catch (error: any) {
+        toast.error(`Error fetching properties: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProperties();
+  }, []);
+
+  // Filter properties based on search params
+  useEffect(() => {
+    if (allProperties.length === 0) return;
+    
     let filtered = [...allProperties];
     
     const location = searchParams.get("location")?.toLowerCase();
@@ -107,7 +81,7 @@ const ListingsPage = () => {
     }
     
     setFilteredProperties(filtered);
-  }, [searchParams]);
+  }, [searchParams, allProperties]);
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -119,8 +93,12 @@ const ListingsPage = () => {
           
           <PropertyFilter />
           
-          {filteredProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+            </div>
+          ) : filteredProperties.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               {filteredProperties.map((property) => (
                 <PropertyListingCard key={property.id} property={property} />
               ))}
