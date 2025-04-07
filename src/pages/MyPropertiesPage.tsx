@@ -30,7 +30,7 @@ const MyPropertiesPage = () => {
         }
         
         if (data) {
-          // Format the data to match the PropertyType
+          // Format the data to match the PropertyType with string id
           const formattedProperties = data.map(prop => ({
             id: prop.id,
             title: prop.title,

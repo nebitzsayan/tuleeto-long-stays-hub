@@ -6,7 +6,7 @@ import { MapPin, BedDouble, Bath, Square } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export interface PropertyType {
-  id: number;
+  id: string; // Changed from number to string to match Supabase UUID
   title: string;
   location: string;
   price: number;

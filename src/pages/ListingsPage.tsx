@@ -26,7 +26,7 @@ const ListingsPage = () => {
         if (error) throw error;
         
         if (data) {
-          // Format the data to match the PropertyType
+          // Format the data to match the PropertyType with string id
           const properties = data.map(prop => ({
             id: prop.id,
             title: prop.title,
