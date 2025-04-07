@@ -72,7 +72,8 @@ const PropertyListingForm = () => {
       contactEmail: user?.email || "",
       contactPhone: "",
       agreeToTerms: false
-    }
+    },
+    mode: "onChange" // This enables real-time validation
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -135,15 +136,35 @@ const PropertyListingForm = () => {
     }
   };
   
-  const nextStep = () => {
-    if (step < steps.length - 1) {
+  const nextStep = async () => {
+    // Validate the current step's fields before proceeding
+    let fieldsToValidate: string[] = [];
+    
+    switch (step) {
+      case 0: // Property Details step
+        fieldsToValidate = ["propertyType", "title", "description"];
+        break;
+      case 1: // Location step
+        fieldsToValidate = ["street", "city", "state", "zipCode"];
+        break;
+      case 2: // Features & Photos step
+        fieldsToValidate = ["bedrooms", "bathrooms", "area", "price", "availableFrom"];
+        break;
+    }
+    
+    // Trigger validation only for the fields in the current step
+    const stepIsValid = await form.trigger(fieldsToValidate as any);
+    
+    if (stepIsValid && step < steps.length - 1) {
       setStep(step + 1);
+      window.scrollTo(0, 0); // Scroll to top when changing steps
     }
   };
   
   const prevStep = () => {
     if (step > 0) {
       setStep(step - 1);
+      window.scrollTo(0, 0); // Scroll to top when changing steps
     }
   };
 

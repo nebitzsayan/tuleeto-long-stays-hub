@@ -1,10 +1,10 @@
 
-import { useState } from "react";
 import { Home } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { ListingSteps } from "@/components/property/ListingSteps";
-import PropertyListingForm from "@/components/property/PropertyListingForm";
+import PropertyListingForm, { steps } from "@/components/property/PropertyListingForm";
+import { useState } from "react";
 
 const ListPropertyPage = () => {
   const [step, setStep] = useState(0);
