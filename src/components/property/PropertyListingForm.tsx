@@ -124,9 +124,7 @@ const PropertyListingForm = () => {
       
       // Navigate to the property detail page
       if (insertedProperty?.id) {
-        setTimeout(() => {
-          navigate(`/property/${insertedProperty.id}`);
-        }, 1500);
+        navigate(`/property/${insertedProperty.id}`);
       } else {
         navigate("/my-properties");
       }
@@ -233,21 +231,25 @@ const PropertyListingForm = () => {
               </Button>
             ) : (
               <Button 
-                type="button"
+                type="submit"
                 className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
                 disabled={isUploading || isSubmitting}
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault(); // Prevent default form submission
                   try {
-                    if (!form.formState.isValid) {
-                      form.trigger();
+                    // First validate all form fields
+                    const isValid = await form.trigger();
+                    if (!isValid) {
+                      toast.error("Please correct all form errors before submitting");
                       return;
                     }
                     
                     // Upload photos first
                     await uploadPhotos();
                     
-                    // Submit the form
-                    form.handleSubmit(onSubmit)();
+                    // Submit the form with form data
+                    const formValues = form.getValues();
+                    onSubmit(formValues);
                   } catch (error) {
                     console.error("Error during submission:", error);
                   }
