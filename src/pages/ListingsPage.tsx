@@ -23,9 +23,6 @@ const ListingsPage = () => {
       try {
         setLoading(true);
         
-        // Get search location if it exists
-        const locationParam = searchParams.get("location")?.toLowerCase();
-        
         const { data, error } = await supabase
           .from('properties')
           .select('*');
@@ -50,15 +47,8 @@ const ListingsPage = () => {
           
           setAllProperties(properties);
           
-          // If there's a location search param, filter initially
-          if (locationParam && locationParam !== "undefined" && locationParam !== "null") {
-            const filtered = properties.filter(p => 
-              p.location.toLowerCase().includes(locationParam)
-            );
-            setFilteredProperties(filtered);
-          } else {
-            setFilteredProperties(properties);
-          }
+          // Initially show all properties
+          setFilteredProperties(properties);
         }
       } catch (error: any) {
         toast.error(`Error fetching properties: ${error.message}`);
@@ -69,17 +59,16 @@ const ListingsPage = () => {
     };
     
     fetchProperties();
-  }, [searchParams.get("location")]); // Re-fetch when location changes
+  }, []); // Removed dependency on searchParams.get("location") to ensure we always fetch all properties
 
   // Filter properties based on search params
   useEffect(() => {
     if (allProperties.length === 0) return;
     
     let filtered = [...allProperties];
-    
     const location = searchParams.get("location")?.toLowerCase();
     const minPrice = Number(searchParams.get("minPrice")) || 0;
-    const maxPrice = Number(searchParams.get("maxPrice")) || 10000;
+    const maxPrice = Number(searchParams.get("maxPrice")) || 50000; // Updated max price for Indian market
     const bedrooms = Number(searchParams.get("bedrooms")) || 0;
     const propertyType = searchParams.get("type");
     
@@ -89,16 +78,19 @@ const ListingsPage = () => {
       );
     }
     
-    filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
+    if (minPrice > 0 || maxPrice < 50000) {
+      filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
+    }
     
     if (bedrooms > 0) {
       filtered = filtered.filter(p => p.bedrooms >= bedrooms);
     }
     
-    if (propertyType && propertyType !== "undefined" && propertyType !== "null") {
+    if (propertyType && propertyType !== "undefined" && propertyType !== "null" && propertyType !== "") {
       filtered = filtered.filter(p => p.type === propertyType);
     }
     
+    console.log("Search params:", { location, minPrice, maxPrice, bedrooms, propertyType });
     console.log("Filtered properties:", filtered);
     setFilteredProperties(filtered);
   }, [searchParams, allProperties]);

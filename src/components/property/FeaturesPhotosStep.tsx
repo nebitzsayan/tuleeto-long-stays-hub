@@ -5,7 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X } from "lucide-react";
+import { Upload, X, IndianRupee } from "lucide-react";
 import { FormValues } from "./PropertyListingForm";
 
 interface FeaturesPhotosStepProps {
@@ -123,9 +123,12 @@ export const FeaturesPhotosStep = ({ form, photos, setPhotos }: FeaturesPhotosSt
         name="price"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Monthly Rent ($)</FormLabel>
+            <FormLabel className="flex items-center">
+              Monthly Rent (₹)
+              <IndianRupee className="h-4 w-4 ml-1 text-gray-500" />
+            </FormLabel>
             <FormControl>
-              <Input type="number" placeholder="e.g. 2000" {...field} />
+              <Input type="number" placeholder="e.g. 25000" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

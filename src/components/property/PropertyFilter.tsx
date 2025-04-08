@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, IndianRupee } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -16,7 +16,7 @@ const PropertyFilter = () => {
   
   const [location, setLocation] = useState(searchParams.get("location") || "");
   const [minPrice, setMinPrice] = useState(Number(searchParams.get("minPrice")) || 0);
-  const [maxPrice, setMaxPrice] = useState(Number(searchParams.get("maxPrice")) || 5000);
+  const [maxPrice, setMaxPrice] = useState(Number(searchParams.get("maxPrice")) || 50000);
   const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") || "");
   const [propertyType, setPropertyType] = useState(searchParams.get("type") || "");
   const [showFilters, setShowFilters] = useState(false);
@@ -25,7 +25,7 @@ const PropertyFilter = () => {
   useEffect(() => {
     setLocation(searchParams.get("location") || "");
     setMinPrice(Number(searchParams.get("minPrice")) || 0);
-    setMaxPrice(Number(searchParams.get("maxPrice")) || 5000);
+    setMaxPrice(Number(searchParams.get("maxPrice")) || 50000);
     setBedrooms(searchParams.get("bedrooms") || "");
     setPropertyType(searchParams.get("type") || "");
   }, [searchParams]);
@@ -79,14 +79,15 @@ const PropertyFilter = () => {
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
             <div>
-              <Label htmlFor="price-range" className="mb-2 block">
-                Price Range: ${minPrice} - ${maxPrice === 5000 ? "5000+" : maxPrice}
+              <Label htmlFor="price-range" className="mb-2 block flex items-center">
+                <IndianRupee className="h-4 w-4 mr-1" />
+                Price Range: ₹{minPrice.toLocaleString('en-IN')} - ₹{maxPrice === 50000 ? "50,000+" : maxPrice.toLocaleString('en-IN')}
               </Label>
               <div className="pt-4 px-2">
                 <Slider
                   defaultValue={[minPrice, maxPrice]}
-                  max={5000}
-                  step={100}
+                  max={50000}
+                  step={1000}
                   onValueChange={(values) => {
                     setMinPrice(values[0]);
                     setMaxPrice(values[1]);
@@ -124,6 +125,8 @@ const PropertyFilter = () => {
                   <SelectItem value="House">House</SelectItem>
                   <SelectItem value="Studio">Studio</SelectItem>
                   <SelectItem value="Condo">Condo</SelectItem>
+                  <SelectItem value="Villa">Villa</SelectItem>
+                  <SelectItem value="Flat">Flat</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -36,7 +36,7 @@ export const LocationStep = ({ form }: LocationStepProps) => {
             <FormItem>
               <FormLabel>City</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. New York" {...field} />
+                <Input placeholder="e.g. Mumbai" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -58,12 +58,39 @@ export const LocationStep = ({ form }: LocationStepProps) => {
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="NY">New York</SelectItem>
-                  <SelectItem value="CA">California</SelectItem>
-                  <SelectItem value="TX">Texas</SelectItem>
-                  <SelectItem value="FL">Florida</SelectItem>
-                  {/* Add more states as needed */}
+                <SelectContent className="max-h-[300px] overflow-y-auto">
+                  <SelectItem value="Andhra Pradesh">Andhra Pradesh</SelectItem>
+                  <SelectItem value="Arunachal Pradesh">Arunachal Pradesh</SelectItem>
+                  <SelectItem value="Assam">Assam</SelectItem>
+                  <SelectItem value="Bihar">Bihar</SelectItem>
+                  <SelectItem value="Chhattisgarh">Chhattisgarh</SelectItem>
+                  <SelectItem value="Goa">Goa</SelectItem>
+                  <SelectItem value="Gujarat">Gujarat</SelectItem>
+                  <SelectItem value="Haryana">Haryana</SelectItem>
+                  <SelectItem value="Himachal Pradesh">Himachal Pradesh</SelectItem>
+                  <SelectItem value="Jharkhand">Jharkhand</SelectItem>
+                  <SelectItem value="Karnataka">Karnataka</SelectItem>
+                  <SelectItem value="Kerala">Kerala</SelectItem>
+                  <SelectItem value="Madhya Pradesh">Madhya Pradesh</SelectItem>
+                  <SelectItem value="Maharashtra">Maharashtra</SelectItem>
+                  <SelectItem value="Manipur">Manipur</SelectItem>
+                  <SelectItem value="Meghalaya">Meghalaya</SelectItem>
+                  <SelectItem value="Mizoram">Mizoram</SelectItem>
+                  <SelectItem value="Nagaland">Nagaland</SelectItem>
+                  <SelectItem value="Odisha">Odisha</SelectItem>
+                  <SelectItem value="Punjab">Punjab</SelectItem>
+                  <SelectItem value="Rajasthan">Rajasthan</SelectItem>
+                  <SelectItem value="Sikkim">Sikkim</SelectItem>
+                  <SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem>
+                  <SelectItem value="Telangana">Telangana</SelectItem>
+                  <SelectItem value="Tripura">Tripura</SelectItem>
+                  <SelectItem value="Uttar Pradesh">Uttar Pradesh</SelectItem>
+                  <SelectItem value="Uttarakhand">Uttarakhand</SelectItem>
+                  <SelectItem value="West Bengal">West Bengal</SelectItem>
+                  <SelectItem value="Delhi">Delhi</SelectItem>
+                  <SelectItem value="Jammu and Kashmir">Jammu and Kashmir</SelectItem>
+                  <SelectItem value="Ladakh">Ladakh</SelectItem>
+                  <SelectItem value="Puducherry">Puducherry</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -77,9 +104,9 @@ export const LocationStep = ({ form }: LocationStepProps) => {
         name="zipCode"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>ZIP Code</FormLabel>
+            <FormLabel>PIN Code</FormLabel>
             <FormControl>
-              <Input placeholder="e.g. 10001" {...field} />
+              <Input placeholder="e.g. 400001" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

@@ -15,7 +15,6 @@ const Hero = () => {
     e.preventDefault();
     
     // Navigate to listings page with search params
-    // Even if location is empty, still navigate to listings page
     navigate({
       pathname: '/listings',
       search: location ? `location=${encodeURIComponent(location)}` : ''

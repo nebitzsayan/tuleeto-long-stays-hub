@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, BedDouble, Bath, Square } from "lucide-react";
+import { MapPin, BedDouble, Bath, Square, IndianRupee } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export interface PropertyType {
@@ -56,7 +56,10 @@ const PropertyListingCard = ({ property }: PropertyListingCardProps) => {
         </div>
         
         <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-          <span className="text-tuleeto-orange text-xl font-bold">${property.price}/mo</span>
+          <span className="text-tuleeto-orange text-xl font-bold flex items-center">
+            <IndianRupee className="h-4 w-4 mr-1" />
+            {property.price.toLocaleString('en-IN')}/mo
+          </span>
           <Link to={`/property/${property.id}`}>
             <Button variant="outline" className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
               View Details
