@@ -8,12 +8,14 @@ import PropertyListingCard, { PropertyType } from "@/components/property/Propert
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ListingsPage = () => {
   const [searchParams] = useSearchParams();
   const [allProperties, setAllProperties] = useState<PropertyType[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<PropertyType[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   
   // Fetch all properties
   useEffect(() => {
@@ -28,14 +30,14 @@ const ListingsPage = () => {
         if (data) {
           // Format the data to match the PropertyType with string id
           const properties = data.map(prop => ({
-            id: prop.id,
+            id: prop.id.toString(),
             title: prop.title,
             location: prop.location,
             price: prop.price,
             bedrooms: prop.bedrooms,
             bathrooms: prop.bathrooms,
             area: prop.area,
-            image: prop.images[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
+            image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
             type: prop.type
           }));
           
@@ -64,7 +66,7 @@ const ListingsPage = () => {
     const bedrooms = Number(searchParams.get("bedrooms")) || 0;
     const propertyType = searchParams.get("type");
     
-    if (location) {
+    if (location && location !== "undefined" && location !== "null") {
       filtered = filtered.filter(p => 
         p.location.toLowerCase().includes(location)
       );
@@ -76,7 +78,7 @@ const ListingsPage = () => {
       filtered = filtered.filter(p => p.bedrooms >= bedrooms);
     }
     
-    if (propertyType) {
+    if (propertyType && propertyType !== "undefined" && propertyType !== "null") {
       filtered = filtered.filter(p => p.type === propertyType);
     }
     
@@ -98,7 +100,7 @@ const ListingsPage = () => {
               <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
             </div>
           ) : filteredProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-12">
               {filteredProperties.map((property) => (
                 <PropertyListingCard key={property.id} property={property} />
               ))}

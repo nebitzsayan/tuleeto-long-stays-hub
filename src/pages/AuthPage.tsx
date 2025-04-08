@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Home, LogIn, UserPlus } from 'lucide-react';
+import { Home, LogIn, UserPlus, ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -35,13 +37,20 @@ const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type SignupFormValues = z.infer<typeof signupSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 const AuthPage = () => {
-  const { user, signIn, signUp, isLoading } = useAuth();
+  const { user, signIn, signUp, isLoading, resetPassword } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('login');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -58,6 +67,13 @@ const AuthPage = () => {
       email: '',
       password: '',
       confirmPassword: '',
+    },
+  });
+
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
     },
   });
 
@@ -79,6 +95,16 @@ const AuthPage = () => {
     }
   };
 
+  const onForgotPasswordSubmit = async (values: ForgotPasswordFormValues) => {
+    try {
+      await resetPassword(values.email);
+      toast.success("If an account exists with that email, we've sent a password reset link");
+      setShowForgotPassword(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset password email");
+    }
+  };
+
   if (user && !isLoading) {
     return <Navigate to="/" />;
   }
@@ -97,22 +123,26 @@ const AuthPage = () => {
             <p className="text-gray-600">Sign in or create an account to get started</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-2 mb-6">
-                <TabsTrigger value="login" className="flex items-center gap-1">
-                  <LogIn className="h-4 w-4" /> Login
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="flex items-center gap-1">
-                  <UserPlus className="h-4 w-4" /> Sign Up
-                </TabsTrigger>
-              </TabsList>
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
+            {showForgotPassword ? (
+              <div>
+                <div className="mb-4">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="mb-2 -ml-2"
+                    onClick={() => setShowForgotPassword(false)}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Back to login
+                  </Button>
+                  <h2 className="text-xl font-semibold">Reset your password</h2>
+                  <p className="text-gray-600 text-sm">Enter your email and we'll send you a link to reset your password</p>
+                </div>
 
-              <TabsContent value="login">
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                <Form {...forgotPasswordForm}>
+                  <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
                     <FormField
-                      control={loginForm.control}
+                      control={forgotPasswordForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
@@ -130,125 +160,180 @@ const AuthPage = () => {
                       )}
                     />
 
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Enter your password" 
-                              {...field} 
-                              type="password" 
-                              autoComplete="current-password"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <Button 
                       type="submit" 
                       className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Signing In...' : 'Sign In'}
+                      {isLoading ? 'Sending...' : 'Send Reset Link'}
                     </Button>
                   </form>
                 </Form>
-              </TabsContent>
+              </div>
+            ) : (
+              <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid grid-cols-2 mb-6">
+                  <TabsTrigger value="login" className="flex items-center gap-1">
+                    <LogIn className="h-4 w-4" /> Login
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="flex items-center gap-1">
+                    <UserPlus className="h-4 w-4" /> Sign Up
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="signup">
-                <Form {...signupForm}>
-                  <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
-                    <FormField
-                      control={signupForm.control}
-                      name="fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Enter your full name" 
-                              {...field} 
-                              autoComplete="name"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <TabsContent value="login">
+                  <Form {...loginForm}>
+                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                      <FormField
+                        control={loginForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your email" 
+                                {...field} 
+                                type="email" 
+                                autoComplete="email"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={signupForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Enter your email" 
-                              {...field} 
-                              type="email" 
-                              autoComplete="email"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={loginForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your password" 
+                                {...field} 
+                                type="password" 
+                                autoComplete="current-password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={signupForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Create a password" 
-                              {...field} 
-                              type="password" 
-                              autoComplete="new-password"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <div className="text-right">
+                        <Button 
+                          type="button" 
+                          variant="link" 
+                          className="p-0 h-auto text-tuleeto-orange"
+                          onClick={() => setShowForgotPassword(true)}
+                        >
+                          Forgot your password?
+                        </Button>
+                      </div>
 
-                    <FormField
-                      control={signupForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Confirm your password" 
-                              {...field} 
-                              type="password" 
-                              autoComplete="new-password"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Signing In...' : 'Sign In'}
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Signing Up...' : 'Sign Up'}
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="signup">
+                  <Form {...signupForm}>
+                    <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
+                      <FormField
+                        control={signupForm.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your full name" 
+                                {...field} 
+                                autoComplete="name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={signupForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your email" 
+                                {...field} 
+                                type="email" 
+                                autoComplete="email"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={signupForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Create a password" 
+                                {...field} 
+                                type="password" 
+                                autoComplete="new-password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={signupForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirm Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Confirm your password" 
+                                {...field} 
+                                type="password" 
+                                autoComplete="new-password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Signing Up...' : 'Sign Up'}
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
+              </Tabs>
+            )}
           </div>
         </div>
       </main>

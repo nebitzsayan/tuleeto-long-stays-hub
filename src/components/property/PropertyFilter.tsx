@@ -7,16 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const PropertyFilter = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const [location, setLocation] = useState(searchParams.get("location") || "");
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(5000);
-  const [bedrooms, setBedrooms] = useState("");
-  const [propertyType, setPropertyType] = useState("");
+  const [minPrice, setMinPrice] = useState(Number(searchParams.get("minPrice")) || 0);
+  const [maxPrice, setMaxPrice] = useState(Number(searchParams.get("maxPrice")) || 5000);
+  const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") || "");
+  const [propertyType, setPropertyType] = useState(searchParams.get("type") || "");
   const [showFilters, setShowFilters] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -36,30 +38,30 @@ const PropertyFilter = () => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+    <div className="bg-white p-3 md:p-4 rounded-lg shadow-md mb-6">
       <form onSubmit={handleSearch}>
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-4">
           <div className="flex-grow">
             <Input
               type="text"
               placeholder="Location, neighborhood, or address"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="h-12"
+              className="h-10 md:h-12"
             />
           </div>
           <Button
             type="button"
             variant="outline"
-            className="flex items-center gap-2 h-12"
+            className="flex items-center gap-2 h-10 md:h-12"
             onClick={() => setShowFilters(!showFilters)}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            Filters
+            <span className="inline-block">{isMobile ? "" : "Filters"}</span>
           </Button>
           <Button 
             type="submit" 
-            className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white h-12"
+            className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white h-10 md:h-12"
           >
             <Search className="mr-2 h-4 w-4" /> Search
           </Button>
@@ -88,7 +90,7 @@ const PropertyFilter = () => {
             <div>
               <Label htmlFor="bedrooms" className="mb-2 block">Bedrooms</Label>
               <Select value={bedrooms} onValueChange={setBedrooms}>
-                <SelectTrigger id="bedrooms" className="h-12">
+                <SelectTrigger id="bedrooms" className="h-10 md:h-12">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
@@ -104,7 +106,7 @@ const PropertyFilter = () => {
             <div>
               <Label htmlFor="property-type" className="mb-2 block">Property Type</Label>
               <Select value={propertyType} onValueChange={setPropertyType}>
-                <SelectTrigger id="property-type" className="h-12">
+                <SelectTrigger id="property-type" className="h-10 md:h-12">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>

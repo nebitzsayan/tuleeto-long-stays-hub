@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, User, LogIn, House, LogOut, Plus } from "lucide-react";
+import { Home, User, LogIn, House, LogOut, Plus, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -13,10 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,6 +39,11 @@ const Navbar = () => {
 
   const handleSignOut = async () => {
     await signOut();
+    setMobileMenuOpen(false);
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   return (
@@ -73,7 +81,7 @@ const Navbar = () => {
                     <User className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuContent className="w-56 bg-white" align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
@@ -115,13 +123,69 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <div className="md:hidden">
-          <Button variant="ghost" className="text-tuleeto-orange">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+          <Button variant="ghost" className="text-tuleeto-orange" onClick={toggleMobileMenu}>
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </Button>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white shadow-lg py-4 px-4 absolute w-full">
+          <div className="flex flex-col space-y-4">
+            <Link
+              to="/listings"
+              className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Find Rentals
+            </Link>
+            
+            {user ? (
+              <>
+                <Link
+                  to="/list-property"
+                  className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 flex items-center gap-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <House className="h-4 w-4" /> Rent Your House
+                </Link>
+                <Link
+                  to="/profile"
+                  className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 flex items-center gap-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="h-4 w-4" /> Profile
+                </Link>
+                <Link
+                  to="/my-properties"
+                  className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 flex items-center gap-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <House className="h-4 w-4" /> My Properties
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-700 hover:text-tuleeto-orange justify-start p-0 h-auto hover:bg-transparent"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4 mr-1" /> Log out
+                </Button>
+              </>
+            ) : (
+              <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="outline" className="flex items-center gap-1 border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white w-full">
+                  <LogIn className="h-4 w-4" /> Login
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
