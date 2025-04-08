@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Facebook, Twitter, Instagram, Home, Mail, Phone } from "lucide-react";
+import { Facebook, Twitter, Instagram, Mail, Phone } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -10,7 +10,11 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <Home className="h-6 w-6 text-tuleeto-orange" />
+              <img 
+                src="/lovable-uploads/59d0637d-392f-4229-908a-fa6bc4dc3db2.png" 
+                alt="Tuleeto Logo" 
+                className="h-8 w-8"
+              />
               <span className="text-2xl font-bold text-tuleeto-orange">Tuleeto</span>
             </Link>
             <p className="text-gray-400 mb-4">

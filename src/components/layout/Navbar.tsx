@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, User, LogIn, House, LogOut, Plus, Menu, X } from "lucide-react";
+import { User, LogIn, House, LogOut, Plus, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -54,7 +54,11 @@ const Navbar = () => {
     >
       <div className="container max-w-7xl mx-auto px-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
-          <Home className="h-6 w-6 text-tuleeto-orange" />
+          <img 
+            src="/lovable-uploads/59d0637d-392f-4229-908a-fa6bc4dc3db2.png" 
+            alt="Tuleeto Logo" 
+            className="h-8 w-8"
+          />
           <span className="text-2xl font-bold text-tuleeto-orange">Tuleeto</span>
         </Link>
 

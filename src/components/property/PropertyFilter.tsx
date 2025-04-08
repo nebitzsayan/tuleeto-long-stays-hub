@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,15 @@ const PropertyFilter = () => {
   const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") || "");
   const [propertyType, setPropertyType] = useState(searchParams.get("type") || "");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Update form values when URL params change
+  useEffect(() => {
+    setLocation(searchParams.get("location") || "");
+    setMinPrice(Number(searchParams.get("minPrice")) || 0);
+    setMaxPrice(Number(searchParams.get("maxPrice")) || 5000);
+    setBedrooms(searchParams.get("bedrooms") || "");
+    setPropertyType(searchParams.get("type") || "");
+  }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

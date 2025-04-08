@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Hero = () => {
@@ -16,6 +15,7 @@ const Hero = () => {
     e.preventDefault();
     
     // Navigate to listings page with search params
+    // Even if location is empty, still navigate to listings page
     navigate({
       pathname: '/listings',
       search: location ? `location=${encodeURIComponent(location)}` : ''

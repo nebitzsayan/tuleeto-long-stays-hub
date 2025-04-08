@@ -21,6 +21,11 @@ const ListingsPage = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
+        setLoading(true);
+        
+        // Get search location if it exists
+        const locationParam = searchParams.get("location")?.toLowerCase();
+        
         const { data, error } = await supabase
           .from('properties')
           .select('*');
@@ -28,31 +33,43 @@ const ListingsPage = () => {
         if (error) throw error;
         
         if (data) {
+          console.log("Fetched properties:", data);
+          
           // Format the data to match the PropertyType with string id
           const properties = data.map(prop => ({
             id: prop.id.toString(),
-            title: prop.title,
-            location: prop.location,
-            price: prop.price,
-            bedrooms: prop.bedrooms,
-            bathrooms: prop.bathrooms,
-            area: prop.area,
+            title: prop.title || "Untitled Property",
+            location: prop.location || "Unknown Location",
+            price: prop.price || 0,
+            bedrooms: prop.bedrooms || 0,
+            bathrooms: prop.bathrooms || 0,
+            area: prop.area || 0,
             image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-            type: prop.type
+            type: prop.type || "Apartment"
           }));
           
           setAllProperties(properties);
-          setFilteredProperties(properties);
+          
+          // If there's a location search param, filter initially
+          if (locationParam && locationParam !== "undefined" && locationParam !== "null") {
+            const filtered = properties.filter(p => 
+              p.location.toLowerCase().includes(locationParam)
+            );
+            setFilteredProperties(filtered);
+          } else {
+            setFilteredProperties(properties);
+          }
         }
       } catch (error: any) {
         toast.error(`Error fetching properties: ${error.message}`);
+        console.error("Error fetching properties:", error);
       } finally {
         setLoading(false);
       }
     };
     
     fetchProperties();
-  }, []);
+  }, [searchParams.get("location")]); // Re-fetch when location changes
 
   // Filter properties based on search params
   useEffect(() => {
@@ -82,6 +99,7 @@ const ListingsPage = () => {
       filtered = filtered.filter(p => p.type === propertyType);
     }
     
+    console.log("Filtered properties:", filtered);
     setFilteredProperties(filtered);
   }, [searchParams, allProperties]);
   
