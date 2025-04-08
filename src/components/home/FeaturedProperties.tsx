@@ -1,47 +1,58 @@
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, BedDouble, Bath, Square } from "lucide-react";
-
-// Mock data for featured properties
-const featuredProperties = [
-  {
-    id: 1,
-    title: "Modern Downtown Apartment",
-    location: "New York, NY",
-    price: 2500,
-    bedrooms: 2,
-    bathrooms: 1,
-    area: 850,
-    image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "Apartment"
-  },
-  {
-    id: 2,
-    title: "Spacious Family House",
-    location: "Los Angeles, CA",
-    price: 3200,
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 1400,
-    image: "https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "House"
-  },
-  {
-    id: 3,
-    title: "Cozy Studio Apartment",
-    location: "Chicago, IL",
-    price: 1800,
-    bedrooms: 1,
-    bathrooms: 1,
-    area: 600,
-    image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=500&h=300&q=80",
-    type: "Studio"
-  }
-];
+import { MapPin, BedDouble, Bath, Square, IndianRupee, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { PropertyType } from "@/components/property/PropertyListingCard";
+import { Loader2 } from "lucide-react";
 
 const FeaturedProperties = () => {
+  const [properties, setProperties] = useState<PropertyType[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .limit(3);
+        
+        if (error) throw error;
+        
+        if (data) {
+          console.log("Fetched featured properties:", data);
+          
+          // Format the data to match the PropertyType with string id
+          const formattedProperties = data.map(prop => ({
+            id: prop.id.toString(),
+            title: prop.title || "Untitled Property",
+            location: prop.location || "Unknown Location",
+            price: prop.price || 0,
+            bedrooms: prop.bedrooms || 0,
+            bathrooms: prop.bathrooms || 0,
+            area: prop.area || 0,
+            image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
+            type: prop.type || "Apartment"
+          }));
+          
+          setProperties(formattedProperties);
+        }
+      } catch (error: any) {
+        console.error("Error fetching featured properties:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProperties();
+  }, []);
+
   return (
     <section className="py-16 px-4 bg-tuleeto-off-white">
       <div className="container max-w-7xl mx-auto">
@@ -52,58 +63,74 @@ const FeaturedProperties = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredProperties.map((property) => (
-            <Card key={property.id} className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.02]">
-              <div className="relative">
-                <img 
-                  src={property.image} 
-                  alt={property.title} 
-                  className="w-full h-48 object-cover"
-                />
-                <Badge className="absolute top-3 right-3 bg-tuleeto-orange">{property.type}</Badge>
-              </div>
-              
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{property.title}</h3>
-                <div className="flex items-center text-gray-500 mb-3">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{property.location}</span>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+          </div>
+        ) : properties.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {properties.map((property) => (
+              <Card key={property.id} className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.02]">
+                <div className="relative">
+                  <img 
+                    src={property.image} 
+                    alt={property.title} 
+                    className="w-full h-48 object-cover"
+                  />
+                  <Badge className="absolute top-3 right-3 bg-tuleeto-orange">{property.type}</Badge>
                 </div>
                 
-                <div className="flex justify-between mb-4">
-                  <div className="flex items-center text-gray-600">
-                    <BedDouble className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-2">{property.title}</h3>
+                  <div className="flex items-center text-gray-500 mb-3">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span className="text-sm">{property.location}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <Bath className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
+                  
+                  <div className="flex justify-between mb-4">
+                    <div className="flex items-center text-gray-600">
+                      <BedDouble className="h-4 w-4 mr-1" />
+                      <span className="text-sm">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <Bath className="h-4 w-4 mr-1" />
+                      <span className="text-sm">{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <Square className="h-4 w-4 mr-1" />
+                      <span className="text-sm">{property.area} sq ft</span>
+                    </div>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <Square className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{property.area} sq ft</span>
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                    <span className="text-tuleeto-orange text-xl font-bold flex items-center">
+                      <IndianRupee className="h-4 w-4 mr-1" />
+                      {property.price.toLocaleString('en-IN')}/mo
+                    </span>
+                    <Link to={`/property/${property.id}`}>
+                      <Button variant="outline" className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
+                        <Eye className="mr-1 h-4 w-4" /> Open
+                      </Button>
+                    </Link>
                   </div>
-                </div>
-                
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                  <span className="text-tuleeto-orange text-xl font-bold">${property.price}/mo</span>
-                  <Button variant="outline" className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-lg text-gray-600">No properties available at the moment.</p>
+          </div>
+        )}
         
         <div className="text-center mt-12">
-          <Button 
-            className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white px-8 py-6 text-lg"
-            onClick={() => window.location.href = '/listings'}
-          >
-            Browse All Properties
-          </Button>
+          <Link to="/listings">
+            <Button 
+              className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white px-8 py-6 text-lg"
+            >
+              Browse All Properties
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
