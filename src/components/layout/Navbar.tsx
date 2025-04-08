@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { User, LogIn, House, LogOut, Plus, Menu, X } from "lucide-react";
@@ -54,11 +53,6 @@ const Navbar = () => {
     >
       <div className="container max-w-7xl mx-auto px-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
-          <img 
-            src="/lovable-uploads/59d0637d-392f-4229-908a-fa6bc4dc3db2.png" 
-            alt="Tuleeto Logo" 
-            className="h-8 w-8"
-          />
           <span className="text-2xl font-bold text-tuleeto-orange">Tuleeto</span>
         </Link>
 
@@ -125,7 +119,6 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
         <div className="md:hidden">
           <Button variant="ghost" className="text-tuleeto-orange" onClick={toggleMobileMenu}>
             {mobileMenuOpen ? (
@@ -137,7 +130,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white shadow-lg py-4 px-4 absolute w-full">
           <div className="flex flex-col space-y-4">
