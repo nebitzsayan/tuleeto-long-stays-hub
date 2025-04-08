@@ -87,11 +87,11 @@ const Footer = () => {
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
                 <Mail className="h-5 w-5 mr-2" />
-                <span>support@tuleeto.com</span>
+                <span>nebitztechnology@gmail.com</span>
               </li>
               <li className="flex items-center text-gray-400">
                 <Phone className="h-5 w-5 mr-2" />
-                <span>+1 (555) 123-4567</span>
+                <span>+91 8918278737</span>
               </li>
             </ul>
           </div>
