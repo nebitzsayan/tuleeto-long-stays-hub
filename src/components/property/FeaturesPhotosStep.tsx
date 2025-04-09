@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -9,7 +8,7 @@ import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils } from "lucide-re
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
-import { Progress } from "@/components/ui/slider";
+import { Progress } from "@/components/ui/progress";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -36,7 +35,6 @@ export const FeaturesPhotosStep = ({
     setUploading(true);
     
     try {
-      // Check file size (5MB limit)
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
         toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
@@ -48,7 +46,6 @@ export const FeaturesPhotosStep = ({
         return;
       }
       
-      // Add photo preview
       const preview = URL.createObjectURL(file);
       setPhotos([...photos, { file, preview }]);
       toast.success(`Photo "${file.name}" added successfully`);
@@ -63,7 +60,6 @@ export const FeaturesPhotosStep = ({
   
   const handleRemovePhoto = (index: number) => {
     const newPhotos = [...photos];
-    // Revoke the object URL to avoid memory leaks
     URL.revokeObjectURL(newPhotos[index].preview);
     newPhotos.splice(index, 1);
     setPhotos(newPhotos);
