@@ -5,9 +5,11 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee, Wifi, AirVent } from "lucide-react";
+import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
+import { toast } from "sonner";
+import { Progress } from "@/components/ui/slider";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -24,31 +26,48 @@ export const FeaturesPhotosStep = ({
   selectedFeatures = [], 
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
+  const [uploading, setUploading] = useState(false);
+
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
     if (!fileInput.files || fileInput.files.length === 0) return;
     
     const file = fileInput.files[0];
+    setUploading(true);
     
-    // Check file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size should be less than 5MB");
-      return;
+    try {
+      // Check file size (5MB limit)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
+        return;
+      }
+      
+      if (photos.length >= 5) {
+        toast.warning("Maximum 5 photos allowed");
+        return;
+      }
+      
+      // Add photo preview
+      const preview = URL.createObjectURL(file);
+      setPhotos([...photos, { file, preview }]);
+      toast.success(`Photo "${file.name}" added successfully`);
+    } catch (error) {
+      console.error("Error adding photo:", error);
+      toast.error("Failed to add photo. Please try again.");
+    } finally {
+      setUploading(false);
+      fileInput.value = '';
     }
-    
-    if (photos.length >= 5) {
-      alert("Maximum 5 photos allowed");
-      return;
-    }
-    
-    // Add photo preview
-    const preview = URL.createObjectURL(file);
-    setPhotos([...photos, { file, preview }]);
-    fileInput.value = '';
   };
   
   const handleRemovePhoto = (index: number) => {
-    setPhotos(photos.filter((_, i) => i !== index));
+    const newPhotos = [...photos];
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(newPhotos[index].preview);
+    newPhotos.splice(index, 1);
+    setPhotos(newPhotos);
+    toast.info("Photo removed");
   };
 
   const handleFeatureToggle = (feature: string) => {
@@ -60,17 +79,17 @@ export const FeaturesPhotosStep = ({
   };
 
   const availableFeatures = [
-    { id: "pet-friendly", label: "Pet friendly" },
+    { id: "pet-friendly", label: "Pet friendly", icon: <Wind className="h-4 w-4 mr-2" /> },
     { id: "wifi", label: "Wifi", icon: <Wifi className="h-4 w-4 mr-2" /> },
     { id: "air-conditioning", label: "Air conditioning", icon: <AirVent className="h-4 w-4 mr-2" /> },
-    { id: "in-unit-laundry", label: "In-unit laundry" }
+    { id: "in-unit-laundry", label: "In-unit laundry", icon: <Utensils className="h-4 w-4 mr-2" /> }
   ];
   
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Features & Photos</h2>
       
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField
           control={form.control}
           name="bedrooms"
@@ -199,21 +218,26 @@ export const FeaturesPhotosStep = ({
         <FormLabel>Property Photos</FormLabel>
         <div className="flex flex-wrap gap-3">
           {photos.map((photo, i) => (
-            <div key={i} className="relative">
-              <img 
-                src={photo.preview} 
-                alt={`Property photo ${i+1}`}
-                className="w-20 h-20 object-cover rounded-md"
-              />
+            <div key={i} className="relative group">
+              <div className="w-24 h-24 overflow-hidden rounded-md">
+                <img 
+                  src={photo.preview} 
+                  alt={`Property photo ${i+1}`}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                />
+              </div>
               <Button
                 type="button"
                 variant="destructive"
                 size="icon"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-90"
                 onClick={() => handleRemovePhoto(i)}
               >
                 <X className="h-3 w-3" />
               </Button>
+              <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 text-center truncate">
+                {(photo.file.size / (1024 * 1024)).toFixed(1)}MB
+              </span>
             </div>
           ))}
           {photos.length < 5 && (
@@ -221,22 +245,26 @@ export const FeaturesPhotosStep = ({
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-20 h-20 flex flex-col items-center justify-center border-dashed"
+                className="w-24 h-24 flex flex-col items-center justify-center border-dashed"
+                disabled={uploading}
               >
                 <Upload className="h-6 w-6 mb-1" />
-                <span className="text-xs">Add</span>
+                <span className="text-xs">{uploading ? 'Processing...' : 'Add'}</span>
               </Button>
               <input
                 type="file"
                 accept="image/*"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleAddPhoto}
-                disabled={photos.length >= 5}
+                disabled={photos.length >= 5 || uploading}
               />
             </div>
           )}
         </div>
-        <p className="text-xs text-gray-500">Upload up to 5 photos (Max 5MB each)</p>
+        <div className="text-xs space-y-1">
+          <p className="text-gray-500">Upload up to 5 photos (Max 5MB each)</p>
+          <p className="text-amber-600">Tip: Smaller images load faster. Compress your photos before uploading for best performance.</p>
+        </div>
       </div>
     </div>
   );

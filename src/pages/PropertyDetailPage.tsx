@@ -10,6 +10,7 @@ import { MapPin, BedDouble, Bath, Square, Calendar, CheckCircle2, Phone, Mail, L
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 
 interface PropertyDetails {
   id: string;
@@ -148,25 +149,11 @@ const PropertyDetailPage = () => {
             </div>
           </div>
           
-          <div className="mb-8 overflow-hidden rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <img 
-                  src={property.images[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=800&h=500&q=80"} 
-                  alt={property.title} 
-                  className="w-full h-[400px] object-cover rounded-t-lg"
-                />
-              </div>
-              {property.images.slice(1).map((image, index) => (
-                <div key={index} className="hidden md:block">
-                  <img 
-                    src={image} 
-                    alt={`${property.title} - ${index + 2}`} 
-                    className="w-full h-[200px] object-cover"
-                  />
-                </div>
-              ))}
-            </div>
+          <div className="mb-8">
+            <PropertyImageCarousel 
+              images={property.images} 
+              title={property.title} 
+            />
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
