@@ -1,8 +1,10 @@
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { User, LogIn, House, LogOut, Plus, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import Logo from "@/components/ui/logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,9 +54,7 @@ const Navbar = () => {
       }`}
     >
       <div className="container max-w-7xl mx-auto px-4 flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-tuleeto-orange">Tuleeto</span>
-        </Link>
+        <Logo />
 
         <div className="hidden md:flex items-center space-x-6">
           <Link

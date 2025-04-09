@@ -1,5 +1,7 @@
+
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Mail, Phone } from "lucide-react";
+import Logo from "@/components/ui/logo";
 
 const Footer = () => {
   return (
@@ -8,9 +10,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <span className="text-2xl font-bold text-tuleeto-orange">Tuleeto</span>
-            </Link>
+            <Logo className="mb-4" />
             <p className="text-gray-400 mb-4">
               Find your perfect long-term home with Tuleeto. We connect renters and property owners directly.
             </p>
