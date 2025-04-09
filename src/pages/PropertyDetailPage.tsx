@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, BedDouble, Bath, Square, Calendar, CheckCircle2, Phone, Mail, Loader2 } from "lucide-react";
+import { MapPin, BedDouble, Bath, Square, Calendar, CheckCircle2, Phone, Mail, Loader2, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,7 +46,6 @@ const PropertyDetailPage = () => {
           return;
         }
 
-        // Fetch property details
         const { data: propertyData, error: propertyError } = await supabase
           .from("properties")
           .select("*")
@@ -64,7 +62,6 @@ const PropertyDetailPage = () => {
           return;
         }
 
-        // Fetch owner profile
         const { data: profileData } = await supabase
           .from("profiles")
           .select("email, full_name")
@@ -75,7 +72,7 @@ const PropertyDetailPage = () => {
           ...propertyData,
           owner_email: profileData?.email || "Contact via Tuleeto",
           owner_name: profileData?.full_name || "Property Owner",
-          owner_phone: "(555) 123-4567" // Mock phone number for demo
+          owner_phone: "(555) 123-4567"
         });
       } catch (error: any) {
         setError(error.message);
@@ -132,7 +129,6 @@ const PropertyDetailPage = () => {
       
       <main className="flex-grow pt-24 px-4 pb-12 bg-tuleeto-off-white">
         <div className="container max-w-7xl mx-auto">
-          {/* Property Header */}
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-end">
               <div>
@@ -143,13 +139,15 @@ const PropertyDetailPage = () => {
                 </div>
               </div>
               <div className="mt-4 md:mt-0">
-                <span className="text-3xl font-bold text-tuleeto-orange">${property.price}</span>
+                <span className="text-3xl font-bold text-tuleeto-orange flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-1" />
+                  {property.price.toLocaleString('en-IN')}
+                </span>
                 <span className="text-gray-600">/month</span>
               </div>
             </div>
           </div>
           
-          {/* Property Images */}
           <div className="mb-8 overflow-hidden rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
@@ -171,12 +169,10 @@ const PropertyDetailPage = () => {
             </div>
           </div>
           
-          {/* Property Details and Contact */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Card>
                 <CardContent className="p-6">
-                  {/* Quick Info */}
                   <div className="grid grid-cols-3 gap-4 mb-6">
                     <div className="flex flex-col items-center p-4 bg-tuleeto-off-white rounded-lg">
                       <BedDouble className="h-6 w-6 text-tuleeto-orange mb-2" />

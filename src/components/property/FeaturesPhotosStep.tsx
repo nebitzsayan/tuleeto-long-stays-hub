@@ -5,16 +5,25 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee } from "lucide-react";
+import { Upload, X, IndianRupee, Wifi, AirVent } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
   photos: { file: File; preview: string }[];
   setPhotos: React.Dispatch<React.SetStateAction<{ file: File; preview: string }[]>>;
+  selectedFeatures: string[];
+  setSelectedFeatures: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-export const FeaturesPhotosStep = ({ form, photos, setPhotos }: FeaturesPhotosStepProps) => {
+export const FeaturesPhotosStep = ({ 
+  form, 
+  photos, 
+  setPhotos, 
+  selectedFeatures = [], 
+  setSelectedFeatures 
+}: FeaturesPhotosStepProps) => {
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
     if (!fileInput.files || fileInput.files.length === 0) return;
@@ -41,6 +50,21 @@ export const FeaturesPhotosStep = ({ form, photos, setPhotos }: FeaturesPhotosSt
   const handleRemovePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
   };
+
+  const handleFeatureToggle = (feature: string) => {
+    setSelectedFeatures(prev => 
+      prev.includes(feature)
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  };
+
+  const availableFeatures = [
+    { id: "pet-friendly", label: "Pet friendly" },
+    { id: "wifi", label: "Wifi", icon: <Wifi className="h-4 w-4 mr-2" /> },
+    { id: "air-conditioning", label: "Air conditioning", icon: <AirVent className="h-4 w-4 mr-2" /> },
+    { id: "in-unit-laundry", label: "In-unit laundry" }
+  ];
   
   return (
     <div className="space-y-6">
@@ -148,6 +172,28 @@ export const FeaturesPhotosStep = ({ form, photos, setPhotos }: FeaturesPhotosSt
           </FormItem>
         )}
       />
+
+      <div className="space-y-2">
+        <FormLabel>Amenities</FormLabel>
+        <div className="grid grid-cols-2 gap-2">
+          {availableFeatures.map(feature => (
+            <div key={feature.id} className="flex items-center space-x-2">
+              <Checkbox 
+                id={feature.id}
+                checked={selectedFeatures.includes(feature.label)}
+                onCheckedChange={() => handleFeatureToggle(feature.label)}
+              />
+              <label 
+                htmlFor={feature.id}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center"
+              >
+                {feature.icon}
+                {feature.label}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
       
       <div className="space-y-4">
         <FormLabel>Property Photos</FormLabel>

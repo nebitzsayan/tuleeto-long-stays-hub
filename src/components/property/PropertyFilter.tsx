@@ -66,7 +66,7 @@ const PropertyFilter = () => {
             onClick={() => setShowFilters(!showFilters)}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            <span className="inline-block">{isMobile ? "" : "Filters"}</span>
+            <span>{isMobile ? "" : "Filters"}</span>
           </Button>
           <Button 
             type="submit" 
@@ -85,7 +85,7 @@ const PropertyFilter = () => {
               </Label>
               <div className="pt-4 px-2">
                 <Slider
-                  defaultValue={[minPrice, maxPrice]}
+                  value={[minPrice, maxPrice]}
                   max={50000}
                   step={1000}
                   onValueChange={(values) => {

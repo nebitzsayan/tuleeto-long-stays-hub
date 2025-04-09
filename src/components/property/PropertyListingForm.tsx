@@ -52,6 +52,11 @@ const PropertyListingForm = () => {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
+    "Pet friendly", 
+    "Air conditioning", 
+    "In-unit laundry"
+  ]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -93,9 +98,6 @@ const PropertyListingForm = () => {
       // Prepare the location string
       const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
       
-      // Create features array
-      const features = ["Pet friendly", "Air conditioning", "In-unit laundry"];
-      
       // Prepare property data
       const propertyData = {
         title: data.title,
@@ -106,7 +108,7 @@ const PropertyListingForm = () => {
         bathrooms: parseFloat(data.bathrooms),
         area: parseFloat(data.area),
         type: data.propertyType,
-        features: features,
+        features: selectedFeatures,
         available_from: data.availableFrom,
         images: photoUrls,
         owner_id: user.id
@@ -218,7 +220,9 @@ const PropertyListingForm = () => {
             <FeaturesPhotosStep 
               form={form} 
               photos={photos} 
-              setPhotos={setPhotos} 
+              setPhotos={setPhotos}
+              selectedFeatures={selectedFeatures}
+              setSelectedFeatures={setSelectedFeatures}
             />
           )}
           
