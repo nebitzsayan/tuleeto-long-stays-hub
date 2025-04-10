@@ -116,6 +116,7 @@ const ProfilePage = () => {
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
         toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
+        setUploadingAvatar(false);
         return;
       }
       
@@ -123,18 +124,22 @@ const ProfilePage = () => {
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      // Create avatars bucket if it doesn't exist (the upload will fail otherwise)
-      const { data: bucketExists } = await supabase
-        .storage
-        .getBucket('avatars');
+      // Check if avatars bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const avatarBucketExists = buckets?.some(bucket => bucket.name === 'avatars');
 
-      if (!bucketExists) {
+      // Create avatars bucket if it doesn't exist
+      if (!avatarBucketExists) {
         const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
-          public: true
+          public: true,
+          fileSizeLimit: 5242880 // 5MB in bytes
         });
+        
         if (createBucketError) {
           console.error("Error creating bucket:", createBucketError);
-          throw createBucketError;
+          toast.error(`Failed to create storage bucket: ${createBucketError.message}`);
+          setUploadingAvatar(false);
+          return;
         }
       }
 
@@ -143,10 +148,15 @@ const ProfilePage = () => {
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true // Changed to true to replace existing files
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        toast.error(`Error uploading avatar: ${uploadError.message}`);
+        setUploadingAvatar(false);
+        return;
+      }
 
       // Get the public URL
       const { data } = supabase.storage
@@ -161,7 +171,12 @@ const ProfilePage = () => {
         .update({ avatar_url: avatarUrl })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Profile update error:", updateError);
+        toast.error(`Error updating profile: ${updateError.message}`);
+        setUploadingAvatar(false);
+        return;
+      }
 
       setAvatarUrl(avatarUrl);
       toast.success('Avatar updated successfully!');

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -88,6 +87,7 @@ export const FeaturesPhotosStep = ({
     { id: "air-conditioning", label: "Air conditioning", icon: <AirVent className="h-4 w-4 mr-2" /> },
     { id: "in-unit-laundry", label: "In-unit laundry", icon: <Utensils className="h-4 w-4 mr-2" /> }
   ];
+  
   
   return (
     <div className="space-y-6">

@@ -92,9 +92,16 @@ const PropertyListingForm = () => {
         return;
       }
       
-      // Check if we have either uploaded photos or photo URLs already
-      if (photos.length === 0 && photoUrls.length === 0) {
+      // Either upload new photos or use existing photo URLs
+      let finalPhotoUrls = photoUrls;
+      if (photos.length > 0) {
+        finalPhotoUrls = await uploadPhotos();
+      }
+      
+      // Check if we have photos after the upload attempt
+      if (finalPhotoUrls.length === 0) {
         toast.error("Please upload at least one photo of your property");
+        setIsSubmitting(false);
         return;
       }
       
@@ -111,7 +118,7 @@ const PropertyListingForm = () => {
         type: data.propertyType,
         features: selectedFeatures,
         available_from: data.availableFrom,
-        images: photoUrls,
+        images: finalPhotoUrls,
         owner_id: user.id
       };
       
@@ -183,17 +190,21 @@ const PropertyListingForm = () => {
       const urls = [];
       const totalPhotos = photos.length;
       
-      const { data: bucketExists } = await supabase
-        .storage
-        .getBucket('property_images');
+      // Check if property_images bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'property_images');
 
       if (!bucketExists) {
         const { error: createBucketError } = await supabase.storage.createBucket('property_images', {
-          public: true
+          public: true,
+          fileSizeLimit: 5242880 // 5MB in bytes
         });
+        
         if (createBucketError) {
           console.error("Error creating bucket:", createBucketError);
-          throw createBucketError;
+          toast.error(`Failed to create storage bucket: ${createBucketError.message}`);
+          setIsUploading(false);
+          return [];
         }
       }
       
@@ -207,12 +218,13 @@ const PropertyListingForm = () => {
           .from('property_images')
           .upload(filePath, photo.file, {
             cacheControl: '3600',
-            upsert: false
+            upsert: true // Changed to true to replace existing files
           });
         
         if (error) {
           console.error(`Error uploading photo ${i+1}:`, error);
-          throw error;
+          toast.error(`Error uploading photo ${i+1}: ${error.message}`);
+          continue; // Continue with other uploads even if one fails
         }
         
         const { data } = supabase.storage
@@ -229,7 +241,7 @@ const PropertyListingForm = () => {
     } catch (error: any) {
       console.error("Error in uploadPhotos:", error);
       toast.error(`Error uploading photos: ${error.message}`);
-      throw error;
+      return [];
     } finally {
       setIsUploading(false);
     }
@@ -306,7 +318,7 @@ const PropertyListingForm = () => {
                       return;
                     }
                     
-                    // Only check for photos if we don't already have URLs
+                    // Check if we have photos in either state - either already uploaded URLs or new photos
                     if (photos.length === 0 && photoUrls.length === 0) {
                       toast.error("Please add at least one photo of your property");
                       return;
@@ -314,7 +326,11 @@ const PropertyListingForm = () => {
                     
                     // Only upload if there are new photos
                     if (photos.length > 0) {
-                      await uploadPhotos();
+                      const uploadedUrls = await uploadPhotos();
+                      if (uploadedUrls.length === 0 && photoUrls.length === 0) {
+                        toast.error("Failed to upload photos. Please try again.");
+                        return;
+                      }
                     }
                     
                     const formValues = form.getValues();
