@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -46,9 +47,16 @@ export const FeaturesPhotosStep = ({
         return;
       }
       
-      const preview = URL.createObjectURL(file);
-      setPhotos([...photos, { file, preview }]);
-      toast.success(`Photo "${file.name}" added successfully`);
+      // Create preview of the image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          const preview = e.target.result.toString();
+          setPhotos(prevPhotos => [...prevPhotos, { file, preview }]);
+          toast.success(`Photo "${file.name}" added successfully`);
+        }
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error("Error adding photo:", error);
       toast.error("Failed to add photo. Please try again.");

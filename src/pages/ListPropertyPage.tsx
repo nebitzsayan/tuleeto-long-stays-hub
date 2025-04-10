@@ -7,7 +7,7 @@ import PropertyListingForm, { steps } from "@/components/property/PropertyListin
 import { useState } from "react";
 
 const ListPropertyPage = () => {
-  const [step, setStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -26,7 +26,7 @@ const ListPropertyPage = () => {
           </div>
           
           {/* Progress Steps */}
-          <ListingSteps currentStep={step} />
+          <ListingSteps currentStep={currentStep} />
           
           {/* Form */}
           <PropertyListingForm />

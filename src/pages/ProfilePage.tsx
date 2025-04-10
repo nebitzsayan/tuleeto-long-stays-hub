@@ -105,23 +105,52 @@ const ProfilePage = () => {
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const files = event.target.files;
-      if (!files || files.length === 0 || !user) return;
+      if (!files || files.length === 0 || !user) {
+        return;
+      }
 
       setUploadingAvatar(true);
       const file = files[0];
+      
+      // Validate file size
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
+        return;
+      }
+      
       const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Create avatars bucket if it doesn't exist (the upload will fail otherwise)
+      const { data: bucketExists } = await supabase
+        .storage
+        .getBucket('avatars');
+
+      if (!bucketExists) {
+        const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
+          public: true
+        });
+        if (createBucketError) {
+          console.error("Error creating bucket:", createBucketError);
+          throw createBucketError;
+        }
+      }
 
       // Upload the file to Supabase storage
       const { error: uploadError } = await supabase.storage
-        .from('property_images')
-        .upload(filePath, file);
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
       // Get the public URL
       const { data } = supabase.storage
-        .from('property_images')
+        .from('avatars')
         .getPublicUrl(filePath);
 
       const avatarUrl = data.publicUrl;
@@ -137,6 +166,7 @@ const ProfilePage = () => {
       setAvatarUrl(avatarUrl);
       toast.success('Avatar updated successfully!');
     } catch (error: any) {
+      console.error("Avatar upload error:", error);
       toast.error(`Error uploading avatar: ${error.message}`);
     } finally {
       setUploadingAvatar(false);

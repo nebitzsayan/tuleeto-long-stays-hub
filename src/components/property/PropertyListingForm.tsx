@@ -52,6 +52,7 @@ const PropertyListingForm = () => {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
     "Pet friendly", 
     "Air conditioning", 
@@ -174,29 +175,59 @@ const PropertyListingForm = () => {
     if (photos.length === 0) return [];
     
     setIsUploading(true);
+    setUploadProgress(0);
+    
     try {
       const urls = [];
+      const totalPhotos = photos.length;
       
-      for (const photo of photos) {
+      // Create 'property_images' bucket if it doesn't exist
+      const { data: bucketExists } = await supabase
+        .storage
+        .getBucket('property_images');
+
+      if (!bucketExists) {
+        const { error: createBucketError } = await supabase.storage.createBucket('property_images', {
+          public: true
+        });
+        if (createBucketError) {
+          console.error("Error creating bucket:", createBucketError);
+          throw createBucketError;
+        }
+      }
+      
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
         const fileExt = photo.file.name.split('.').pop();
-        const filePath = `${user?.id || 'anonymous'}/${crypto.randomUUID()}.${fileExt}`;
+        const fileName = `${user?.id || 'anonymous'}-${Date.now()}-${i}.${fileExt}`;
+        const filePath = `${user?.id || 'anonymous'}/${fileName}`;
         
         const { error } = await supabase.storage
           .from('property_images')
-          .upload(filePath, photo.file);
+          .upload(filePath, photo.file, {
+            cacheControl: '3600',
+            upsert: false
+          });
         
-        if (error) throw error;
+        if (error) {
+          console.error(`Error uploading photo ${i+1}:`, error);
+          throw error;
+        }
         
         const { data } = supabase.storage
           .from('property_images')
           .getPublicUrl(filePath);
         
         urls.push(data.publicUrl);
+        
+        // Update progress
+        setUploadProgress(Math.round(((i + 1) / totalPhotos) * 100));
       }
       
       setPhotoUrls(urls);
       return urls;
     } catch (error: any) {
+      console.error("Error in uploadPhotos:", error);
       toast.error(`Error uploading photos: ${error.message}`);
       throw error;
     } finally {
@@ -228,6 +259,13 @@ const PropertyListingForm = () => {
           
           {step === 3 && (
             <ContactInfoStep form={form} />
+          )}
+          
+          {isUploading && (
+            <div className="space-y-2">
+              <p className="text-sm text-center">Uploading photos: {uploadProgress}%</p>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
           )}
           
           <div className="flex justify-between pt-4 border-t border-gray-100">
@@ -269,14 +307,20 @@ const PropertyListingForm = () => {
                       return;
                     }
                     
+                    if (photos.length === 0) {
+                      toast.error("Please add at least one photo of your property");
+                      return;
+                    }
+                    
                     // Upload photos first
                     await uploadPhotos();
                     
                     // Submit the form with form data
                     const formValues = form.getValues();
                     onSubmit(formValues);
-                  } catch (error) {
+                  } catch (error: any) {
                     console.error("Error during submission:", error);
+                    toast.error(`Submission error: ${error.message}`);
                   }
                 }}
               >
