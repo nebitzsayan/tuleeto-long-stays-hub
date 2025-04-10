@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -9,6 +8,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingSteps } from "@/components/property/ListingSteps";
 import { PropertyDetailsStep } from "@/components/property/PropertyDetailsStep";
@@ -79,7 +79,7 @@ const PropertyListingForm = () => {
       contactPhone: "",
       agreeToTerms: false
     },
-    mode: "onChange" // This enables real-time validation
+    mode: "onChange"
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -96,10 +96,8 @@ const PropertyListingForm = () => {
         return;
       }
       
-      // Prepare the location string
       const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
       
-      // Prepare property data
       const propertyData = {
         title: data.title,
         description: data.description,
@@ -115,7 +113,6 @@ const PropertyListingForm = () => {
         owner_id: user.id
       };
       
-      // Insert property into Supabase
       const { data: insertedProperty, error } = await supabase
         .from('properties')
         .insert(propertyData)
@@ -126,7 +123,6 @@ const PropertyListingForm = () => {
       
       toast.success("Your property has been listed!");
       
-      // Navigate to the property detail page
       if (insertedProperty?.id) {
         navigate(`/property/${insertedProperty.id}`);
       } else {
@@ -140,34 +136,32 @@ const PropertyListingForm = () => {
   };
   
   const nextStep = async () => {
-    // Validate the current step's fields before proceeding
     let fieldsToValidate: string[] = [];
     
     switch (step) {
-      case 0: // Property Details step
+      case 0:
         fieldsToValidate = ["propertyType", "title", "description"];
         break;
-      case 1: // Location step
+      case 1:
         fieldsToValidate = ["street", "city", "state", "zipCode"];
         break;
-      case 2: // Features & Photos step
+      case 2:
         fieldsToValidate = ["bedrooms", "bathrooms", "area", "price", "availableFrom"];
         break;
     }
     
-    // Trigger validation only for the fields in the current step
     const stepIsValid = await form.trigger(fieldsToValidate as any);
     
     if (stepIsValid && step < steps.length - 1) {
       setStep(step + 1);
-      window.scrollTo(0, 0); // Scroll to top when changing steps
+      window.scrollTo(0, 0);
     }
   };
   
   const prevStep = () => {
     if (step > 0) {
       setStep(step - 1);
-      window.scrollTo(0, 0); // Scroll to top when changing steps
+      window.scrollTo(0, 0);
     }
   };
 
@@ -181,7 +175,6 @@ const PropertyListingForm = () => {
       const urls = [];
       const totalPhotos = photos.length;
       
-      // Create 'property_images' bucket if it doesn't exist
       const { data: bucketExists } = await supabase
         .storage
         .getBucket('property_images');
@@ -220,7 +213,6 @@ const PropertyListingForm = () => {
         
         urls.push(data.publicUrl);
         
-        // Update progress
         setUploadProgress(Math.round(((i + 1) / totalPhotos) * 100));
       }
       
@@ -298,9 +290,8 @@ const PropertyListingForm = () => {
                 className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
                 disabled={isUploading || isSubmitting}
                 onClick={async (e) => {
-                  e.preventDefault(); // Prevent default form submission
+                  e.preventDefault();
                   try {
-                    // First validate all form fields
                     const isValid = await form.trigger();
                     if (!isValid) {
                       toast.error("Please correct all form errors before submitting");
@@ -312,10 +303,8 @@ const PropertyListingForm = () => {
                       return;
                     }
                     
-                    // Upload photos first
                     await uploadPhotos();
                     
-                    // Submit the form with form data
                     const formValues = form.getValues();
                     onSubmit(formValues);
                   } catch (error: any) {
