@@ -57,6 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
     } catch (error: any) {
       toast.error(`Error signing in: ${error.message}`);
+      // Redirect to home page after error
+      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -78,6 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.success('Registration successful! Please check your email for verification.');
     } catch (error: any) {
       toast.error(`Error signing up: ${error.message}`);
+      // Redirect to home page after error
+      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -91,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
     } catch (error: any) {
       toast.error(`Error signing out: ${error.message}`);
+      // Redirect to home page after error
+      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -106,6 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
     } catch (error: any) {
       toast.error(`Error resetting password: ${error.message}`);
+      // Redirect to home page after error
+      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -123,9 +131,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             : 'https://tuleetotest.netlify.app/auth'
         }
       });
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
     } catch (error: any) {
       toast.error(`Error signing in with Google: ${error.message}`);
+      // Redirect to home page after error
+      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);

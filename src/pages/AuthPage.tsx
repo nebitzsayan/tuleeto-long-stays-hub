@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Home, LogIn, UserPlus, ArrowLeft, Mail } from 'lucide-react';
+import { LogIn, UserPlus, ArrowLeft, Mail } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
+import Logo from '@/components/ui/logo';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -126,7 +126,7 @@ const AuthPage = () => {
         <div className="container max-w-md mx-auto">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <Home className="h-12 w-12 text-tuleeto-orange" />
+              <Logo showText={true} className="scale-150 mb-2" />
             </div>
             <h1 className="text-3xl font-bold mb-2">Welcome to Tuleeto</h1>
             <p className="text-gray-600">Sign in or create an account to get started</p>

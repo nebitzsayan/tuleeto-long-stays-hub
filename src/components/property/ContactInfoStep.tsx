@@ -47,11 +47,29 @@ export const ContactInfoStep = ({ form }: ContactInfoStepProps) => {
         name="contactPhone"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Phone Number</FormLabel>
+            <FormLabel>Phone Number (India)</FormLabel>
             <FormControl>
-              <Input placeholder="e.g. (555) 123-4567" {...field} />
+              <div className="flex">
+                <span className="inline-flex items-center px-3 text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
+                  +91
+                </span>
+                <Input 
+                  className="rounded-l-none" 
+                  placeholder="e.g. 9876543210" 
+                  {...field}
+                  onChange={(e) => {
+                    // Only allow numbers
+                    const value = e.target.value.replace(/[^\d]/g, '');
+                    field.onChange(value);
+                  }}
+                  maxLength={10}
+                />
+              </div>
             </FormControl>
             <FormMessage />
+            <FormDescription>
+              Enter a 10-digit Indian mobile number without the country code
+            </FormDescription>
           </FormItem>
         )}
       />

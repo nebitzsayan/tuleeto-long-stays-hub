@@ -46,6 +46,10 @@ const PropertyFilter = () => {
     });
   };
 
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
+
   return (
     <div className="bg-white p-3 md:p-4 rounded-lg shadow-md mb-6">
       <form onSubmit={handleSearch}>
@@ -63,7 +67,7 @@ const PropertyFilter = () => {
             type="button"
             variant="outline"
             className="flex items-center gap-2 h-10 md:h-12"
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={toggleFilters}
           >
             <SlidersHorizontal className="h-4 w-4" />
             <span>{isMobile ? "" : "Filters"}</span>
@@ -100,10 +104,10 @@ const PropertyFilter = () => {
             <div>
               <Label htmlFor="bedrooms" className="mb-2 block">Bedrooms</Label>
               <Select value={bedrooms} onValueChange={setBedrooms}>
-                <SelectTrigger id="bedrooms" className="h-10 md:h-12">
+                <SelectTrigger id="bedrooms" className="h-10 md:h-12 bg-white">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="bg-white w-full z-50">
                   <SelectItem value="">Any</SelectItem>
                   <SelectItem value="1">1+</SelectItem>
                   <SelectItem value="2">2+</SelectItem>
@@ -116,10 +120,10 @@ const PropertyFilter = () => {
             <div>
               <Label htmlFor="property-type" className="mb-2 block">Property Type</Label>
               <Select value={propertyType} onValueChange={setPropertyType}>
-                <SelectTrigger id="property-type" className="h-10 md:h-12">
+                <SelectTrigger id="property-type" className="h-10 md:h-12 bg-white">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="bg-white w-full z-50">
                   <SelectItem value="">Any</SelectItem>
                   <SelectItem value="Apartment">Apartment</SelectItem>
                   <SelectItem value="House">House</SelectItem>
