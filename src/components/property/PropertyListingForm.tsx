@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -91,7 +92,8 @@ const PropertyListingForm = () => {
         return;
       }
       
-      if (photoUrls.length === 0) {
+      // Check if we have either uploaded photos or photo URLs already
+      if (photos.length === 0 && photoUrls.length === 0) {
         toast.error("Please upload at least one photo of your property");
         return;
       }
@@ -166,7 +168,13 @@ const PropertyListingForm = () => {
   };
 
   const uploadPhotos = async () => {
-    if (photos.length === 0) return [];
+    if (photos.length === 0) {
+      // If no new photos to upload but we already have URLs, return them
+      if (photoUrls.length > 0) {
+        return photoUrls;
+      }
+      return [];
+    }
     
     setIsUploading(true);
     setUploadProgress(0);
@@ -298,12 +306,16 @@ const PropertyListingForm = () => {
                       return;
                     }
                     
-                    if (photos.length === 0) {
+                    // Only check for photos if we don't already have URLs
+                    if (photos.length === 0 && photoUrls.length === 0) {
                       toast.error("Please add at least one photo of your property");
                       return;
                     }
                     
-                    await uploadPhotos();
+                    // Only upload if there are new photos
+                    if (photos.length > 0) {
+                      await uploadPhotos();
+                    }
                     
                     const formValues = form.getValues();
                     onSubmit(formValues);
