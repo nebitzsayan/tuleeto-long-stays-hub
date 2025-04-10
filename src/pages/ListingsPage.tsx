@@ -53,13 +53,15 @@ const ListingsPage = () => {
       } catch (error: any) {
         toast.error(`Error fetching properties: ${error.message}`);
         console.error("Error fetching properties:", error);
+        // If error, redirect to home page
+        window.location.href = "/";
       } finally {
         setLoading(false);
       }
     };
     
     fetchProperties();
-  }, []); // Removed dependency on searchParams.get("location") to ensure we always fetch all properties
+  }, []);
 
   // Filter properties based on search params
   useEffect(() => {
@@ -68,7 +70,7 @@ const ListingsPage = () => {
     let filtered = [...allProperties];
     const location = searchParams.get("location")?.toLowerCase();
     const minPrice = Number(searchParams.get("minPrice")) || 0;
-    const maxPrice = Number(searchParams.get("maxPrice")) || 50000; // Updated max price for Indian market
+    const maxPrice = Number(searchParams.get("maxPrice")) || 50000;
     const bedrooms = Number(searchParams.get("bedrooms")) || 0;
     const propertyType = searchParams.get("type");
     
@@ -99,9 +101,9 @@ const ListingsPage = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      <main className="flex-grow pt-24 px-4 bg-tuleeto-off-white">
+      <main className="flex-grow pt-20 md:pt-24 px-4 bg-tuleeto-off-white">
         <div className="container max-w-7xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold mb-6">Available Rentals</h1>
+          <h1 className="text-2xl md:text-4xl font-bold mb-6">Available Rentals</h1>
           
           <PropertyFilter />
           

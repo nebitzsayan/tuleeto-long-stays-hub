@@ -70,7 +70,7 @@ const PropertyFilter = () => {
             onClick={toggleFilters}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            <span>{isMobile ? "" : "Filters"}</span>
+            <span>{isMobile ? "Filters" : "Filters"}</span>
           </Button>
           <Button 
             type="submit" 
@@ -89,6 +89,7 @@ const PropertyFilter = () => {
               </Label>
               <div className="pt-4 px-2">
                 <Slider
+                  id="price-range"
                   value={[minPrice, maxPrice]}
                   max={50000}
                   step={1000}

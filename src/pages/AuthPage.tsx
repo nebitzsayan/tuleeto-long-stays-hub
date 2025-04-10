@@ -122,13 +122,10 @@ const AuthPage = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
 
-      <main className="flex-grow pt-24 px-4 pb-16 bg-tuleeto-off-white">
+      <main className="flex-grow pt-20 px-4 pb-16 bg-tuleeto-off-white">
         <div className="container max-w-md mx-auto">
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <Logo showText={true} className="scale-150 mb-2" />
-            </div>
-            <h1 className="text-3xl font-bold mb-2">Welcome to Tuleeto</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome to Tuleeto</h1>
             <p className="text-gray-600">Sign in or create an account to get started</p>
           </div>
 

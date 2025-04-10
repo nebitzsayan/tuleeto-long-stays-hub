@@ -14,7 +14,7 @@ const Logo = ({ className = "", showText = true }: LogoProps) => {
         alt="Tuleeto Logo" 
         className="h-8 w-auto"
       />
-      {showText && <span className="text-2xl font-bold text-tuleeto-orange">Tuleeto</span>}
+      {showText && <span className="text-xl md:text-2xl font-bold text-tuleeto-orange">Tuleeto</span>}
     </Link>
   );
 };
