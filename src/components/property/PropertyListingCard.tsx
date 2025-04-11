@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, BedDouble, Bath, Square, IndianRupee } from "lucide-react";
+import { MapPin, BedDouble, Bath, Square, IndianRupee, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export interface PropertyType {
@@ -19,9 +19,15 @@ export interface PropertyType {
 
 interface PropertyListingCardProps {
   property: PropertyType;
+  onDelete?: (id: string) => void; // Add optional onDelete prop
+  showDeleteButton?: boolean; // Flag to show/hide delete button
 }
 
-const PropertyListingCard = ({ property }: PropertyListingCardProps) => {
+const PropertyListingCard = ({ 
+  property, 
+  onDelete, 
+  showDeleteButton = false 
+}: PropertyListingCardProps) => {
   return (
     <Card className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01]">
       <div className="relative">
@@ -60,11 +66,23 @@ const PropertyListingCard = ({ property }: PropertyListingCardProps) => {
             <IndianRupee className="h-4 w-4 mr-1" />
             {property.price.toLocaleString('en-IN')}/mo
           </span>
-          <Link to={`/property/${property.id}`}>
-            <Button variant="outline" className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
-              View Details
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {showDeleteButton && onDelete && (
+              <Button 
+                variant="outline" 
+                className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+                onClick={() => onDelete(property.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            )}
+            <Link to={`/property/${property.id}`}>
+              <Button variant="outline" className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
+                View Details
+              </Button>
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>

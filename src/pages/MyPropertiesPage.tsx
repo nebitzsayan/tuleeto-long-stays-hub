@@ -9,11 +9,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PropertyListingCard, { PropertyType } from "@/components/property/PropertyListingCard";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const MyPropertiesPage = () => {
   const { user } = useAuth();
   const [properties, setProperties] = useState<PropertyType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchUserProperties = async () => {
@@ -55,6 +58,33 @@ const MyPropertiesPage = () => {
     fetchUserProperties();
   }, [user]);
 
+  const handleDeleteConfirm = async (id: string) => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Remove the property from the local state
+      setProperties(properties.filter(property => property.id !== id));
+      toast.success("Property deleted successfully");
+    } catch (error: any) {
+      toast.error(`Error deleting property: ${error.message}`);
+    } finally {
+      setIsDeleting(false);
+      setDeletingPropertyId(null);
+    }
+  };
+
+  const showDeleteConfirmation = (id: string) => {
+    setDeletingPropertyId(id);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -77,7 +107,12 @@ const MyPropertiesPage = () => {
           ) : properties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {properties.map((property) => (
-                <PropertyListingCard key={property.id} property={property} />
+                <PropertyListingCard 
+                  key={property.id} 
+                  property={property} 
+                  showDeleteButton={true}
+                  onDelete={showDeleteConfirmation}
+                />
               ))}
             </div>
           ) : (
@@ -95,6 +130,35 @@ const MyPropertiesPage = () => {
       </main>
       
       <Footer />
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!deletingPropertyId} onOpenChange={(isOpen) => !isOpen && setDeletingPropertyId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your property listing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deletingPropertyId && handleDeleteConfirm(deletingPropertyId)}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Property'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
