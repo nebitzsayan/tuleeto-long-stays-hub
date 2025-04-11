@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { User, LogIn, House, LogOut, Plus, Menu, X } from "lucide-react";
+import { User, LogIn, House, LogOut, Plus, Menu, X, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/ui/logo";
@@ -21,6 +21,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,6 +38,15 @@ const Navbar = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  // Check if user is admin
+  useEffect(() => {
+    if (user && user.email === "admin@gmail.com") {
+      setIsAdmin(true);
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -73,6 +83,15 @@ const Navbar = () => {
                 <House className="h-4 w-4" /> Rent Your House
               </Link>
               
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="text-gray-700 hover:text-tuleeto-orange transition-colors flex items-center gap-1"
+                >
+                  <Shield className="h-4 w-4" /> Admin
+                </Link>
+              )}
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="text-gray-700 hover:text-tuleeto-orange">
@@ -101,6 +120,14 @@ const Navbar = () => {
                         <span>My Properties</span>
                       </Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem>
+                        <Link to="/admin" className="flex items-center w-full">
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
@@ -164,6 +191,15 @@ const Navbar = () => {
                 >
                   <House className="h-4 w-4" /> My Properties
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 flex items-center gap-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Shield className="h-4 w-4" /> Admin Panel
+                  </Link>
+                )}
                 <Button 
                   variant="ghost" 
                   className="text-gray-700 hover:text-tuleeto-orange justify-start p-0 h-auto hover:bg-transparent"

@@ -13,6 +13,7 @@ import ListPropertyPage from "./pages/ListPropertyPage";
 import AuthPage from "./pages/AuthPage";
 import MyPropertiesPage from "./pages/MyPropertiesPage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,11 @@ const App = () => (
             <Route path="/profile" element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminPanel />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
