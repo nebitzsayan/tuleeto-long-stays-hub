@@ -1,20 +1,14 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import MainLayout from "@/components/layout/MainLayout";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Loader2, Users, Home, Image } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Home, Users, Image, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -23,254 +17,300 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import PropertyListingCard from "@/components/property/PropertyListingCard";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const AdminPanel = () => {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [adminVerified, setAdminVerified] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(true);
-  
-  // Dashboard metrics
-  const [metrics, setMetrics] = useState({
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [stats, setStats] = useState({
     totalProperties: 0,
     totalUsers: 0,
     totalImages: 0,
   });
-  
-  // Data for tabs
   const [properties, setProperties] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Check if the current user is admin
+  // Check if user is admin
   useEffect(() => {
-    const checkAdminAccess = async () => {
-      if (!user) return;
-      
+    const checkAdminStatus = async () => {
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
       if (user.email === "admin@gmail.com") {
-        setAdminVerified(true);
+        setIsAdmin(true);
+        await fetchAdminData();
       } else {
-        toast.error("You don't have permission to access this page");
+        toast.error("You do not have permission to access this page");
         navigate("/");
       }
-      setIsAdminLoading(false);
+      setLoading(false);
     };
 
-    if (!isLoading) {
-      checkAdminAccess();
-    }
-  }, [user, isLoading, navigate]);
+    checkAdminStatus();
+  }, [user, navigate]);
 
-  // Fetch dashboard data
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!adminVerified) return;
-      
-      try {
-        setLoadingData(true);
-        
-        // Get properties
-        const { data: propertiesData, error: propertiesError } = await supabase
-          .from("properties")
-          .select("*");
-        
-        if (propertiesError) throw propertiesError;
-        setProperties(propertiesData || []);
-        
-        // Get total images count (from all property images)
-        let totalImagesCount = 0;
-        if (propertiesData) {
-          propertiesData.forEach(property => {
-            if (property.images && Array.isArray(property.images)) {
-              totalImagesCount += property.images.length;
-            }
-          });
-        }
-        
-        // Get users
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
-          .select("*");
-        
-        if (profilesError) throw profilesError;
-        setUsers(profilesData || []);
-        
-        // Set metrics
-        setMetrics({
-          totalProperties: propertiesData?.length || 0,
-          totalUsers: profilesData?.length || 0,
-          totalImages: totalImagesCount,
-        });
-      } catch (error: any) {
-        toast.error(`Error fetching dashboard data: ${error.message}`);
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    if (adminVerified) {
-      fetchDashboardData();
-    }
-  }, [adminVerified]);
-
-  // Handler for property deletion
-  const handleDeleteProperty = async (id: string) => {
+  const fetchAdminData = async () => {
     try {
-      const { error } = await supabase.from("properties").delete().eq("id", id);
-      
-      if (error) throw error;
-      
-      setProperties(prevProperties => prevProperties.filter(property => property.id !== id));
-      toast.success("Property deleted successfully");
-      
-      // Update metrics
-      setMetrics(prev => ({
-        ...prev,
-        totalProperties: prev.totalProperties - 1
-      }));
+      // Fetch properties
+      const { data: propertiesData, error: propertiesError } = await supabase
+        .from("properties")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (propertiesError) throw propertiesError;
+      setProperties(propertiesData || []);
+
+      // Fetch users
+      const { data: usersData, error: usersError } = await supabase
+        .from("profiles")
+        .select("*");
+
+      if (usersError) throw usersError;
+      setUsers(usersData || []);
+
+      // Calculate total images
+      let totalImages = 0;
+      if (propertiesData) {
+        propertiesData.forEach((property) => {
+          if (property.images && Array.isArray(property.images)) {
+            totalImages += property.images.length;
+          }
+        });
+      }
+
+      // Update stats
+      setStats({
+        totalProperties: propertiesData?.length || 0,
+        totalUsers: usersData?.length || 0,
+        totalImages: totalImages,
+      });
     } catch (error: any) {
-      toast.error(`Error deleting property: ${error.message}`);
+      console.error("Error fetching admin data:", error);
+      toast.error(`Error loading dashboard data: ${error.message}`);
     }
   };
 
-  if (isLoading || isAdminLoading) {
+  const handleDeleteProperty = async (id: string) => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.from("properties").delete().eq("id", id);
+
+      if (error) throw error;
+
+      setProperties(properties.filter((property) => property.id !== id));
+      setStats((prevStats) => ({
+        ...prevStats,
+        totalProperties: prevStats.totalProperties - 1,
+      }));
+
+      toast.success("Property deleted successfully");
+    } catch (error: any) {
+      console.error("Error deleting property:", error);
+      toast.error(`Error deleting property: ${error.message}`);
+    } finally {
+      setIsDeleting(false);
+      setDeletingPropertyId(null);
+    }
+  };
+
+  if (loading) {
     return (
       <MainLayout>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="flex justify-center items-center h-[50vh]">
           <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
         </div>
       </MainLayout>
     );
   }
 
-  if (!adminVerified) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Card className="w-full max-w-lg">
-            <CardHeader>
-              <CardTitle className="text-center text-red-500">Access Denied</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center">You don't have permission to access this page.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </MainLayout>
-    );
+  if (!isAdmin) {
+    return null; // Will redirect in useEffect
   }
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container p-6">
         <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-        
-        {/* Dashboard Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
-            <CardContent className="flex items-center p-6">
-              <Home className="h-10 w-10 text-tuleeto-orange mr-4" />
-              <div>
-                <p className="text-sm font-medium">Total Properties</p>
-                <h3 className="text-2xl font-bold">{metrics.totalProperties}</h3>
-              </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center">
+                <Home className="mr-2 h-5 w-5 text-tuleeto-orange" />
+                Properties
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{stats.totalProperties}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardContent className="flex items-center p-6">
-              <Users className="h-10 w-10 text-tuleeto-orange mr-4" />
-              <div>
-                <p className="text-sm font-medium">Total Users</p>
-                <h3 className="text-2xl font-bold">{metrics.totalUsers}</h3>
-              </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center">
+                <Users className="mr-2 h-5 w-5 text-tuleeto-orange" />
+                Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{stats.totalUsers}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardContent className="flex items-center p-6">
-              <Image className="h-10 w-10 text-tuleeto-orange mr-4" />
-              <div>
-                <p className="text-sm font-medium">Total Images</p>
-                <h3 className="text-2xl font-bold">{metrics.totalImages}</h3>
-              </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center">
+                <Image className="mr-2 h-5 w-5 text-tuleeto-orange" />
+                Total Images
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{stats.totalImages}</p>
             </CardContent>
           </Card>
         </div>
-        
-        {/* Tabbed Content */}
-        <Tabs defaultValue="properties" className="w-full">
+
+        <Tabs defaultValue="properties">
           <TabsList className="mb-4">
             <TabsTrigger value="properties">Properties</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="properties">
-            {loadingData ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
-              </div>
-            ) : properties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {properties.map(property => (
-                  <PropertyListingCard 
-                    key={property.id}
-                    property={{
-                      id: property.id,
-                      title: property.title,
-                      location: property.location,
-                      price: property.price,
-                      bedrooms: property.bedrooms,
-                      bathrooms: property.bathrooms,
-                      area: property.area,
-                      image: property.images?.[0] || "/placeholder.svg",
-                      type: property.type
-                    }}
-                    showDeleteButton={true}
-                    onDelete={handleDeleteProperty}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-8">No properties found</p>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="users">
-            {loadingData ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="p-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Property Listings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Created At</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {users.map(user => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.id.substring(0, 8)}...</TableCell>
-                          <TableCell>{user.full_name || "N/A"}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      {properties.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-4">
+                            No properties found
+                          </TableCell>
                         </TableRow>
-                      ))}
+                      ) : (
+                        properties.map((property) => (
+                          <TableRow key={property.id}>
+                            <TableCell>{property.title}</TableCell>
+                            <TableCell>₹{property.price.toLocaleString()}</TableCell>
+                            <TableCell>{property.type}</TableCell>
+                            <TableCell>{property.owner_id.substring(0, 8)}...</TableCell>
+                            <TableCell>
+                              {new Date(property.created_at).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setDeletingPropertyId(property.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Accounts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User ID</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Full Name</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-4">
+                            No users found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        users.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>{user.id.substring(0, 8)}...</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.full_name || "Not provided"}</TableCell>
+                            <TableCell>
+                              {new Date(user.created_at).toLocaleDateString()}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={!!deletingPropertyId}
+        onOpenChange={(isOpen) => !isOpen && setDeletingPropertyId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Property</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this property? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingPropertyId && handleDeleteProperty(deletingPropertyId)}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

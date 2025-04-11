@@ -125,22 +125,22 @@ const ProfilePage = () => {
       const filePath = `avatars/${fileName}`;
 
       // Check if avatars bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error("Error checking buckets:", bucketsError);
+        toast.error(`Error checking storage buckets: ${bucketsError.message}`);
+        setUploadingAvatar(false);
+        return;
+      }
+      
       const avatarBucketExists = buckets?.some(bucket => bucket.name === 'avatars');
 
-      // Create avatars bucket if it doesn't exist
+      // If bucket doesn't exist, let the user know this might be a permissions issue
       if (!avatarBucketExists) {
-        const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
-          public: true,
-          fileSizeLimit: 5242880 // 5MB in bytes
-        });
-        
-        if (createBucketError) {
-          console.error("Error creating bucket:", createBucketError);
-          toast.error(`Failed to create storage bucket: ${createBucketError.message}`);
-          setUploadingAvatar(false);
-          return;
-        }
+        toast.error("Storage bucket doesn't exist. Please contact an administrator to set up the avatars bucket.");
+        setUploadingAvatar(false);
+        return;
       }
 
       // Upload the file to Supabase storage
@@ -148,7 +148,7 @@ const ProfilePage = () => {
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: true // Changed to true to replace existing files
+          upsert: true
         });
 
       if (uploadError) {

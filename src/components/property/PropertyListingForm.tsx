@@ -191,21 +191,22 @@ const PropertyListingForm = () => {
       const totalPhotos = photos.length;
       
       // Check if property_images bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error("Error checking buckets:", bucketsError);
+        toast.error(`Error checking storage buckets: ${bucketsError.message}`);
+        setIsUploading(false);
+        return [];
+      }
+      
       const bucketExists = buckets?.some(bucket => bucket.name === 'property_images');
 
+      // If bucket doesn't exist, let the user know this might be a permissions issue
       if (!bucketExists) {
-        const { error: createBucketError } = await supabase.storage.createBucket('property_images', {
-          public: true,
-          fileSizeLimit: 5242880 // 5MB in bytes
-        });
-        
-        if (createBucketError) {
-          console.error("Error creating bucket:", createBucketError);
-          toast.error(`Failed to create storage bucket: ${createBucketError.message}`);
-          setIsUploading(false);
-          return [];
-        }
+        toast.error("Storage bucket doesn't exist. Please contact an administrator to set up the property_images bucket.");
+        setIsUploading(false);
+        return [];
       }
       
       for (let i = 0; i < photos.length; i++) {
@@ -218,7 +219,7 @@ const PropertyListingForm = () => {
           .from('property_images')
           .upload(filePath, photo.file, {
             cacheControl: '3600',
-            upsert: true // Changed to true to replace existing files
+            upsert: true
           });
         
         if (error) {
