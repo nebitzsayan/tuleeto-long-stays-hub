@@ -1,14 +1,16 @@
+
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils } from "lucide-react";
+import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -26,6 +28,7 @@ export const FeaturesPhotosStep = ({
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
@@ -33,16 +36,19 @@ export const FeaturesPhotosStep = ({
     
     const file = fileInput.files[0];
     setUploading(true);
+    setUploadError(null);
     
     try {
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
         toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
+        setUploadError("File size exceeds 5MB limit. Please choose a smaller image.");
         return;
       }
       
       if (photos.length >= 5) {
         toast.warning("Maximum 5 photos allowed");
+        setUploadError("Maximum 5 photos allowed");
         return;
       }
       
@@ -59,6 +65,7 @@ export const FeaturesPhotosStep = ({
     } catch (error) {
       console.error("Error adding photo:", error);
       toast.error("Failed to add photo. Please try again.");
+      setUploadError("Failed to add photo. Please try again.");
     } finally {
       setUploading(false);
       fileInput.value = '';
@@ -88,10 +95,16 @@ export const FeaturesPhotosStep = ({
     { id: "in-unit-laundry", label: "In-unit laundry", icon: <Utensils className="h-4 w-4 mr-2" /> }
   ];
   
-  
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Features & Photos</h2>
+      
+      {uploadError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{uploadError}</AlertDescription>
+        </Alert>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField
@@ -269,7 +282,20 @@ export const FeaturesPhotosStep = ({
           <p className="text-gray-500">Upload up to 5 photos (Max 5MB each)</p>
           <p className="text-amber-600">Tip: Smaller images load faster. Compress your photos before uploading for best performance.</p>
         </div>
+        
+        <Alert className="bg-blue-50 border-blue-200">
+          <AlertDescription className="text-sm">
+            <p><strong>Having trouble uploading?</strong> Try these tips:</p>
+            <ul className="list-disc pl-5 mt-1 text-xs">
+              <li>Make sure your image is smaller than 5MB</li>
+              <li>Use common formats like JPG, PNG, or WebP</li>
+              <li>Try uploading one image at a time</li>
+              <li>If problems persist, try logging out and back in</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
       </div>
     </div>
   );
 };
+

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -202,9 +201,10 @@ const PropertyListingForm = () => {
       
       const bucketExists = buckets?.some(bucket => bucket.name === 'property_images');
 
-      // If bucket doesn't exist, let the user know this might be a permissions issue
+      // If bucket doesn't exist, show a more helpful error message
       if (!bucketExists) {
-        toast.error("Storage bucket doesn't exist. Please contact an administrator to set up the property_images bucket.");
+        console.error("Property images bucket doesn't exist");
+        toast.error("Storage setup issue: The property_images storage bucket is not configured. Please contact an administrator.");
         setIsUploading(false);
         return [];
       }
@@ -215,7 +215,7 @@ const PropertyListingForm = () => {
         const fileName = `${user?.id || 'anonymous'}-${Date.now()}-${i}.${fileExt}`;
         const filePath = `${user?.id || 'anonymous'}/${fileName}`;
         
-        const { error } = await supabase.storage
+        const { error, data } = await supabase.storage
           .from('property_images')
           .upload(filePath, photo.file, {
             cacheControl: '3600',
@@ -224,17 +224,34 @@ const PropertyListingForm = () => {
         
         if (error) {
           console.error(`Error uploading photo ${i+1}:`, error);
-          toast.error(`Error uploading photo ${i+1}: ${error.message}`);
+          
+          // Provide more helpful error messages based on common issues
+          if (error.message.includes('new row violates row-level security policy')) {
+            toast.error(`Permission denied: You don't have permission to upload files. Please contact an administrator.`);
+          } else {
+            toast.error(`Error uploading photo ${i+1}: ${error.message}`);
+          }
+          
           continue; // Continue with other uploads even if one fails
         }
         
-        const { data } = supabase.storage
-          .from('property_images')
-          .getPublicUrl(filePath);
-        
-        urls.push(data.publicUrl);
+        if (data) {
+          const { data: urlData } = supabase.storage
+            .from('property_images')
+            .getPublicUrl(filePath);
+          
+          urls.push(urlData.publicUrl);
+        }
         
         setUploadProgress(Math.round(((i + 1) / totalPhotos) * 100));
+      }
+      
+      if (urls.length === 0 && photos.length > 0) {
+        toast.error("Failed to upload any photos. Please try again or contact support.");
+      } else if (urls.length < photos.length) {
+        toast.warning(`Only ${urls.length} out of ${photos.length} photos were uploaded successfully.`);
+      } else if (urls.length > 0) {
+        toast.success(`Successfully uploaded ${urls.length} photos.`);
       }
       
       setPhotoUrls(urls);
