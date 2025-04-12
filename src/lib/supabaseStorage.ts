@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 /**
  * Creates a bucket if it doesn't exist with public access
@@ -14,8 +13,7 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
     
     if (bucketsError) {
       console.error("Error checking buckets:", bucketsError);
-      // Don't throw error, just log and continue
-      toast.error("Storage service unavailable. Trying to reconnect...");
+      // Don't show toast, just log and continue
       return false;
     }
     
@@ -32,7 +30,6 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
       
       if (createError) {
         console.error(`Error creating bucket ${bucketName}:`, createError);
-        toast.error("Could not create storage area. Please try again.");
         return false;
       }
       
@@ -44,7 +41,6 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
     return true;
   } catch (error: any) {
     console.error("Error in storage setup:", error);
-    toast.error("Storage setup failed. Please refresh the page and try again.");
     return false;
   }
 };
@@ -73,26 +69,11 @@ export const uploadFileToStorage = async (
     
     if (error) {
       console.error(`Upload error:`, error);
-      
-      // Simplified error messaging
-      if (error.message.includes('permission') || error.message.includes('401')) {
-        toast.error("Upload permission denied. Please log in again.");
-      } else if (error.message.includes('size')) {
-        toast.error("File is too large (max 10MB).");
-      } else if (error.message.includes('bucket') || error.message.includes('not found')) {
-        toast.error("Storage not ready. Try again in a moment.");
-        // Try to fix the bucket once more
-        await ensureBucketExists(bucketName);
-      } else {
-        toast.error("Upload failed. Please try a smaller image.");
-      }
-      
       return null;
     }
     
     if (!data) {
       console.error("No data returned from upload");
-      toast.error("Upload failed. Please try again.");
       return null;
     }
     
@@ -105,7 +86,6 @@ export const uploadFileToStorage = async (
     return urlData.publicUrl;
   } catch (error: any) {
     console.error("Unexpected upload error:", error);
-    toast.error("Upload failed. Please try again with a smaller image.");
     return null;
   }
 };
@@ -159,14 +139,6 @@ export const uploadMultipleFiles = async (
     }
   }
   
-  // Give feedback on completion
-  if (successCount === 0 && files.length > 0) {
-    toast.error(`Failed to upload any photos. Please try smaller images.`);
-  } else if (successCount < files.length) {
-    toast.warning(`Uploaded ${successCount} out of ${files.length} photos.`);
-  } else {
-    toast.success(`Successfully uploaded ${successCount} photos!`);
-  }
-  
+  // No toasts, just return the URLs
   return urls;
 };
