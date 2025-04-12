@@ -12,7 +12,7 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
     
     if (bucketsError) {
       console.error("Error checking buckets:", bucketsError);
-      return false;
+      throw new Error(`Storage access error: ${bucketsError.message}`);
     }
     
     const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
@@ -27,16 +27,25 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
       
       if (createError) {
         console.error(`Error creating bucket ${bucketName}:`, createError);
-        return false;
+        throw new Error(`Failed to create storage bucket: ${createError.message}`);
       }
       
       console.log(`Successfully created bucket ${bucketName}`);
+      
+      // Set public bucket policy
+      const { error: policyError } = await supabase.storage.from(bucketName).createSignedUrl('test.txt', 60);
+      if (policyError && !policyError.message.includes("The resource was not found")) {
+        console.error("Error setting bucket policy:", policyError);
+        throw new Error(`Failed to configure bucket permissions: ${policyError.message}`);
+      }
+      
       return true;
     }
     
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error checking/creating bucket:", error);
+    toast.error(`Storage setup issue: ${error.message}`);
     return false;
   }
 };
@@ -54,7 +63,7 @@ export const uploadFileToStorage = async (
     const bucketReady = await ensureBucketExists(bucketName);
     
     if (!bucketReady) {
-      toast.error(`Storage bucket '${bucketName}' is not available. Please contact support.`);
+      toast.error(`Storage setup issue: The ${bucketName} storage bucket is not configured. Please try again later.`);
       return null;
     }
     
@@ -76,6 +85,15 @@ export const uploadFileToStorage = async (
         toast.error("Permission denied. You don't have access to upload files.");
       } else if (error.message.includes('size')) {
         toast.error("File is too large. Maximum size is 10MB.");
+      } else if (error.message.includes('bucket') || error.message.includes('not found')) {
+        // Try to recreate the bucket once more as a last resort
+        const recreated = await ensureBucketExists(bucketName);
+        if (recreated) {
+          toast.info("Storage system reconfigured. Please try uploading again.");
+        } else {
+          toast.error("Storage system unavailable. Please try again later.");
+        }
+        return null;
       } else {
         toast.error(`Upload failed: ${error.message}`);
       }
@@ -113,10 +131,17 @@ export const uploadMultipleFiles = async (
   const urls: string[] = [];
   const totalFiles = files.length;
   
+  // Verify bucket existence before attempting uploads
+  const bucketReady = await ensureBucketExists(bucketName);
+  if (!bucketReady) {
+    toast.error(`Cannot upload files: Storage system not available`);
+    return [];
+  }
+  
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const fileExt = file.name.split('.').pop();
-    const fileName = `${pathPrefix}-${Date.now()}-${i}.${fileExt}`;
+    const fileName = `${pathPrefix}/${Date.now()}-${i}.${fileExt}`;
     
     const url = await uploadFileToStorage(bucketName, fileName, file);
     
