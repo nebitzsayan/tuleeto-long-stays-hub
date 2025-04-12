@@ -10,7 +10,6 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { ListingSteps } from "@/components/property/ListingSteps";
 import { PropertyDetailsStep } from "@/components/property/PropertyDetailsStep";
 import { LocationStep } from "@/components/property/LocationStep";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
@@ -45,10 +44,18 @@ export const steps = [
   { id: "contact", label: "Contact Info" }
 ];
 
-const PropertyListingForm = () => {
+interface PropertyListingFormProps {
+  currentStep?: number;
+  onStepChange?: (step: number) => void;
+}
+
+const PropertyListingForm = ({ 
+  currentStep = 0, 
+  onStepChange = () => {} 
+}: PropertyListingFormProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(currentStep);
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,7 +82,7 @@ const PropertyListingForm = () => {
       bathrooms: "",
       area: "",
       availableFrom: "",
-      contactName: "",
+      contactName: user?.user_metadata?.full_name || "",
       contactEmail: user?.email || "",
       contactPhone: "",
       agreeToTerms: false
@@ -107,17 +114,6 @@ const PropertyListingForm = () => {
         pathPrefix,
         (progress) => setUploadProgress(progress)
       );
-      
-      if (urls.length === 0) {
-        toast.error("Failed to upload any photos. Please try again later.");
-        return [];
-      }
-      
-      if (urls.length < photos.length) {
-        toast.warning(`Only ${urls.length} out of ${photos.length} photos were uploaded successfully.`);
-      } else {
-        toast.success(`Successfully uploaded ${urls.length} photos.`);
-      }
       
       setPhotoUrls(urls);
       return urls;
@@ -213,14 +209,18 @@ const PropertyListingForm = () => {
     const stepIsValid = await form.trigger(fieldsToValidate as any);
     
     if (stepIsValid && step < steps.length - 1) {
-      setStep(step + 1);
+      const newStep = step + 1;
+      setStep(newStep);
+      onStepChange(newStep);
       window.scrollTo(0, 0);
     }
   };
   
   const prevStep = () => {
     if (step > 0) {
-      setStep(step - 1);
+      const newStep = step - 1;
+      setStep(newStep);
+      onStepChange(newStep);
       window.scrollTo(0, 0);
     }
   };
