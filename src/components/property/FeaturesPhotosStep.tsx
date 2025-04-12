@@ -39,33 +39,57 @@ export const FeaturesPhotosStep = ({
     setUploadError(null);
     
     try {
+      console.log(`Processing photo: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
+      
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
         toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
         setUploadError("File size exceeds 5MB limit. Please choose a smaller image.");
+        setUploading(false);
+        fileInput.value = '';
         return;
       }
       
       if (photos.length >= 5) {
         toast.warning("Maximum 5 photos allowed");
         setUploadError("Maximum 5 photos allowed");
+        setUploading(false);
+        fileInput.value = '';
+        return;
+      }
+      
+      // Validate image type
+      if (!file.type.startsWith('image/')) {
+        toast.error("File must be an image");
+        setUploadError("File must be an image");
+        setUploading(false);
+        fileInput.value = '';
         return;
       }
       
       // Create preview of the image
       const reader = new FileReader();
+      
       reader.onload = (e) => {
         if (e.target?.result) {
           const preview = e.target.result.toString();
           setPhotos(prevPhotos => [...prevPhotos, { file, preview }]);
           toast.success(`Photo "${file.name}" added successfully`);
+          console.log(`Photo preview generated successfully for ${file.name}`);
         }
       };
+      
+      reader.onerror = () => {
+        console.error("FileReader error:", reader.error);
+        toast.error("Failed to preview image. Please try another file.");
+        setUploadError("Failed to preview image. Please try another file.");
+      };
+      
       reader.readAsDataURL(file);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding photo:", error);
-      toast.error("Failed to add photo. Please try again.");
-      setUploadError("Failed to add photo. Please try again.");
+      toast.error(`Failed to add photo: ${error.message}`);
+      setUploadError(`Failed to add photo: ${error.message}`);
     } finally {
       setUploading(false);
       fileInput.value = '';
@@ -73,11 +97,22 @@ export const FeaturesPhotosStep = ({
   };
   
   const handleRemovePhoto = (index: number) => {
-    const newPhotos = [...photos];
-    URL.revokeObjectURL(newPhotos[index].preview);
-    newPhotos.splice(index, 1);
-    setPhotos(newPhotos);
-    toast.info("Photo removed");
+    try {
+      const newPhotos = [...photos];
+      console.log(`Removing photo at index ${index}:`, newPhotos[index].file.name);
+      
+      // Clean up object URL to prevent memory leaks
+      if (newPhotos[index].preview.startsWith('blob:')) {
+        URL.revokeObjectURL(newPhotos[index].preview);
+      }
+      
+      newPhotos.splice(index, 1);
+      setPhotos(newPhotos);
+      toast.info("Photo removed");
+    } catch (error: any) {
+      console.error("Error removing photo:", error);
+      toast.error(`Error removing photo: ${error.message}`);
+    }
   };
 
   const handleFeatureToggle = (feature: string) => {
@@ -289,8 +324,9 @@ export const FeaturesPhotosStep = ({
             <ul className="list-disc pl-5 mt-1 text-xs">
               <li>Make sure your image is smaller than 5MB</li>
               <li>Use common formats like JPG, PNG, or WebP</li>
-              <li>Try uploading one image at a time</li>
-              <li>If problems persist, try logging out and back in</li>
+              <li>Try a different browser if problems persist</li>
+              <li>Check your internet connection</li>
+              <li>Clear your browser cache and cookies</li>
             </ul>
           </AlertDescription>
         </Alert>
@@ -298,4 +334,3 @@ export const FeaturesPhotosStep = ({
     </div>
   );
 };
-

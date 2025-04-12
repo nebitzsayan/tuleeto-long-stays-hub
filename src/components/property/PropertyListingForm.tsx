@@ -15,6 +15,7 @@ import { PropertyDetailsStep } from "@/components/property/PropertyDetailsStep";
 import { LocationStep } from "@/components/property/LocationStep";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
+import { uploadMultipleFiles } from "@/lib/supabaseStorage";
 
 export const formSchema = z.object({
   propertyType: z.string().min(1, { message: "Please select a property type" }),
@@ -82,6 +83,53 @@ const PropertyListingForm = () => {
     mode: "onChange"
   });
 
+  const uploadPhotos = async () => {
+    if (photos.length === 0) {
+      if (photoUrls.length > 0) {
+        return photoUrls;
+      }
+      return [];
+    }
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    try {
+      console.log(`Starting upload of ${photos.length} photos...`);
+      toast.info(`Uploading ${photos.length} photos...`);
+      
+      const files = photos.map(photo => photo.file);
+      
+      const pathPrefix = user?.id || 'anonymous';
+      const urls = await uploadMultipleFiles(
+        'property_images',
+        files,
+        pathPrefix,
+        (progress) => setUploadProgress(progress)
+      );
+      
+      if (urls.length === 0) {
+        toast.error("Failed to upload any photos. Please try again later.");
+        return [];
+      }
+      
+      if (urls.length < photos.length) {
+        toast.warning(`Only ${urls.length} out of ${photos.length} photos were uploaded successfully.`);
+      } else {
+        toast.success(`Successfully uploaded ${urls.length} photos.`);
+      }
+      
+      setPhotoUrls(urls);
+      return urls;
+    } catch (error: any) {
+      console.error("Error in uploadPhotos:", error);
+      toast.error(`Upload error: ${error.message || "Unknown error"}`);
+      return [];
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
@@ -91,13 +139,11 @@ const PropertyListingForm = () => {
         return;
       }
       
-      // Either upload new photos or use existing photo URLs
       let finalPhotoUrls = photoUrls;
       if (photos.length > 0) {
         finalPhotoUrls = await uploadPhotos();
       }
       
-      // Check if we have photos after the upload attempt
       if (finalPhotoUrls.length === 0) {
         toast.error("Please upload at least one photo of your property");
         setIsSubmitting(false);
@@ -121,13 +167,18 @@ const PropertyListingForm = () => {
         owner_id: user.id
       };
       
+      console.log("Submitting property data:", propertyData);
+      
       const { data: insertedProperty, error } = await supabase
         .from('properties')
         .insert(propertyData)
         .select('id')
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting property:", error);
+        throw error;
+      }
       
       toast.success("Your property has been listed!");
       
@@ -137,6 +188,7 @@ const PropertyListingForm = () => {
         navigate("/my-properties");
       }
     } catch (error: any) {
+      console.error("Submit error:", error);
       toast.error(`Error listing property: ${error.message}`);
     } finally {
       setIsSubmitting(false);
@@ -170,98 +222,6 @@ const PropertyListingForm = () => {
     if (step > 0) {
       setStep(step - 1);
       window.scrollTo(0, 0);
-    }
-  };
-
-  const uploadPhotos = async () => {
-    if (photos.length === 0) {
-      // If no new photos to upload but we already have URLs, return them
-      if (photoUrls.length > 0) {
-        return photoUrls;
-      }
-      return [];
-    }
-    
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    try {
-      const urls = [];
-      const totalPhotos = photos.length;
-      
-      // Check if property_images bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      
-      if (bucketsError) {
-        console.error("Error checking buckets:", bucketsError);
-        toast.error(`Error checking storage buckets: ${bucketsError.message}`);
-        setIsUploading(false);
-        return [];
-      }
-      
-      const bucketExists = buckets?.some(bucket => bucket.name === 'property_images');
-
-      // If bucket doesn't exist, show a more helpful error message
-      if (!bucketExists) {
-        console.error("Property images bucket doesn't exist");
-        toast.error("Storage setup issue: The property_images storage bucket is not configured. Please contact an administrator.");
-        setIsUploading(false);
-        return [];
-      }
-      
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
-        const fileExt = photo.file.name.split('.').pop();
-        const fileName = `${user?.id || 'anonymous'}-${Date.now()}-${i}.${fileExt}`;
-        const filePath = `${user?.id || 'anonymous'}/${fileName}`;
-        
-        const { error, data } = await supabase.storage
-          .from('property_images')
-          .upload(filePath, photo.file, {
-            cacheControl: '3600',
-            upsert: true
-          });
-        
-        if (error) {
-          console.error(`Error uploading photo ${i+1}:`, error);
-          
-          // Provide more helpful error messages based on common issues
-          if (error.message.includes('new row violates row-level security policy')) {
-            toast.error(`Permission denied: You don't have permission to upload files. Please contact an administrator.`);
-          } else {
-            toast.error(`Error uploading photo ${i+1}: ${error.message}`);
-          }
-          
-          continue; // Continue with other uploads even if one fails
-        }
-        
-        if (data) {
-          const { data: urlData } = supabase.storage
-            .from('property_images')
-            .getPublicUrl(filePath);
-          
-          urls.push(urlData.publicUrl);
-        }
-        
-        setUploadProgress(Math.round(((i + 1) / totalPhotos) * 100));
-      }
-      
-      if (urls.length === 0 && photos.length > 0) {
-        toast.error("Failed to upload any photos. Please try again or contact support.");
-      } else if (urls.length < photos.length) {
-        toast.warning(`Only ${urls.length} out of ${photos.length} photos were uploaded successfully.`);
-      } else if (urls.length > 0) {
-        toast.success(`Successfully uploaded ${urls.length} photos.`);
-      }
-      
-      setPhotoUrls(urls);
-      return urls;
-    } catch (error: any) {
-      console.error("Error in uploadPhotos:", error);
-      toast.error(`Error uploading photos: ${error.message}`);
-      return [];
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -336,19 +296,9 @@ const PropertyListingForm = () => {
                       return;
                     }
                     
-                    // Check if we have photos in either state - either already uploaded URLs or new photos
                     if (photos.length === 0 && photoUrls.length === 0) {
                       toast.error("Please add at least one photo of your property");
                       return;
-                    }
-                    
-                    // Only upload if there are new photos
-                    if (photos.length > 0) {
-                      const uploadedUrls = await uploadPhotos();
-                      if (uploadedUrls.length === 0 && photoUrls.length === 0) {
-                        toast.error("Failed to upload photos. Please try again.");
-                        return;
-                      }
                     }
                     
                     const formValues = form.getValues();
