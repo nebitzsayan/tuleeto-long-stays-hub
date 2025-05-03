@@ -3,8 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, BedDouble, Bath, Square, IndianRupee, Trash2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 export interface PropertyType {
   id: string; // Changed from number to string to match Supabase UUID
@@ -45,23 +46,25 @@ const PropertyListingCard = ({
   
   return (
     <Card 
-      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer"
+      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer h-full"
       onClick={handleCardClick}
     >
       <div className="relative">
-        <img 
-          src={property.image} 
-          alt={property.title} 
-          className="w-full h-48 object-cover"
-        />
+        <AspectRatio ratio={1/1}>
+          <img 
+            src={property.image} 
+            alt={property.title} 
+            className="w-full h-full object-cover"
+          />
+        </AspectRatio>
         <Badge className="absolute top-3 right-3 bg-tuleeto-orange">{property.type}</Badge>
       </div>
       
       <CardContent className="p-3 md:p-6">
-        <h3 className="text-lg md:text-xl font-semibold mb-1 md:mb-2">{property.title}</h3>
+        <h3 className="text-lg md:text-xl font-semibold mb-1 md:mb-2 line-clamp-1">{property.title}</h3>
         <div className="flex items-center text-gray-500 mb-2 md:mb-3">
           <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-          <span className="text-xs md:text-sm">{property.location}</span>
+          <span className="text-xs md:text-sm line-clamp-1">{property.location}</span>
         </div>
         
         <div className="grid grid-cols-3 gap-1 mb-2 md:mb-4">
@@ -88,7 +91,7 @@ const PropertyListingCard = ({
             <Button 
               variant="outline" 
               size="sm"
-              className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+              className="border-destructive text-destructive hover:bg-destructive hover:text-white z-10"
               onClick={handleDeleteClick}
             >
               <Trash2 className="h-3 w-3 md:h-4 md:w-4" />

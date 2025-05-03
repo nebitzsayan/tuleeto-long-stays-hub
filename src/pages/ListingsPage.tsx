@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PropertyFilter from "@/components/property/PropertyFilter";
@@ -7,14 +7,12 @@ import PropertyListingCard, { PropertyType } from "@/components/property/Propert
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const ListingsPage = () => {
   const [searchParams] = useSearchParams();
   const [allProperties, setAllProperties] = useState<PropertyType[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<PropertyType[]>([]);
   const [loading, setLoading] = useState(true);
-  const isMobile = useIsMobile();
   
   // Fetch all properties
   useEffect(() => {
@@ -111,7 +109,7 @@ const ListingsPage = () => {
               <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
             </div>
           ) : filteredProperties.length > 0 ? (
-            <div className={`grid grid-cols-2 ${isMobile ? "" : "md:grid-cols-2 lg:grid-cols-3"} gap-2 md:gap-6 mb-12`}>
+            <div className="grid grid-cols-2 gap-2 md:gap-6 mb-12">
               {filteredProperties.map((property) => (
                 <PropertyListingCard key={property.id} property={property} />
               ))}

@@ -91,5 +91,15 @@ button svg {
   [class*="lucide-"] {
     @apply w-4 h-4;
   }
+  
+  /* Property card optimizations */
+  .grid-cols-2 {
+    @apply gap-2;
+  }
+}
+
+/* Property image optimization */
+.aspect-square img {
+  @apply object-cover h-full w-full;
 }
 

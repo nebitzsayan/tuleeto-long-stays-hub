@@ -220,7 +220,7 @@ const MyPropertiesPage = () => {
               <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
             </div>
           ) : properties.length > 0 ? (
-            <div className={`grid grid-cols-2 ${isMobile ? "" : "md:grid-cols-2 lg:grid-cols-3"} gap-2 md:gap-6 mb-8`}>
+            <div className="grid grid-cols-2 gap-2 md:gap-6 mb-8">
               {properties.map((property) => (
                 <div key={property.id} className="relative">
                   <PropertyListingCard 
