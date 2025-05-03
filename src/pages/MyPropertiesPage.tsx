@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -32,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ExtendedPropertyType extends PropertyType {
   description?: string;
@@ -45,6 +45,7 @@ const MyPropertiesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const isMobile = useIsMobile();
   
   // Edit property state
   const [isEditing, setIsEditing] = useState(false);
@@ -199,13 +200,17 @@ const MyPropertiesPage = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      <main className="flex-grow pt-24 px-4 bg-tuleeto-off-white">
+      <main className="flex-grow pt-16 md:pt-24 px-2 md:px-4 bg-tuleeto-off-white">
         <div className="container max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold">My Properties</h1>
+          <div className="flex justify-between items-center mb-3 md:mb-6">
+            <h1 className="text-xl md:text-4xl font-bold">My Properties</h1>
             <Link to="/list-property">
-              <Button className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark">
-                <Plus className="mr-2 h-4 w-4" /> List New Property
+              <Button 
+                size={isMobile ? "mobile" : "default"}
+                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+              >
+                <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" /> 
+                {isMobile ? "Add" : "List New Property"}
               </Button>
             </Link>
           </div>
@@ -215,7 +220,7 @@ const MyPropertiesPage = () => {
               <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
             </div>
           ) : properties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className={`grid grid-cols-2 ${isMobile ? "" : "md:grid-cols-2 lg:grid-cols-3"} gap-2 md:gap-6 mb-8`}>
               {properties.map((property) => (
                 <div key={property.id} className="relative">
                   <PropertyListingCard 
@@ -226,21 +231,24 @@ const MyPropertiesPage = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="absolute top-2 right-12 bg-white hover:bg-gray-100"
+                    className="absolute top-2 right-12 bg-white hover:bg-gray-100 p-1 md:p-2"
                     onClick={() => handleEditProperty(property)}
                   >
-                    <Edit className="h-4 w-4 mr-1" /> Edit
+                    <Edit className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-lg shadow">
-              <h3 className="text-2xl font-semibold mb-2">You haven't listed any properties yet</h3>
-              <p className="text-gray-500 mb-6">Start earning by listing your property on Tuleeto</p>
+            <div className="text-center py-10 md:py-16 bg-white rounded-lg shadow">
+              <h3 className="text-lg md:text-2xl font-semibold mb-2">You haven't listed any properties yet</h3>
+              <p className="text-gray-500 mb-4 md:mb-6">Start earning by listing your property on Tuleeto</p>
               <Link to="/list-property">
-                <Button className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark">
-                  <Plus className="mr-2 h-4 w-4" /> List Your Property
+                <Button 
+                  size={isMobile ? "mobile" : "default"}
+                  className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+                >
+                  <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" /> List Your Property
                 </Button>
               </Link>
             </div>

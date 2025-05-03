@@ -101,9 +101,9 @@ const ListingsPage = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      <main className="flex-grow pt-20 md:pt-24 px-4 bg-tuleeto-off-white">
+      <main className="flex-grow pt-16 md:pt-24 px-2 md:px-4 bg-tuleeto-off-white">
         <div className="container max-w-7xl mx-auto">
-          <h1 className="text-2xl md:text-4xl font-bold mb-6">Available Rentals</h1>
+          <h1 className="text-xl md:text-4xl font-bold mb-3 md:mb-6">Available Rentals</h1>
           
           <PropertyFilter />
           
@@ -112,14 +112,14 @@ const ListingsPage = () => {
               <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
             </div>
           ) : filteredProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-12">
+            <div className={`grid grid-cols-2 ${isMobile ? "" : "md:grid-cols-2 lg:grid-cols-3"} gap-2 md:gap-6 mb-12`}>
               {filteredProperties.map((property) => (
                 <PropertyListingCard key={property.id} property={property} />
               ))}
             </div>
           ) : (
             <div className="text-center py-16">
-              <h3 className="text-2xl font-semibold mb-2">No properties found</h3>
+              <h3 className="text-xl md:text-2xl font-semibold mb-2">No properties found</h3>
               <p className="text-gray-500">Try adjusting your search filters</p>
             </div>
           )}

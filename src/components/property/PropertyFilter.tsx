@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Search, SlidersHorizontal, IndianRupee } from "lucide-react";
+import { Search, SlidersHorizontal, IndianRupee, X } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -44,6 +44,10 @@ const PropertyFilter = () => {
       pathname: "/listings",
       search: params.toString(),
     });
+    
+    if (isMobile && showFilters) {
+      setShowFilters(false);
+    }
   };
 
   const toggleFilters = () => {
@@ -51,43 +55,50 @@ const PropertyFilter = () => {
   };
 
   return (
-    <div className="bg-white p-3 md:p-4 rounded-lg shadow-md mb-6">
+    <div className="bg-white p-2 md:p-4 rounded-lg shadow-md mb-3 md:mb-6">
       <form onSubmit={handleSearch}>
-        <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-4">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-2 md:mb-4">
           <div className="flex-grow">
             <Input
               type="text"
               placeholder="Location, neighborhood, or address"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="h-10 md:h-12"
+              className="h-9 md:h-12"
             />
           </div>
           <Button
             type="button"
             variant="outline"
-            className="flex items-center gap-2 h-10 md:h-12"
+            size={isMobile ? "mobile" : "default"}
+            className="flex items-center gap-1 h-9 md:h-12"
             onClick={toggleFilters}
           >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span>{isMobile ? "Filters" : "Filters"}</span>
+            {showFilters ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <SlidersHorizontal className="h-4 w-4" />
+            )}
+            <span>Filters</span>
           </Button>
           <Button 
             type="submit" 
-            className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white h-10 md:h-12"
+            size={isMobile ? "mobile" : "default"}
+            className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white h-9 md:h-12"
           >
-            <Search className="mr-2 h-4 w-4" /> Search
+            <Search className="h-4 w-4 md:mr-2" />
+            {!isMobile && <span>Search</span>}
           </Button>
         </div>
         
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+          <div className={`${isMobile ? 'grid grid-cols-1' : 'grid grid-cols-1 md:grid-cols-3'} gap-3 md:gap-4 pt-2 md:pt-4 border-t border-gray-200`}>
             <div>
-              <Label htmlFor="price-range" className="mb-2 block flex items-center">
-                <IndianRupee className="h-4 w-4 mr-1" />
+              <Label htmlFor="price-range" className="mb-1 md:mb-2 block flex items-center text-xs md:text-sm">
+                <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                 Price Range: ₹{minPrice.toLocaleString('en-IN')} - ₹{maxPrice === 50000 ? "50,000+" : maxPrice.toLocaleString('en-IN')}
               </Label>
-              <div className="pt-4 px-2">
+              <div className="pt-2 md:pt-4 px-2">
                 <Slider
                   id="price-range"
                   value={[minPrice, maxPrice]}
@@ -97,15 +108,15 @@ const PropertyFilter = () => {
                     setMinPrice(values[0]);
                     setMaxPrice(values[1]);
                   }}
-                  className="my-4"
+                  className="my-2 md:my-4"
                 />
               </div>
             </div>
             
             <div>
-              <Label htmlFor="bedrooms" className="mb-2 block">Bedrooms</Label>
+              <Label htmlFor="bedrooms" className="mb-1 md:mb-2 block text-xs md:text-sm">Bedrooms</Label>
               <Select value={bedrooms} onValueChange={setBedrooms}>
-                <SelectTrigger id="bedrooms" className="h-10 md:h-12 bg-white">
+                <SelectTrigger id="bedrooms" className="h-9 md:h-12 bg-white">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent position="popper" className="bg-white w-full z-50">
@@ -119,9 +130,9 @@ const PropertyFilter = () => {
             </div>
             
             <div>
-              <Label htmlFor="property-type" className="mb-2 block">Property Type</Label>
+              <Label htmlFor="property-type" className="mb-1 md:mb-2 block text-xs md:text-sm">Property Type</Label>
               <Select value={propertyType} onValueChange={setPropertyType}>
-                <SelectTrigger id="property-type" className="h-10 md:h-12 bg-white">
+                <SelectTrigger id="property-type" className="h-9 md:h-12 bg-white">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent position="popper" className="bg-white w-full z-50">
@@ -135,6 +146,16 @@ const PropertyFilter = () => {
                 </SelectContent>
               </Select>
             </div>
+            
+            {isMobile && (
+              <Button 
+                type="submit" 
+                size="mobile"
+                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white mt-2"
+              >
+                Apply Filters
+              </Button>
+            )}
           </div>
         )}
       </form>
