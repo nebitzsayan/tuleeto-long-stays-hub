@@ -21,6 +21,7 @@ import { Loader2, Upload, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { uploadFileToStorage, ensureBucketExists } from "@/lib/supabaseStorage";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
@@ -70,7 +71,7 @@ const ProfilePage = () => {
           }
         }
       } catch (error: any) {
-        toast.error(`Error fetching profile: ${error.message}`);
+        console.error("Error fetching profile:", error.message);
       } finally {
         setIsLoading(false);
       }
@@ -96,7 +97,7 @@ const ProfilePage = () => {
       
       toast.success("Profile updated successfully!");
     } catch (error: any) {
-      toast.error(`Error updating profile: ${error.message}`);
+      console.error("Error updating profile:", error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -122,48 +123,18 @@ const ProfilePage = () => {
       
       const fileExt = file.name.split('.').pop();
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      // Check if avatars bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      const filePath = fileName;
       
-      if (bucketsError) {
-        console.error("Error checking buckets:", bucketsError);
-        toast.error(`Error checking storage buckets: ${bucketsError.message}`);
-        setUploadingAvatar(false);
-        return;
-      }
+      // Use our improved storage utility to ensure bucket exists and handle upload
+      await ensureBucketExists('avatars');
       
-      const avatarBucketExists = buckets?.some(bucket => bucket.name === 'avatars');
-
-      // If bucket doesn't exist, let the user know this might be a permissions issue
-      if (!avatarBucketExists) {
-        toast.error("Storage bucket doesn't exist. Please contact an administrator to set up the avatars bucket.");
+      const avatarUrl = await uploadFileToStorage('avatars', filePath, file);
+      
+      if (!avatarUrl) {
+        toast.error("Failed to upload avatar. Please try again.");
         setUploadingAvatar(false);
         return;
       }
-
-      // Upload the file to Supabase storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        toast.error(`Error uploading avatar: ${uploadError.message}`);
-        setUploadingAvatar(false);
-        return;
-      }
-
-      // Get the public URL
-      const { data } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const avatarUrl = data.publicUrl;
 
       // Update the profile with the new avatar URL
       const { error: updateError } = await supabase
@@ -182,7 +153,6 @@ const ProfilePage = () => {
       toast.success('Avatar updated successfully!');
     } catch (error: any) {
       console.error("Avatar upload error:", error);
-      toast.error(`Error uploading avatar: ${error.message}`);
     } finally {
       setUploadingAvatar(false);
     }
