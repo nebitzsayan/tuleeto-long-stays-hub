@@ -231,8 +231,11 @@ const MyPropertiesPage = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="absolute top-2 right-12 bg-white hover:bg-gray-100 p-1 md:p-2"
-                    onClick={() => handleEditProperty(property)}
+                    className="absolute top-2 left-2 bg-white hover:bg-gray-100 p-1 md:p-2 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditProperty(property);
+                    }}
                   >
                     <Edit className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>

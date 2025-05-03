@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, BedDouble, Bath, Square, IndianRupee, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface PropertyType {
@@ -20,8 +20,8 @@ export interface PropertyType {
 
 interface PropertyListingCardProps {
   property: PropertyType;
-  onDelete?: (id: string) => void; // Add optional onDelete prop
-  showDeleteButton?: boolean; // Flag to show/hide delete button
+  onDelete?: (id: string) => void;
+  showDeleteButton?: boolean;
 }
 
 const PropertyListingCard = ({ 
@@ -30,9 +30,24 @@ const PropertyListingCard = ({
   showDeleteButton = false 
 }: PropertyListingCardProps) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  
+  const handleCardClick = () => {
+    navigate(`/property/${property.id}`);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
+    if (onDelete) {
+      onDelete(property.id);
+    }
+  };
   
   return (
-    <Card className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01]">
+    <Card 
+      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="relative">
         <img 
           src={property.image} 
@@ -69,28 +84,17 @@ const PropertyListingCard = ({
             <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1" />
             {property.price.toLocaleString('en-IN')}/mo
           </span>
-          <div className={`flex ${isMobile ? 'flex-col' : ''} gap-1 md:gap-2`}>
-            {showDeleteButton && onDelete && (
-              <Button 
-                variant="outline" 
-                size={isMobile ? "mobile" : "sm"}
-                className="border-destructive text-destructive hover:bg-destructive hover:text-white"
-                onClick={() => onDelete(property.id)}
-              >
-                <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-                {!isMobile && <span>Delete</span>}
-              </Button>
-            )}
-            <Link to={`/property/${property.id}`}>
-              <Button 
-                variant="outline" 
-                size={isMobile ? "mobile" : "sm"}
-                className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white"
-              >
-                View Details
-              </Button>
-            </Link>
-          </div>
+          {showDeleteButton && onDelete && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+              onClick={handleDeleteClick}
+            >
+              <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden md:inline ml-1">Delete</span>
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
