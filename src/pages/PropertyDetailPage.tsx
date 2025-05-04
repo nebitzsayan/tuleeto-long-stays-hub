@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PropertyDetails {
   id: string;
@@ -37,6 +39,7 @@ const PropertyDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     const fetchProperty = async () => {
@@ -73,7 +76,7 @@ const PropertyDetailPage = () => {
           ...propertyData,
           owner_email: profileData?.email || "Contact via Tuleeto",
           owner_name: profileData?.full_name || "Property Owner",
-          owner_phone: "(555) 123-4567"
+          owner_phone: "+91 9876543210"
         });
       } catch (error: any) {
         setError(error.message);
@@ -92,6 +95,12 @@ const PropertyDetailPage = () => {
       return;
     }
     toast.success("Your message has been sent! The owner will contact you soon.");
+  };
+  
+  const handlePhoneCall = () => {
+    if (isMobile && property?.owner_phone) {
+      window.location.href = `tel:${property.owner_phone.replace(/\s+/g, '')}`;
+    }
   };
   
   if (loading) {
@@ -224,7 +233,16 @@ const PropertyDetailPage = () => {
                     <div className="space-y-2">
                       <div className="flex items-center">
                         <Phone className="h-4 w-4 text-tuleeto-orange mr-2" />
-                        <span>{property.owner_phone}</span>
+                        {isMobile ? (
+                          <button 
+                            onClick={handlePhoneCall} 
+                            className="text-tuleeto-orange hover:underline flex items-center"
+                          >
+                            {property.owner_phone} <span className="ml-2 text-xs text-gray-500">(Tap to call)</span>
+                          </button>
+                        ) : (
+                          <span>{property.owner_phone}</span>
+                        )}
                       </div>
                       <div className="flex items-center">
                         <Mail className="h-4 w-4 text-tuleeto-orange mr-2" />

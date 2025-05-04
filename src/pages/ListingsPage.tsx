@@ -51,8 +51,6 @@ const ListingsPage = () => {
       } catch (error: any) {
         toast.error(`Error fetching properties: ${error.message}`);
         console.error("Error fetching properties:", error);
-        // If error, redirect to home page
-        window.location.href = "/";
       } finally {
         setLoading(false);
       }
@@ -67,8 +65,8 @@ const ListingsPage = () => {
     
     let filtered = [...allProperties];
     const searchTerm = searchParams.get("search")?.toLowerCase();
-    const minPrice = Number(searchParams.get("minPrice")) || 0;
-    const maxPrice = Number(searchParams.get("maxPrice")) || 50000;
+    const minPrice = Number(searchParams.get("minPrice")) || 500;
+    const maxPrice = Number(searchParams.get("maxPrice")) || 150000;
     const bedrooms = Number(searchParams.get("bedrooms")) || 0;
     const propertyType = searchParams.get("type");
     

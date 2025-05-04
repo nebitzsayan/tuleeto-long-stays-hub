@@ -1,5 +1,5 @@
 
 # Redirect all routes to index.html for client-side routing
-# This works for Netlify, Vercel, Cloudflare Pages, and most other modern hosts
+# These redirects work with Netlify, Vercel, Cloudflare Pages, and other hosts
 /*    /index.html   200
 
