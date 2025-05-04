@@ -64,7 +64,8 @@ const ListingsPage = () => {
     if (allProperties.length === 0) return;
     
     let filtered = [...allProperties];
-    const searchTerm = searchParams.get("search")?.toLowerCase();
+    // Fix: Check for both 'search' and 'location' parameters
+    const searchTerm = searchParams.get("search")?.toLowerCase() || searchParams.get("location")?.toLowerCase() || "";
     const minPrice = Number(searchParams.get("minPrice")) || 500;
     const maxPrice = Number(searchParams.get("maxPrice")) || 150000;
     const bedrooms = Number(searchParams.get("bedrooms")) || 0;

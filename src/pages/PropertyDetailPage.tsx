@@ -94,13 +94,13 @@ const PropertyDetailPage = () => {
       toast.error("Please log in to contact property owners");
       return;
     }
-    toast.success("Your message has been sent! The owner will contact you soon.");
-  };
-  
-  const handlePhoneCall = () => {
+    
     if (isMobile && property?.owner_phone) {
       window.location.href = `tel:${property.owner_phone.replace(/\s+/g, '')}`;
+      return;
     }
+    
+    toast.success("Your message has been sent! The owner will contact you soon.");
   };
   
   if (loading) {
@@ -232,19 +232,6 @@ const PropertyDetailPage = () => {
                     <Separator className="my-3" />
                     <div className="space-y-2">
                       <div className="flex items-center">
-                        <Phone className="h-4 w-4 text-tuleeto-orange mr-2" />
-                        {isMobile ? (
-                          <button 
-                            onClick={handlePhoneCall} 
-                            className="text-tuleeto-orange hover:underline flex items-center"
-                          >
-                            {property.owner_phone} <span className="ml-2 text-xs text-gray-500">(Tap to call)</span>
-                          </button>
-                        ) : (
-                          <span>{property.owner_phone}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center">
                         <Mail className="h-4 w-4 text-tuleeto-orange mr-2" />
                         <span>{property.owner_email}</span>
                       </div>
@@ -254,7 +241,19 @@ const PropertyDetailPage = () => {
                     className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
                     onClick={handleContact}
                   >
-                    Contact Now
+                    {isMobile ? (
+                      <>
+                        <Phone className="h-4 w-4 mr-2" />
+                        Call {property.owner_phone}
+                      </>
+                    ) : (
+                      <>
+                        Contact Now
+                        {property.owner_phone && (
+                          <span className="ml-2 text-xs">({property.owner_phone})</span>
+                        )}
+                      </>
+                    )}
                   </Button>
 
                   {property.owner_id === user?.id && (
