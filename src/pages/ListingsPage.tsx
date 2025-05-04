@@ -66,21 +66,21 @@ const ListingsPage = () => {
     if (allProperties.length === 0) return;
     
     let filtered = [...allProperties];
-    const location = searchParams.get("location")?.toLowerCase();
+    const searchTerm = searchParams.get("search")?.toLowerCase();
     const minPrice = Number(searchParams.get("minPrice")) || 0;
     const maxPrice = Number(searchParams.get("maxPrice")) || 50000;
     const bedrooms = Number(searchParams.get("bedrooms")) || 0;
     const propertyType = searchParams.get("type");
     
-    if (location && location !== "undefined" && location !== "null") {
+    if (searchTerm && searchTerm !== "undefined" && searchTerm !== "null") {
       filtered = filtered.filter(p => 
-        p.location.toLowerCase().includes(location)
+        p.location.toLowerCase().includes(searchTerm) || 
+        p.title.toLowerCase().includes(searchTerm)
       );
     }
     
-    if (minPrice > 0 || maxPrice < 50000) {
-      filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
-    }
+    // Always apply price filter even if values are default
+    filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
     
     if (bedrooms > 0) {
       filtered = filtered.filter(p => p.bedrooms >= bedrooms);
@@ -90,7 +90,7 @@ const ListingsPage = () => {
       filtered = filtered.filter(p => p.type === propertyType);
     }
     
-    console.log("Search params:", { location, minPrice, maxPrice, bedrooms, propertyType });
+    console.log("Search params:", { searchTerm, minPrice, maxPrice, bedrooms, propertyType });
     console.log("Filtered properties:", filtered);
     setFilteredProperties(filtered);
   }, [searchParams, allProperties]);

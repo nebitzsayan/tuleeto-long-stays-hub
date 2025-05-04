@@ -14,7 +14,7 @@ const PropertyFilter = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  const [location, setLocation] = useState(searchParams.get("location") || "");
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [minPrice, setMinPrice] = useState(Number(searchParams.get("minPrice")) || 0);
   const [maxPrice, setMaxPrice] = useState(Number(searchParams.get("maxPrice")) || 50000);
   const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") || "");
@@ -23,7 +23,7 @@ const PropertyFilter = () => {
 
   // Update form values when URL params change
   useEffect(() => {
-    setLocation(searchParams.get("location") || "");
+    setSearchTerm(searchParams.get("search") || "");
     setMinPrice(Number(searchParams.get("minPrice")) || 0);
     setMaxPrice(Number(searchParams.get("maxPrice")) || 50000);
     setBedrooms(searchParams.get("bedrooms") || "");
@@ -34,7 +34,7 @@ const PropertyFilter = () => {
     e.preventDefault();
     
     const params = new URLSearchParams();
-    if (location) params.set("location", location);
+    if (searchTerm) params.set("search", searchTerm);
     if (bedrooms) params.set("bedrooms", bedrooms);
     if (propertyType) params.set("type", propertyType);
     params.set("minPrice", minPrice.toString());
@@ -61,9 +61,9 @@ const PropertyFilter = () => {
           <div className="flex-grow">
             <Input
               type="text"
-              placeholder="Location, neighborhood, or address"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Search by location or property title"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="h-9 md:h-12"
             />
           </div>
