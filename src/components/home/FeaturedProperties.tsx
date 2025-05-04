@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PropertyType } from "@/components/property/PropertyListingCard";
@@ -69,7 +68,7 @@ const FeaturedProperties = () => {
             <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
           </div>
         ) : properties.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2 md:gap-8">
+          <div className="grid grid-cols-2 gap-4 md:gap-8">
             {properties.map((property) => (
               <PropertyListingCard key={property.id} property={property} />
             ))}

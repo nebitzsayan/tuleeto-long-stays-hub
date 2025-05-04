@@ -85,7 +85,7 @@ const PropertyListingCard = ({
         <div className="flex items-center justify-between pt-2 md:pt-3 border-t border-gray-200">
           <span className="text-tuleeto-orange text-lg md:text-xl font-bold flex items-center">
             <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            {property.price.toLocaleString('en-IN')}/mo
+            {property.price.toLocaleString('en-IN')}/m
           </span>
           {showDeleteButton && onDelete && (
             <Button 
