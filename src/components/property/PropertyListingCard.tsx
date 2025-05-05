@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +16,7 @@ export interface PropertyType {
   area: number;
   image: string;
   type: string;
-  contact_phone?: string;
+  contact_phone: string;
 }
 
 interface PropertyListingCardProps {

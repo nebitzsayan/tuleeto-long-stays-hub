@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -30,7 +29,7 @@ interface PropertyDetails {
   owner_id: string;
   owner_email?: string;
   owner_name?: string;
-  owner_phone?: string;
+  contact_phone?: string;
 }
 
 const PropertyDetailPage = () => {
@@ -79,14 +78,13 @@ const PropertyDetailPage = () => {
         }
         
         // Get owner phone number directly from property data if available
-        // This assumes there's a contact_phone field in the properties table
         const ownerPhone = propertyData.contact_phone || "";
         
         setProperty({
           ...propertyData,
           owner_email: profileData?.email || "Contact via Tuleeto",
           owner_name: profileData?.full_name || "Property Owner",
-          owner_phone: ownerPhone
+          contact_phone: ownerPhone
         });
       } catch (error: any) {
         setError(error.message);
@@ -106,8 +104,8 @@ const PropertyDetailPage = () => {
     }
     
     // If on mobile and we have a phone number, open the phone dialer
-    if (isMobile && property?.owner_phone) {
-      window.location.href = `tel:${property.owner_phone.replace(/\s+/g, '')}`;
+    if (isMobile && property?.contact_phone) {
+      window.location.href = `tel:${property.contact_phone.replace(/\s+/g, '')}`;
       return;
     }
     
@@ -249,10 +247,10 @@ const PropertyDetailPage = () => {
                         <span>{property?.owner_email}</span>
                       </div>
                       {user ? (
-                        property?.owner_phone ? (
+                        property?.contact_phone ? (
                           <div className="flex items-center">
                             <Phone className="h-4 w-4 text-tuleeto-orange mr-2" />
-                            <span>{property.owner_phone}</span>
+                            <span>{property.contact_phone}</span>
                           </div>
                         ) : (
                           <div className="flex items-center text-gray-500">
@@ -273,12 +271,12 @@ const PropertyDetailPage = () => {
                     <Button 
                       className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
                       onClick={handleContact}
-                      disabled={!property?.owner_phone}
+                      disabled={!property?.contact_phone}
                     >
-                      {isMobile && property?.owner_phone ? (
+                      {isMobile && property?.contact_phone ? (
                         <>
                           <Phone className="h-4 w-4 mr-2" />
-                          Call {property.owner_phone}
+                          Call {property.contact_phone}
                         </>
                       ) : (
                         "Contact Now"

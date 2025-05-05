@@ -39,6 +39,7 @@ export type Database = {
           available_from: string
           bathrooms: number
           bedrooms: number
+          contact_phone: string | null
           created_at: string
           description: string
           features: string[] | null
@@ -55,6 +56,7 @@ export type Database = {
           available_from: string
           bathrooms: number
           bedrooms: number
+          contact_phone?: string | null
           created_at?: string
           description: string
           features?: string[] | null
@@ -71,6 +73,7 @@ export type Database = {
           available_from?: string
           bathrooms?: number
           bedrooms?: number
+          contact_phone?: string | null
           created_at?: string
           description?: string
           features?: string[] | null
