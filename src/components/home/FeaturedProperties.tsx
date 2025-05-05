@@ -55,9 +55,9 @@ const FeaturedProperties = () => {
   }, []);
 
   return (
-    <section className="py-16 px-4 bg-tuleeto-off-white">
+    <section className="py-12 px-4 bg-tuleeto-off-white">
       <div className="container max-w-7xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Rentals</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Discover our handpicked selection of premium long-term rentals
@@ -65,11 +65,11 @@ const FeaturedProperties = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
           </div>
         ) : properties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {properties.map((property) => (
               <div key={property.id} className="h-full">
                 <PropertyListingCard property={property} />
@@ -82,10 +82,10 @@ const FeaturedProperties = () => {
           </div>
         )}
         
-        <div className="text-center mt-12">
+        <div className="text-center mt-10">
           <Link to="/listings">
             <Button 
-              className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white px-8 py-6 text-lg"
+              className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white px-6 py-2 text-base"
             >
               Browse All Properties
             </Button>

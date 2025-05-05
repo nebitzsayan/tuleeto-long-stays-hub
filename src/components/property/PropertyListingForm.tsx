@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -148,6 +149,7 @@ const PropertyListingForm = ({
       
       const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
       
+      // Include contact_phone in the propertyData object
       const propertyData = {
         title: data.title,
         description: data.description,
@@ -160,7 +162,8 @@ const PropertyListingForm = ({
         features: selectedFeatures,
         available_from: data.availableFrom,
         images: finalPhotoUrls,
-        owner_id: user.id
+        owner_id: user.id,
+        contact_phone: data.contactPhone // Add the contact phone number here
       };
       
       console.log("Submitting property data:", propertyData);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -66,6 +67,8 @@ const PropertyDetailPage = () => {
           return;
         }
 
+        console.log("Fetched property data:", propertyData);
+
         // Fetch the owner's profile to get contact details
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
@@ -77,8 +80,10 @@ const PropertyDetailPage = () => {
           console.error("Error fetching profile:", profileError);
         }
         
-        // Get owner phone number directly from property data if available
+        // Get owner phone number directly from property data
         const ownerPhone = propertyData.contact_phone || "";
+        
+        console.log("Phone number from database:", ownerPhone);
         
         setProperty({
           ...propertyData,
