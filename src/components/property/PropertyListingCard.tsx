@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +51,7 @@ const PropertyListingCard = ({
       onClick={handleCardClick}
     >
       <div className="relative">
-        <AspectRatio ratio={1/1}>
+        <AspectRatio ratio={16/9}>
           <img 
             src={property.image} 
             alt={property.title} 
@@ -60,30 +61,30 @@ const PropertyListingCard = ({
         <Badge className="absolute top-3 right-3 bg-tuleeto-orange">{property.type}</Badge>
       </div>
       
-      <CardContent className="p-3 md:p-6">
-        <h3 className="text-lg md:text-xl font-semibold mb-1 md:mb-2 line-clamp-1">{property.title}</h3>
-        <div className="flex items-center text-gray-500 mb-2 md:mb-3">
+      <CardContent className="p-3 md:p-4">
+        <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 line-clamp-1">{property.title}</h3>
+        <div className="flex items-center text-gray-500 mb-2">
           <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1" />
           <span className="text-xs md:text-sm line-clamp-1">{property.location}</span>
         </div>
         
-        <div className="grid grid-cols-3 gap-1 mb-2 md:mb-4">
+        <div className="grid grid-cols-3 gap-1 mb-2">
           <div className="flex items-center text-gray-600">
             <BedDouble className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs md:text-sm">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
+            <span className="text-xs">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
           </div>
           <div className="flex items-center text-gray-600">
             <Bath className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs md:text-sm">{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
+            <span className="text-xs">{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
           </div>
           <div className="flex items-center text-gray-600">
             <Square className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs md:text-sm">{property.area} sq ft</span>
+            <span className="text-xs">{property.area} sq ft</span>
           </div>
         </div>
         
-        <div className="flex items-center justify-between pt-2 md:pt-3 border-t border-gray-200">
-          <span className="text-tuleeto-orange text-lg md:text-xl font-bold flex items-center">
+        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+          <span className="text-tuleeto-orange text-base md:text-lg font-bold flex items-center">
             <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1" />
             {property.price.toLocaleString('en-IN')}/m
           </span>

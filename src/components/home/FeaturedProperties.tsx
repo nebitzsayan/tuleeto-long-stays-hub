@@ -69,9 +69,11 @@ const FeaturedProperties = () => {
             <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
           </div>
         ) : properties.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-6">
             {properties.map((property) => (
-              <PropertyListingCard key={property.id} property={property} />
+              <div key={property.id} className="h-full">
+                <PropertyListingCard property={property} />
+              </div>
             ))}
           </div>
         ) : (

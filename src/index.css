@@ -75,17 +75,17 @@
   );
 }
 
-/* E-commerce like grid styling for property cards - consistent spacing */
-.grid-cols-2 {
-  @apply gap-4 px-4 md:px-0;
+/* Property card grid styling - consistent spacing */
+.grid-cols-2, .grid-cols-1, .grid-cols-3, .grid-cols-4 {
+  @apply gap-6;
 }
 
 @media (max-width: 640px) {
-  .grid-cols-2 {
-    @apply gap-4 px-4;
+  .grid {
+    @apply gap-4;
   }
   
-  .grid-cols-2 > * {
+  .grid > * {
     @apply rounded-md shadow-sm border border-gray-100;
   }
   
@@ -103,15 +103,9 @@ button svg {
   [class*="lucide-"] {
     @apply w-4 h-4;
   }
-  
-  /* Property card optimizations */
-  .grid-cols-2 {
-    @apply gap-4;
-  }
 }
 
 /* Property image optimization */
-.aspect-square img {
+.aspect-square img, .aspect-video img {
   @apply object-cover h-full w-full;
 }
-
