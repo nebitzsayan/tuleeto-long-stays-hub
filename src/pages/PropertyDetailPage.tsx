@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, BedDouble, Bath, Square, Calendar, CheckCircle2, Phone, Mail, Loader2, IndianRupee } from "lucide-react";
+import { MapPin, BedDouble, Bath, Square, Calendar, CheckCircle2, Phone, Mail, Loader2, IndianRupee, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,17 +66,21 @@ const PropertyDetailPage = () => {
           return;
         }
 
+        // Fetch the owner's profile to get contact details
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("email, full_name")
+          .select("email, full_name, phone")
           .eq("id", propertyData.owner_id)
           .single();
 
+        // Use owner's actual phone from profile if available, otherwise use placeholder
+        const ownerPhone = profileData?.phone || "+91 9876543210";
+        
         setProperty({
           ...propertyData,
           owner_email: profileData?.email || "Contact via Tuleeto",
           owner_name: profileData?.full_name || "Property Owner",
-          owner_phone: "+91 9876543210"
+          owner_phone: ownerPhone
         });
       } catch (error: any) {
         setError(error.message);
@@ -95,6 +99,7 @@ const PropertyDetailPage = () => {
       return;
     }
     
+    // If on mobile and we have a phone number, open the phone dialer
     if (isMobile && property?.owner_phone) {
       window.location.href = `tel:${property.owner_phone.replace(/\s+/g, '')}`;
       return;
@@ -235,26 +240,43 @@ const PropertyDetailPage = () => {
                         <Mail className="h-4 w-4 text-tuleeto-orange mr-2" />
                         <span>{property.owner_email}</span>
                       </div>
+                      {user ? (
+                        <div className="flex items-center">
+                          <Phone className="h-4 w-4 text-tuleeto-orange mr-2" />
+                          <span>{property.owner_phone}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-gray-500">
+                          <Lock className="h-4 w-4 mr-2" />
+                          <span>Login to view phone number</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <Button 
-                    className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
-                    onClick={handleContact}
-                  >
-                    {isMobile ? (
-                      <>
-                        <Phone className="h-4 w-4 mr-2" />
-                        Call {property.owner_phone}
-                      </>
-                    ) : (
-                      <>
-                        Contact Now
-                        {property.owner_phone && (
-                          <span className="ml-2 text-xs">({property.owner_phone})</span>
-                        )}
-                      </>
-                    )}
-                  </Button>
+                  
+                  {user ? (
+                    <Button 
+                      className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
+                      onClick={handleContact}
+                    >
+                      {isMobile ? (
+                        <>
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call {property.owner_phone}
+                        </>
+                      ) : (
+                        "Contact Now"
+                      )}
+                    </Button>
+                  ) : (
+                    <Link to="/auth">
+                      <Button 
+                        className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
+                      >
+                        Login to Contact Owner
+                      </Button>
+                    </Link>
+                  )}
 
                   {property.owner_id === user?.id && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
