@@ -97,7 +97,7 @@ const PropertyFilter = () => {
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent position="popper" className="bg-white w-full z-50">
-                <SelectItem value="">Any</SelectItem>
+                <SelectItem value="any">Any</SelectItem>
                 <SelectItem value="1">1+</SelectItem>
                 <SelectItem value="2">2+</SelectItem>
                 <SelectItem value="3">3+</SelectItem>
@@ -113,7 +113,7 @@ const PropertyFilter = () => {
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent position="popper" className="bg-white w-full z-50">
-                <SelectItem value="">Any</SelectItem>
+                <SelectItem value="any">Any</SelectItem>
                 <SelectItem value="Apartment">Apartment</SelectItem>
                 <SelectItem value="House">House</SelectItem>
                 <SelectItem value="Studio">Studio</SelectItem>

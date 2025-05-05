@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -67,14 +66,18 @@ const PropertyDetailPage = () => {
         }
 
         // Fetch the owner's profile to get contact details
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("email, full_name, phone")
+          .select("email, full_name")
           .eq("id", propertyData.owner_id)
           .single();
 
-        // Use owner's actual phone from profile if available, otherwise use placeholder
-        const ownerPhone = profileData?.phone || "+91 9876543210";
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+        }
+
+        // Use a default phone number since the column doesn't exist yet
+        const ownerPhone = "+91 9876543210";
         
         setProperty({
           ...propertyData,

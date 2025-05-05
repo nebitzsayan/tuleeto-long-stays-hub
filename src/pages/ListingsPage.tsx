@@ -68,8 +68,8 @@ const ListingsPage = () => {
     const searchTerm = searchParams.get("search")?.toLowerCase() || searchParams.get("location")?.toLowerCase() || "";
     const minPrice = Number(searchParams.get("minPrice")) || 500;
     const maxPrice = Number(searchParams.get("maxPrice")) || 150000;
-    const bedrooms = Number(searchParams.get("bedrooms")) || 0;
-    const propertyType = searchParams.get("type");
+    const bedrooms = searchParams.get("bedrooms") || "";
+    const propertyType = searchParams.get("type") || "";
     
     if (searchTerm && searchTerm !== "undefined" && searchTerm !== "null") {
       filtered = filtered.filter(p => 
@@ -81,11 +81,13 @@ const ListingsPage = () => {
     // Always apply price filter even if values are default
     filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
     
-    if (bedrooms > 0) {
-      filtered = filtered.filter(p => p.bedrooms >= bedrooms);
+    // Only filter by bedrooms if it's not "any" and is a valid number
+    if (bedrooms && bedrooms !== "any" && !isNaN(Number(bedrooms))) {
+      filtered = filtered.filter(p => p.bedrooms >= Number(bedrooms));
     }
     
-    if (propertyType && propertyType !== "undefined" && propertyType !== "null" && propertyType !== "") {
+    // Only filter by property type if it's not "any"
+    if (propertyType && propertyType !== "any" && propertyType !== "undefined" && propertyType !== "null" && propertyType !== "") {
       filtered = filtered.filter(p => p.type === propertyType);
     }
     
