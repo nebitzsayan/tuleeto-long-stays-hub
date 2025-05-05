@@ -40,7 +40,8 @@ const ListingsPage = () => {
             bathrooms: prop.bathrooms || 0,
             area: prop.area || 0,
             image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-            type: prop.type || "Apartment"
+            type: prop.type || "Apartment",
+            contact_phone: prop.contact_phone || ""
           }));
           
           setAllProperties(properties);

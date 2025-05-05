@@ -8,7 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 export interface PropertyType {
-  id: string; // Changed from number to string to match Supabase UUID
+  id: string;
   title: string;
   location: string;
   price: number;
@@ -17,6 +17,7 @@ export interface PropertyType {
   area: number;
   image: string;
   type: string;
+  contact_phone?: string;
 }
 
 interface PropertyListingCardProps {

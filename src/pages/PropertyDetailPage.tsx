@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -49,6 +50,7 @@ const PropertyDetailPage = () => {
           return;
         }
 
+        // First, fetch the property data
         const { data: propertyData, error: propertyError } = await supabase
           .from("properties")
           .select("*")
@@ -75,9 +77,10 @@ const PropertyDetailPage = () => {
         if (profileError) {
           console.error("Error fetching profile:", profileError);
         }
-
-        // Use a default phone number since the column doesn't exist yet
-        const ownerPhone = "+91 9876543210";
+        
+        // Get owner phone number directly from property data if available
+        // This assumes there's a contact_phone field in the properties table
+        const ownerPhone = propertyData.contact_phone || "";
         
         setProperty({
           ...propertyData,
@@ -150,16 +153,16 @@ const PropertyDetailPage = () => {
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-end">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">{property.title}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">{property?.title}</h1>
                 <div className="flex items-center text-gray-600">
                   <MapPin className="h-5 w-5 mr-1" />
-                  <span>{property.location}</span>
+                  <span>{property?.location}</span>
                 </div>
               </div>
               <div className="mt-4 md:mt-0">
                 <span className="text-3xl font-bold text-tuleeto-orange flex items-center">
                   <IndianRupee className="h-5 w-5 mr-1" />
-                  {property.price.toLocaleString('en-IN')}
+                  {property?.price?.toLocaleString('en-IN')}
                 </span>
                 <span className="text-gray-600">/month</span>
               </div>
@@ -167,10 +170,12 @@ const PropertyDetailPage = () => {
           </div>
           
           <div className="mb-8">
-            <PropertyImageCarousel 
-              images={property.images} 
-              title={property.title} 
-            />
+            {property?.images && (
+              <PropertyImageCarousel 
+                images={property.images} 
+                title={property.title} 
+              />
+            )}
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -181,17 +186,17 @@ const PropertyDetailPage = () => {
                     <div className="flex flex-col items-center p-4 bg-tuleeto-off-white rounded-lg">
                       <BedDouble className="h-6 w-6 text-tuleeto-orange mb-2" />
                       <span className="text-sm text-gray-500">Bedrooms</span>
-                      <span className="font-semibold">{property.bedrooms}</span>
+                      <span className="font-semibold">{property?.bedrooms}</span>
                     </div>
                     <div className="flex flex-col items-center p-4 bg-tuleeto-off-white rounded-lg">
                       <Bath className="h-6 w-6 text-tuleeto-orange mb-2" />
                       <span className="text-sm text-gray-500">Bathrooms</span>
-                      <span className="font-semibold">{property.bathrooms}</span>
+                      <span className="font-semibold">{property?.bathrooms}</span>
                     </div>
                     <div className="flex flex-col items-center p-4 bg-tuleeto-off-white rounded-lg">
                       <Square className="h-6 w-6 text-tuleeto-orange mb-2" />
                       <span className="text-sm text-gray-500">Area</span>
-                      <span className="font-semibold">{property.area} sq ft</span>
+                      <span className="font-semibold">{property?.area} sq ft</span>
                     </div>
                   </div>
                   
@@ -202,11 +207,11 @@ const PropertyDetailPage = () => {
                       <TabsTrigger value="availability">Availability</TabsTrigger>
                     </TabsList>
                     <TabsContent value="description">
-                      <p className="text-gray-600">{property.description}</p>
+                      <p className="text-gray-600">{property?.description}</p>
                     </TabsContent>
                     <TabsContent value="features">
                       <div className="grid grid-cols-2 gap-3">
-                        {property.features && property.features.length > 0 ? (
+                        {property?.features && property.features.length > 0 ? (
                           property.features.map((feature, index) => (
                             <div key={index} className="flex items-center">
                               <CheckCircle2 className="h-4 w-4 text-tuleeto-orange mr-2" />
@@ -221,7 +226,7 @@ const PropertyDetailPage = () => {
                     <TabsContent value="availability">
                       <div className="flex items-center mb-4">
                         <Calendar className="h-5 w-5 text-tuleeto-orange mr-2" />
-                        <span>Available from: <strong>{new Date(property.available_from).toLocaleDateString()}</strong></span>
+                        <span>Available from: <strong>{property?.available_from && new Date(property.available_from).toLocaleDateString()}</strong></span>
                       </div>
                       <p className="text-gray-600">This property requires a minimum lease of 6 months.</p>
                     </TabsContent>
@@ -235,19 +240,26 @@ const PropertyDetailPage = () => {
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-4">Contact the Owner</h3>
                   <div className="mb-6">
-                    <h4 className="font-medium mb-1">{property.owner_name}</h4>
+                    <h4 className="font-medium mb-1">{property?.owner_name}</h4>
                     <p className="text-sm text-gray-500 mb-3">Usually responds within 1 day</p>
                     <Separator className="my-3" />
                     <div className="space-y-2">
                       <div className="flex items-center">
                         <Mail className="h-4 w-4 text-tuleeto-orange mr-2" />
-                        <span>{property.owner_email}</span>
+                        <span>{property?.owner_email}</span>
                       </div>
                       {user ? (
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 text-tuleeto-orange mr-2" />
-                          <span>{property.owner_phone}</span>
-                        </div>
+                        property?.owner_phone ? (
+                          <div className="flex items-center">
+                            <Phone className="h-4 w-4 text-tuleeto-orange mr-2" />
+                            <span>{property.owner_phone}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-gray-500">
+                            <Phone className="h-4 w-4 mr-2" />
+                            <span>No phone number provided</span>
+                          </div>
+                        )
                       ) : (
                         <div className="flex items-center text-gray-500">
                           <Lock className="h-4 w-4 mr-2" />
@@ -261,8 +273,9 @@ const PropertyDetailPage = () => {
                     <Button 
                       className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
                       onClick={handleContact}
+                      disabled={!property?.owner_phone}
                     >
-                      {isMobile ? (
+                      {isMobile && property?.owner_phone ? (
                         <>
                           <Phone className="h-4 w-4 mr-2" />
                           Call {property.owner_phone}
@@ -281,7 +294,7 @@ const PropertyDetailPage = () => {
                     </Link>
                   )}
 
-                  {property.owner_id === user?.id && (
+                  {property?.owner_id === user?.id && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
                       <p className="text-sm text-gray-500 mb-2">This is your listing</p>
                       <Link to="/my-properties">
