@@ -13,6 +13,7 @@ import ListPropertyPage from "./pages/ListPropertyPage";
 import AuthPage from "./pages/AuthPage";
 import MyPropertiesPage from "./pages/MyPropertiesPage";
 import ProfilePage from "./pages/ProfilePage";
+import OwnerProfilePage from "./pages/OwnerProfilePage";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/listings" element={<ListingsPage />} />
             <Route path="/property/:id" element={<PropertyDetailPage />} />
+            <Route path="/owner/:id" element={<OwnerProfilePage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/list-property" element={
               <ProtectedRoute>

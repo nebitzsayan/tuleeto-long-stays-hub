@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 import { useIsMobile } from "@/hooks/use-mobile";
+import OwnerAvatar from "@/components/profile/OwnerAvatar";
 
 interface PropertyDetails {
   id: string;
@@ -243,7 +243,16 @@ const PropertyDetailPage = () => {
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-4">Contact the Owner</h3>
                   <div className="mb-6">
-                    <h4 className="font-medium mb-1">{property?.owner_name}</h4>
+                    <div className="flex items-center mb-3">
+                      <Link to={`/owner/${property?.owner_id}`} className="flex items-center">
+                        <OwnerAvatar 
+                          ownerId={property?.owner_id || ""} 
+                          ownerName={property?.owner_name}
+                          className="mr-3"
+                        />
+                        <h4 className="font-medium hover:text-tuleeto-orange transition-colors">{property?.owner_name}</h4>
+                      </Link>
+                    </div>
                     <p className="text-sm text-gray-500 mb-3">Usually responds within 1 day</p>
                     <Separator className="my-3" />
                     <div className="space-y-2">
