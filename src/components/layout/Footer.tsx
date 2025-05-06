@@ -32,22 +32,22 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/listings" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/listings" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   Browse Rentals
                 </Link>
               </li>
               <li>
-                <Link to="/list-property" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/list-property" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   List Your Property
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/about" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/contact" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   Contact Us
                 </Link>
               </li>
@@ -59,22 +59,22 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/terms" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/terms" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/privacy" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/cookies" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/cookies" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   Cookie Policy
                 </Link>
               </li>
               <li>
-                <Link to="/accessibility" className="text-gray-400 hover:text-tuleeto-orange">
+                <Link to="/accessibility" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
                   Accessibility
                 </Link>
               </li>
@@ -86,11 +86,11 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
-                <Mail className="h-5 w-5 mr-2" />
+                <Mail className="h-5 w-5 mr-2 flex-shrink-0" />
                 <span>nebitztechnology@gmail.com</span>
               </li>
               <li className="flex items-center text-gray-400">
-                <Phone className="h-5 w-5 mr-2" />
+                <Phone className="h-5 w-5 mr-2 flex-shrink-0" />
                 <span>+91 8918278737</span>
               </li>
             </ul>

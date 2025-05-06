@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -21,37 +20,22 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
     if (!bucketExists) {
       console.log(`Bucket ${bucketName} does not exist, creating it with public access`);
       
-      try {
-        // Create the bucket with public access
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true,  // Make bucket public by default
-          fileSizeLimit: 10485760, // 10MB
-        });
-        
-        if (createError) {
-          console.error(`Error creating bucket ${bucketName}:`, createError);
-          return false;
-        }
-        
-        // Wait a moment for bucket creation to register
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Update bucket public access directly instead of using RPC
-        // This avoids the TypeScript error with the RPC function that's not defined in the types
-        try {
-          // Setting policy is now handled internally by createBucket with public: true
-          // No need for additional RPC calls that might not be typed correctly
-          console.log(`Successfully created bucket ${bucketName} with public access`);
-          return true;
-        } catch (policyErr) {
-          console.error(`Error setting bucket policy for ${bucketName}:`, policyErr);
-          // Continue anyway as the bucket was created
-          return true;
-        }
-      } catch (err) {
-        console.error(`Error in bucket creation process:`, err);
+      // Create the bucket with public access
+      const { error: createError } = await supabase.storage.createBucket(bucketName, {
+        public: true,  // Make bucket public by default
+        fileSizeLimit: 10485760, // 10MB
+      });
+      
+      if (createError) {
+        console.error(`Error creating bucket ${bucketName}:`, createError);
         return false;
       }
+      
+      console.log(`Successfully created bucket ${bucketName} with public access`);
+      
+      // Add a small delay to ensure bucket creation is registered
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return true;
     }
     
     console.log(`Bucket ${bucketName} already exists`);
