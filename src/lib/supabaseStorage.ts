@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -115,8 +116,13 @@ export const uploadMultipleFiles = async (
   // Simple bucket check - one time only
   const bucketCreated = await ensureBucketExists(bucketName);
   if (!bucketCreated) {
-    // Try one more time
-    await ensureBucketExists(bucketName);
+    // Try one more time with a delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const secondAttempt = await ensureBucketExists(bucketName);
+    if (!secondAttempt) {
+      console.error(`Failed to create bucket ${bucketName} after multiple attempts`);
+      return [];
+    }
   }
   
   for (let i = 0; i < files.length; i++) {

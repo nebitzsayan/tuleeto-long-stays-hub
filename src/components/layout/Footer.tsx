@@ -15,13 +15,13 @@ const Footer = () => {
               Find your perfect long-term home with Tuleeto. We connect renters and property owners directly.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-tuleeto-orange">
+              <a href="#" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-tuleeto-orange">
+              <a href="#" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-tuleeto-orange">
+              <a href="#" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200">
                 <Instagram className="h-5 w-5" />
               </a>
             </div>
@@ -32,22 +32,22 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/listings" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/listings" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   Browse Rentals
                 </Link>
               </li>
               <li>
-                <Link to="/list-property" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/list-property" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   List Your Property
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/about" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/contact" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   Contact Us
                 </Link>
               </li>
@@ -59,22 +59,22 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/terms" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/terms" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/privacy" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/cookies" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/cookies" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   Cookie Policy
                 </Link>
               </li>
               <li>
-                <Link to="/accessibility" className="text-gray-400 hover:text-tuleeto-orange transition-colors">
+                <Link to="/accessibility" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
                   Accessibility
                 </Link>
               </li>
@@ -87,7 +87,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
                 <Mail className="h-5 w-5 mr-2 flex-shrink-0" />
-                <span>nebitztechnology@gmail.com</span>
+                <span className="break-all">nebitztechnology@gmail.com</span>
               </li>
               <li className="flex items-center text-gray-400">
                 <Phone className="h-5 w-5 mr-2 flex-shrink-0" />

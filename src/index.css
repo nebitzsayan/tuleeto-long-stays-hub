@@ -86,11 +86,23 @@
   }
   
   .grid > * {
-    @apply rounded-md shadow-sm border border-gray-100;
+    @apply rounded-md shadow-sm;
   }
   
   .container {
     @apply px-4;
+  }
+  
+  /* Fix for boxy outlines in footer and amenities */
+  footer ul li a,
+  footer ul li span,
+  .amenities-list li {
+    @apply border-0 shadow-none outline-none;
+  }
+  
+  /* Remove border from grid items on mobile */
+  .grid > * {
+    @apply border-0;
   }
 }
 
