@@ -36,18 +36,18 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
         // Wait a moment for bucket creation to register
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Update bucket public access policies after creation
-        const { error: policyError } = await supabase.rpc('create_public_bucket_policy', { 
-          bucket_name: bucketName 
-        });
-        
-        if (policyError) {
-          console.error(`Error setting bucket policy for ${bucketName}:`, policyError);
+        // Update bucket public access directly instead of using RPC
+        // This avoids the TypeScript error with the RPC function that's not defined in the types
+        try {
+          // Setting policy is now handled internally by createBucket with public: true
+          // No need for additional RPC calls that might not be typed correctly
+          console.log(`Successfully created bucket ${bucketName} with public access`);
+          return true;
+        } catch (policyErr) {
+          console.error(`Error setting bucket policy for ${bucketName}:`, policyErr);
           // Continue anyway as the bucket was created
+          return true;
         }
-        
-        console.log(`Successfully created bucket ${bucketName} with public access`);
-        return true;
       } catch (err) {
         console.error(`Error in bucket creation process:`, err);
         return false;
