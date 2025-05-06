@@ -36,6 +36,7 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -98,6 +99,7 @@ const ProfilePage = () => {
       toast.success("Profile updated successfully!");
     } catch (error: any) {
       console.error("Error updating profile:", error.message);
+      toast.error(`Failed to update profile: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -105,6 +107,7 @@ const ProfilePage = () => {
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
+      setUploadError(null);
       const files = event.target.files;
       if (!files || files.length === 0 || !user) {
         return;
@@ -118,24 +121,48 @@ const ProfilePage = () => {
       if (file.size > MAX_FILE_SIZE) {
         toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
         setUploadingAvatar(false);
+        setUploadError("File size exceeds 5MB limit");
         return;
       }
       
-      const fileExt = file.name.split('.').pop();
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Invalid file type. Please upload a JPEG, PNG, GIF, or WEBP image.");
+        setUploadingAvatar(false);
+        setUploadError("Invalid file type");
+        return;
+      }
+      
+      // Ensure avatars bucket exists (with retries)
+      let bucketExists = await ensureBucketExists('avatars');
+      if (!bucketExists) {
+        // Retry once more with delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        bucketExists = await ensureBucketExists('avatars');
+        
+        if (!bucketExists) {
+          toast.error("Failed to create storage bucket. Please try again later.");
+          setUploadingAvatar(false);
+          setUploadError("Storage bucket creation failed");
+          return;
+        }
+      }
+      
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = fileName;
       
-      // Use our improved storage utility to ensure bucket exists and handle upload
-      await ensureBucketExists('avatars');
-      
-      const avatarUrl = await uploadFileToStorage('avatars', filePath, file);
+      console.log("Attempting to upload avatar to bucket 'avatars'");
+      const avatarUrl = await uploadFileToStorage('avatars', fileName, file);
       
       if (!avatarUrl) {
-        toast.error("Failed to upload avatar. Please try again.");
+        toast.error("Failed to upload avatar. Please try again later.");
         setUploadingAvatar(false);
+        setUploadError("Upload failed");
         return;
       }
 
+      console.log("Avatar uploaded successfully, updating profile");
       // Update the profile with the new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
@@ -146,6 +173,7 @@ const ProfilePage = () => {
         console.error("Profile update error:", updateError);
         toast.error(`Error updating profile: ${updateError.message}`);
         setUploadingAvatar(false);
+        setUploadError("Profile update failed");
         return;
       }
 
@@ -153,6 +181,8 @@ const ProfilePage = () => {
       toast.success('Avatar updated successfully!');
     } catch (error: any) {
       console.error("Avatar upload error:", error);
+      toast.error(`Avatar upload failed: ${error.message}`);
+      setUploadError(error.message);
     } finally {
       setUploadingAvatar(false);
     }
@@ -187,7 +217,7 @@ const ProfilePage = () => {
                 <div className="flex flex-col items-center gap-2 mb-4 md:mb-0">
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={avatarUrl || ""} alt={form.getValues().fullName} />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-tuleeto-orange text-white">
                       <User className="h-12 w-12" />
                     </AvatarFallback>
                   </Avatar>
@@ -213,6 +243,9 @@ const ProfilePage = () => {
                       disabled={uploadingAvatar}
                     />
                   </div>
+                  {uploadError && (
+                    <p className="text-sm text-red-500 mt-1">{uploadError}</p>
+                  )}
                 </div>
 
                 <div className="flex-grow w-full">

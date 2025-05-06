@@ -22,6 +22,7 @@ const OwnerAvatar = ({
 }: OwnerAvatarProps) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Size mapping
   const sizeClass = {
@@ -34,28 +35,41 @@ const OwnerAvatar = ({
   useEffect(() => {
     const fetchOwnerAvatar = async () => {
       try {
+        if (!ownerId) {
+          setLoading(false);
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('profiles')
-          .select('avatar_url')
+          .select('avatar_url, full_name')
           .eq('id', ownerId)
           .single();
           
-        if (error) throw error;
-        
-        if (data?.avatar_url) {
-          setAvatarUrl(data.avatar_url);
+        if (error) {
+          console.error("Error fetching owner profile:", error);
+          setError(error.message);
+        } else if (data) {
+          // If we have a profile with avatar_url
+          if (data.avatar_url) {
+            setAvatarUrl(data.avatar_url);
+            
+            // If ownerName wasn't provided but we have it in profile, use that
+            if (ownerName === "Property Owner" && data.full_name) {
+              ownerName = data.full_name;
+            }
+          }
         }
-      } catch (error) {
-        console.error("Error fetching owner avatar:", error);
+      } catch (error: any) {
+        console.error("Unexpected error fetching avatar:", error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
     
-    if (ownerId) {
-      fetchOwnerAvatar();
-    }
-  }, [ownerId]);
+    fetchOwnerAvatar();
+  }, [ownerId, ownerName]);
   
   const AvatarComponent = () => (
     <Avatar className={`${sizeClass[size]} ${className}`}>
@@ -75,7 +89,7 @@ const OwnerAvatar = ({
     </Avatar>
   );
   
-  if (withLink) {
+  if (withLink && ownerId) {
     return (
       <Link to={`/owner/${ownerId}`} className="inline-block">
         <AvatarComponent />

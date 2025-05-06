@@ -13,7 +13,6 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
     
     if (bucketsError) {
       console.error("Error checking buckets:", bucketsError);
-      // Don't show toast, just log and continue
       return false;
     }
     
@@ -22,19 +21,37 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
     if (!bucketExists) {
       console.log(`Bucket ${bucketName} does not exist, creating it with public access`);
       
-      // Create the bucket with public access
-      const { error: createError } = await supabase.storage.createBucket(bucketName, {
-        public: true,  // Make bucket public by default
-        fileSizeLimit: 10485760, // 10MB
-      });
-      
-      if (createError) {
-        console.error(`Error creating bucket ${bucketName}:`, createError);
+      try {
+        // Create the bucket with public access
+        const { error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true,  // Make bucket public by default
+          fileSizeLimit: 10485760, // 10MB
+        });
+        
+        if (createError) {
+          console.error(`Error creating bucket ${bucketName}:`, createError);
+          return false;
+        }
+        
+        // Wait a moment for bucket creation to register
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Update bucket public access policies after creation
+        const { error: policyError } = await supabase.rpc('create_public_bucket_policy', { 
+          bucket_name: bucketName 
+        });
+        
+        if (policyError) {
+          console.error(`Error setting bucket policy for ${bucketName}:`, policyError);
+          // Continue anyway as the bucket was created
+        }
+        
+        console.log(`Successfully created bucket ${bucketName} with public access`);
+        return true;
+      } catch (err) {
+        console.error(`Error in bucket creation process:`, err);
         return false;
       }
-      
-      console.log(`Successfully created bucket ${bucketName} with public access`);
-      return true;
     }
     
     console.log(`Bucket ${bucketName} already exists`);
@@ -54,8 +71,12 @@ export const uploadFileToStorage = async (
   file: File
 ): Promise<string | null> => {
   try {
-    // Create bucket if needed, but don't block on failure
-    await ensureBucketExists(bucketName);
+    // Create bucket if needed
+    const bucketCreated = await ensureBucketExists(bucketName);
+    if (!bucketCreated) {
+      console.error(`Failed to ensure bucket ${bucketName} exists`);
+      return null;
+    }
     
     console.log(`Uploading file ${file.name} (${file.size} bytes) to ${bucketName}/${filePath}`);
     
