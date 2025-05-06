@@ -22,21 +22,37 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
       console.log(`Bucket ${bucketName} does not exist, creating it with public access`);
       
       // Create the bucket with public access
-      const { error: createError } = await supabase.storage.createBucket(bucketName, {
-        public: true,  // Make bucket public by default
-        fileSizeLimit: 10485760, // 10MB
-      });
-      
-      if (createError) {
-        console.error(`Error creating bucket ${bucketName}:`, createError);
+      try {
+        const { error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true,  // Make bucket public by default
+          fileSizeLimit: 10485760, // 10MB
+        });
+        
+        if (createError) {
+          console.error(`Error creating bucket ${bucketName}:`, createError);
+          // Try one more time with a delay - sometimes Supabase needs a moment
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const { error: retryError } = await supabase.storage.createBucket(bucketName, {
+            public: true,
+            fileSizeLimit: 10485760,
+          });
+          
+          if (retryError) {
+            console.error(`Retry failed for bucket ${bucketName}:`, retryError);
+            return false;
+          }
+        }
+        
+        console.log(`Successfully created bucket ${bucketName} with public access`);
+        
+        // Add a small delay to ensure bucket creation is registered
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return true;
+      } catch (error) {
+        console.error(`Exception when creating bucket ${bucketName}:`, error);
         return false;
       }
-      
-      console.log(`Successfully created bucket ${bucketName} with public access`);
-      
-      // Add a small delay to ensure bucket creation is registered
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return true;
     }
     
     console.log(`Bucket ${bucketName} already exists`);
@@ -56,9 +72,14 @@ export const uploadFileToStorage = async (
   file: File
 ): Promise<string | null> => {
   try {
-    // Create bucket if needed
-    const bucketCreated = await ensureBucketExists(bucketName);
-    if (!bucketCreated) {
+    // Assume the bucket exists for "avatars" bucket - don't try to create it at runtime
+    let bucketExists = true;
+    if (bucketName !== "avatars") {
+      // Only try to create the bucket if it's not the avatars bucket
+      bucketExists = await ensureBucketExists(bucketName);
+    }
+    
+    if (!bucketExists) {
       console.error(`Failed to ensure bucket ${bucketName} exists`);
       return null;
     }
@@ -113,8 +134,13 @@ export const uploadMultipleFiles = async (
   const totalFiles = files.length;
   let successCount = 0;
   
-  // Simple bucket check - one time only
-  const bucketCreated = await ensureBucketExists(bucketName);
+  // For avatars bucket, assume it exists
+  let bucketCreated = true;
+  if (bucketName !== "avatars") {
+    // Only try to create the bucket if it's not the avatars bucket
+    bucketCreated = await ensureBucketExists(bucketName);
+  }
+  
   if (!bucketCreated) {
     // Try one more time with a delay
     await new Promise(resolve => setTimeout(resolve, 2000));

@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { User, LogIn, House, LogOut, Plus, Menu, X, Shield } from "lucide-react";
+import { User, LogIn, House, LogOut, Plus, X, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/ui/logo";
@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -22,6 +24,7 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,6 +51,29 @@ const Navbar = () => {
     }
   }, [user]);
 
+  // Fetch user avatar
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', user.id)
+            .single();
+          
+          if (!error && data && data.avatar_url) {
+            setAvatarUrl(data.avatar_url);
+          }
+        } catch (error) {
+          console.error('Error fetching avatar:', error);
+        }
+      }
+    };
+
+    fetchAvatar();
+  }, [user]);
+
   const handleSignOut = async () => {
     await signOut();
     setMobileMenuOpen(false);
@@ -55,6 +81,13 @@ const Navbar = () => {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const getInitials = () => {
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "U";
   };
 
   return (
@@ -94,8 +127,13 @@ const Navbar = () => {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-gray-700 hover:text-tuleeto-orange">
-                    <User className="h-4 w-4" />
+                  <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
+                    <Avatar className="h-8 w-8 cursor-pointer">
+                      <AvatarImage src={avatarUrl || ""} alt="User profile" />
+                      <AvatarFallback className="bg-tuleeto-orange text-white">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 bg-white" align="end">
@@ -147,13 +185,26 @@ const Navbar = () => {
         </div>
 
         <div className="md:hidden">
-          <Button variant="ghost" className="text-tuleeto-orange" onClick={toggleMobileMenu}>
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </Button>
+          {user ? (
+            <Button variant="ghost" className="p-0 h-auto hover:bg-transparent" onClick={toggleMobileMenu}>
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6 text-tuleeto-orange" />
+              ) : (
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  <AvatarImage src={avatarUrl || ""} alt="User profile" />
+                  <AvatarFallback className="bg-tuleeto-orange text-white">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+            </Button>
+          ) : (
+            <Link to="/auth">
+              <Button variant="outline" className="flex items-center gap-1 border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white">
+                <LogIn className="h-4 w-4" /> Login
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 

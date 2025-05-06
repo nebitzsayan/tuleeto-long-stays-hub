@@ -97,12 +97,23 @@
   footer ul li a,
   footer ul li span,
   .amenities-list li {
-    @apply border-0 shadow-none outline-none;
+    @apply border-0 shadow-none outline-none transition-colors;
   }
   
   /* Remove border from grid items on mobile */
   .grid > * {
     @apply border-0;
+  }
+  
+  /* Additional fixes for mobile footer links */
+  footer a, footer span {
+    @apply transition-colors duration-200 outline-none ring-0 focus:ring-0 focus:outline-none active:outline-none;
+  }
+  
+  /* Ensure icons have consistent size in mobile view */
+  footer [class*="lucide-"],
+  .amenities-list [class*="lucide-"] {
+    @apply w-4 h-4 flex-shrink-0;
   }
 }
 
@@ -120,4 +131,22 @@ button svg {
 /* Property image optimization */
 .aspect-square img, .aspect-video img {
   @apply object-cover h-full w-full;
+}
+
+/* Fix for Dropdown Menu Avatar Button */
+.DropdownMenuTrigger[data-state="open"],
+button:has(.Avatar):focus,
+button:has(.Avatar):active {
+  @apply outline-none ring-0 shadow-none border-0;
+}
+
+/* Avatar enhancements */
+.Avatar {
+  @apply ring-0 outline-none;
+}
+
+/* Additional fix for mobile menu items to avoid boxy outlines */
+.mobile-menu a,
+.mobile-menu button {
+  @apply border-0 outline-none ring-0 shadow-none transition-colors;
 }
