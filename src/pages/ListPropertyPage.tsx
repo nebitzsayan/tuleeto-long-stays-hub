@@ -21,11 +21,19 @@ const ListPropertyPage = () => {
     const checkStorage = async () => {
       if (user) {
         try {
+          // Just check if we can list buckets (not trying to create them here)
           const { data, error } = await supabase.storage.listBuckets();
           setStorageReady(error ? false : true);
           
           if (error) {
             console.error("Storage system check failed:", error);
+          } else {
+            // Check specifically for property_images bucket
+            const hasPropertyBucket = data.some(bucket => bucket.name === 'property_images');
+            if (!hasPropertyBucket) {
+              console.warn("Property images bucket doesn't exist yet");
+              // We'll create it when needed, not here
+            }
           }
         } catch (err) {
           console.error("Error checking storage:", err);

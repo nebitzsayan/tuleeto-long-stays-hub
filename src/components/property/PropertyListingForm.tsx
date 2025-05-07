@@ -116,6 +116,17 @@ const PropertyListingForm = ({
         (progress) => setUploadProgress(progress)
       );
       
+      if (urls.length === 0) {
+        toast.error("Failed to upload photos. Please try again.");
+        return [];
+      }
+      
+      if (urls.length !== files.length) {
+        toast.warning(`Only ${urls.length} out of ${files.length} photos were uploaded successfully.`);
+      } else {
+        toast.success(`All ${urls.length} photos uploaded successfully!`);
+      }
+      
       setPhotoUrls(urls);
       return urls;
     } catch (error: any) {
@@ -136,15 +147,24 @@ const PropertyListingForm = ({
         return;
       }
       
-      let finalPhotoUrls = photoUrls;
-      if (photos.length > 0) {
-        finalPhotoUrls = await uploadPhotos();
-      }
-      
-      if (finalPhotoUrls.length === 0) {
+      // Check if we have photos to upload
+      if (photos.length === 0 && photoUrls.length === 0) {
         toast.error("Please upload at least one photo of your property");
         setIsSubmitting(false);
         return;
+      }
+      
+      // Upload photos if needed
+      let finalPhotoUrls = photoUrls;
+      if (photos.length > 0) {
+        finalPhotoUrls = await uploadPhotos();
+        
+        // Double-check we have URLs after upload
+        if (finalPhotoUrls.length === 0) {
+          toast.error("Photo upload failed. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
       }
       
       const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
@@ -163,7 +183,7 @@ const PropertyListingForm = ({
         available_from: data.availableFrom,
         images: finalPhotoUrls,
         owner_id: user.id,
-        contact_phone: data.contactPhone // Add the contact phone number here
+        contact_phone: data.contactPhone
       };
       
       console.log("Submitting property data:", propertyData);

@@ -72,7 +72,8 @@ export const uploadFileToStorage = async (
   file: File
 ): Promise<string | null> => {
   try {
-    // Assume the bucket exists for "avatars" bucket - don't try to create it at runtime
+    // For avatars bucket, we'll assume it exists (should be created in Supabase console)
+    // For other buckets, try to ensure they exist first
     let bucketExists = true;
     if (bucketName !== "avatars") {
       // Only try to create the bucket if it's not the avatars bucket
@@ -176,6 +177,6 @@ export const uploadMultipleFiles = async (
     }
   }
   
-  // No toasts, just return the URLs
+  console.log(`Uploaded ${successCount}/${totalFiles} files successfully`);
   return urls;
 };

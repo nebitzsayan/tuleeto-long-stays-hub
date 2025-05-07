@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -21,7 +20,7 @@ import { Loader2, Upload, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { uploadFileToStorage, ensureBucketExists } from "@/lib/supabaseStorage";
+import { uploadFileToStorage } from "@/lib/supabaseStorage";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
@@ -134,20 +133,8 @@ const ProfilePage = () => {
         return;
       }
       
-      // Ensure avatars bucket exists (with retries)
-      let bucketExists = await ensureBucketExists('avatars');
-      if (!bucketExists) {
-        // Retry once more with delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        bucketExists = await ensureBucketExists('avatars');
-        
-        if (!bucketExists) {
-          toast.error("Failed to create storage bucket. Please try again later.");
-          setUploadingAvatar(false);
-          setUploadError("Storage bucket creation failed");
-          return;
-        }
-      }
+      // We assume the avatars bucket exists - no need to try creating it at runtime
+      // This should be created in the Supabase console
       
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
