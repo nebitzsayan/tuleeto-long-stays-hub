@@ -2,13 +2,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Creates a bucket if it doesn't exist with public access
+ * Checks if a bucket exists without trying to create it
  */
-export const ensureBucketExists = async (bucketName: string): Promise<boolean> => {
+export const checkBucketExists = async (bucketName: string): Promise<boolean> => {
   try {
     console.log(`Checking if bucket ${bucketName} exists...`);
     
-    // First check if bucket exists
+    // Check if bucket exists
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
@@ -17,62 +17,16 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
     }
     
     const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-    
-    if (!bucketExists) {
-      console.log(`Bucket ${bucketName} does not exist, creating it with public access`);
-      
-      // Create the bucket with public access
-      try {
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true,  // Make bucket public by default
-          fileSizeLimit: 10485760, // 10MB
-        });
-        
-        if (createError) {
-          console.error(`Error creating bucket ${bucketName}:`, createError);
-          
-          // Special note: For avatar uploads, recommend manual creation
-          if (bucketName === 'avatars') {
-            console.warn("The avatars bucket should be created manually in Supabase console");
-            return false;
-          }
-          
-          // Try one more time with a delay - sometimes Supabase needs a moment
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const { error: retryError } = await supabase.storage.createBucket(bucketName, {
-            public: true,
-            fileSizeLimit: 10485760,
-          });
-          
-          if (retryError) {
-            console.error(`Retry failed for bucket ${bucketName}:`, retryError);
-            return false;
-          }
-        }
-        
-        // Add RLS policy for the bucket to make it publicly accessible
-        console.log(`Successfully created bucket ${bucketName} with public access`);
-        
-        // Add a small delay to ensure bucket creation is registered
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return true;
-      } catch (error) {
-        console.error(`Exception when creating bucket ${bucketName}:`, error);
-        return false;
-      }
-    }
-    
-    console.log(`Bucket ${bucketName} already exists`);
-    return true;
+    return bucketExists || false;
   } catch (error: any) {
-    console.error("Error in storage setup:", error);
+    console.error("Error checking bucket:", error);
     return false;
   }
 };
 
 /**
  * Simple direct upload of a file to storage with better error handling
+ * Uses existing buckets - does not try to create them
  */
 export const uploadFileToStorage = async (
   bucketName: string,
@@ -80,17 +34,12 @@ export const uploadFileToStorage = async (
   file: File
 ): Promise<string | null> => {
   try {
-    // For avatars bucket, we'll assume it exists (should be created in Supabase console)
-    // For other buckets, try to ensure they exist first
-    let bucketExists = true;
-    if (bucketName !== "avatars") {
-      // Only try to create the bucket if it's not the avatars bucket
-      bucketExists = await ensureBucketExists(bucketName);
-    }
+    // Check if bucket exists first
+    const bucketExists = await checkBucketExists(bucketName);
     
-    if (!bucketExists && bucketName !== "avatars") {
-      console.error(`Failed to ensure bucket ${bucketName} exists`);
-      return null;
+    if (!bucketExists) {
+      console.error(`Bucket ${bucketName} does not exist`);
+      throw new Error(`Storage bucket '${bucketName}' does not exist. It needs to be created in the Supabase dashboard.`);
     }
     
     console.log(`Uploading file ${file.name} (${file.size} bytes) to ${bucketName}/${filePath}`);
@@ -105,12 +54,12 @@ export const uploadFileToStorage = async (
     
     if (error) {
       console.error(`Upload error:`, error);
-      return null;
+      throw error;
     }
     
     if (!data) {
       console.error("No data returned from upload");
-      return null;
+      throw new Error("Upload failed - no data returned");
     }
     
     // Get the public URL
@@ -122,7 +71,7 @@ export const uploadFileToStorage = async (
     return urlData.publicUrl;
   } catch (error: any) {
     console.error("Unexpected upload error:", error);
-    return null;
+    throw error;
   }
 };
 
@@ -143,21 +92,11 @@ export const uploadMultipleFiles = async (
   const totalFiles = files.length;
   let successCount = 0;
   
-  // For avatars bucket, assume it exists
-  let bucketCreated = true;
-  if (bucketName !== "avatars") {
-    // Only try to create the bucket if it's not the avatars bucket
-    bucketCreated = await ensureBucketExists(bucketName);
-  }
+  // Check if bucket exists
+  const bucketExists = await checkBucketExists(bucketName);
   
-  if (!bucketCreated && bucketName !== "avatars") {
-    // Try one more time with a delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const secondAttempt = await ensureBucketExists(bucketName);
-    if (!secondAttempt) {
-      console.error(`Failed to create bucket ${bucketName} after multiple attempts`);
-      return [];
-    }
+  if (!bucketExists) {
+    throw new Error(`Storage bucket '${bucketName}' does not exist. It needs to be created in the Supabase dashboard.`);
   }
   
   for (let i = 0; i < files.length; i++) {

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,7 +15,9 @@ import { PropertyDetailsStep } from "@/components/property/PropertyDetailsStep";
 import { LocationStep } from "@/components/property/LocationStep";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
-import { uploadMultipleFiles } from "@/lib/supabaseStorage";
+import { uploadMultipleFiles, checkBucketExists } from "@/lib/supabaseStorage";
+import { Alert, AlertDescription } from "@/components/ui/alert"; 
+import { AlertCircle } from "lucide-react";
 
 export const formSchema = z.object({
   propertyType: z.string().min(1, { message: "Please select a property type" }),
@@ -63,6 +65,7 @@ const PropertyListingForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [bucketStatus, setBucketStatus] = useState<boolean | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
     "Pet friendly", 
     "Air conditioning", 
@@ -92,6 +95,27 @@ const PropertyListingForm = ({
     mode: "onChange"
   });
 
+  // Check if property_images bucket exists on component mount
+  useEffect(() => {
+    const checkBucketExistence = async () => {
+      try {
+        const exists = await checkBucketExists('property_images');
+        setBucketStatus(exists);
+        console.log("Property images bucket status:", exists ? "exists" : "does not exist");
+        
+        if (!exists) {
+          setUploadError("The 'property_images' bucket does not exist in Supabase. Please create it in the Supabase dashboard.");
+          toast.error("Storage system not fully configured. Contact administrator.");
+        }
+      } catch (err) {
+        console.error("Error checking property images bucket:", err);
+        setBucketStatus(false);
+      }
+    };
+    
+    checkBucketExistence();
+  }, []);
+
   const uploadPhotos = async () => {
     if (photos.length === 0) {
       if (photoUrls.length > 0) {
@@ -108,6 +132,12 @@ const PropertyListingForm = ({
     try {
       console.log(`Starting upload of ${photos.length} photos...`);
       toast.info(`Uploading ${photos.length} photos...`);
+      
+      // Check if bucket exists first
+      const bucketExists = await checkBucketExists('property_images');
+      if (!bucketExists) {
+        throw new Error("Storage bucket 'property_images' does not exist. It needs to be created in the Supabase dashboard.");
+      }
       
       const files = photos.map(photo => photo.file);
       
@@ -162,6 +192,15 @@ const PropertyListingForm = ({
       if (photos.length === 0 && photoUrls.length === 0) {
         toast.error("Please upload at least one photo of your property");
         setUploadError("Please upload at least one photo of your property");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Verify property_images bucket exists
+      const bucketExists = await checkBucketExists('property_images');
+      if (!bucketExists) {
+        setUploadError("Storage bucket 'property_images' does not exist. It needs to be created in the Supabase dashboard.");
+        toast.error("Storage bucket not found. Contact administrator.");
         setIsSubmitting(false);
         return;
       }
@@ -269,6 +308,16 @@ const PropertyListingForm = ({
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
+      {bucketStatus === false && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Storage system not fully configured. Photo uploads will not work until this is fixed.
+            Please contact the administrator.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {step === 0 && (
@@ -334,7 +383,7 @@ const PropertyListingForm = ({
               <Button 
                 type="submit"
                 className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
-                disabled={isUploading || isSubmitting}
+                disabled={isUploading || isSubmitting || bucketStatus === false}
                 onClick={async (e) => {
                   e.preventDefault();
                   try {

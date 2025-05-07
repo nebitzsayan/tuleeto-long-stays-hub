@@ -1,16 +1,17 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, AlertCircle } from "lucide-react";
+import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { checkBucketExists } from "@/lib/supabaseStorage";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -30,6 +31,27 @@ export const FeaturesPhotosStep = ({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [previewsGenerated, setPreviewsGenerated] = useState<boolean>(false);
+  const [bucketStatus, setBucketStatus] = useState<boolean | null>(null);
+
+  // Check if property_images bucket exists on component mount
+  useEffect(() => {
+    const checkPropertyImagesBucket = async () => {
+      try {
+        const exists = await checkBucketExists('property_images');
+        setBucketStatus(exists);
+        console.log("Property images bucket status:", exists ? "Exists" : "Does not exist");
+        
+        if (!exists) {
+          setUploadError("The 'property_images' bucket does not exist in Supabase. Please create it in the Supabase dashboard.");
+        }
+      } catch (err) {
+        console.error("Error checking property images bucket:", err);
+        setBucketStatus(false);
+      }
+    };
+    
+    checkPropertyImagesBucket();
+  }, []);
 
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
@@ -41,6 +63,15 @@ export const FeaturesPhotosStep = ({
     
     try {
       console.log(`Processing photo: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
+      
+      // Check if property_images bucket exists
+      if (bucketStatus === false) {
+        toast.error("The 'property_images' bucket does not exist in Supabase. Please contact administrator.");
+        setUploadError("Storage bucket 'property_images' not found. Contact administrator.");
+        setUploading(false);
+        fileInput.value = '';
+        return;
+      }
       
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
@@ -60,9 +91,10 @@ export const FeaturesPhotosStep = ({
       }
       
       // Validate image type
-      if (!file.type.startsWith('image/')) {
-        toast.error("File must be an image");
-        setUploadError("File must be an image");
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        toast.error(`Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`);
+        setUploadError(`Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`);
         setUploading(false);
         fileInput.value = '';
         return;
@@ -140,6 +172,25 @@ export const FeaturesPhotosStep = ({
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{uploadError}</AlertDescription>
+        </Alert>
+      )}
+      
+      {bucketStatus === false && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            The 'property_images' bucket does not exist in Supabase storage.
+            Photo uploads will not work until this is created.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {bucketStatus === true && (
+        <Alert className="mb-4 bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <AlertDescription className="text-green-700">
+            Storage system is ready for uploads.
+          </AlertDescription>
         </Alert>
       )}
       
@@ -300,7 +351,7 @@ export const FeaturesPhotosStep = ({
                 type="button" 
                 variant="outline" 
                 className="w-24 h-24 flex flex-col items-center justify-center border-dashed border-2 border-gray-300"
-                disabled={uploading}
+                disabled={uploading || bucketStatus === false}
               >
                 <Upload className="h-6 w-6 mb-1" />
                 <span className="text-xs">{uploading ? 'Processing...' : 'Add'}</span>
@@ -310,7 +361,7 @@ export const FeaturesPhotosStep = ({
                 accept="image/*"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleAddPhoto}
-                disabled={photos.length >= 5 || uploading}
+                disabled={photos.length >= 5 || uploading || bucketStatus === false}
               />
             </div>
           )}

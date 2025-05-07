@@ -21,7 +21,7 @@ import { Loader2, Upload, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { uploadFileToStorage } from "@/lib/supabaseStorage";
+import { uploadFileToStorage, checkBucketExists } from "@/lib/supabaseStorage";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
@@ -37,6 +37,7 @@ const ProfilePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [bucketStatus, setBucketStatus] = useState<boolean | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -45,6 +46,29 @@ const ProfilePage = () => {
       email: user?.email || "",
     },
   });
+
+  // Check if avatars bucket exists on component mount
+  useEffect(() => {
+    const checkAvatarsBucket = async () => {
+      if (user) {
+        try {
+          const exists = await checkBucketExists('avatars');
+          setBucketStatus(exists);
+          console.log("Avatars bucket status:", exists ? "Exists" : "Does not exist");
+          
+          if (!exists) {
+            setUploadError("The 'avatars' bucket does not exist in Supabase. Please create it in the Supabase dashboard.");
+            toast.error("Storage bucket 'avatars' not found. Contact administrator.");
+          }
+        } catch (err) {
+          console.error("Error checking avatar bucket:", err);
+          setBucketStatus(false);
+        }
+      }
+    };
+    
+    checkAvatarsBucket();
+  }, [user]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -134,14 +158,20 @@ const ProfilePage = () => {
         return;
       }
       
-      // Important note: The 'avatars' bucket should be created manually in the Supabase console
-      // with public read access. Don't try to create it at runtime.
+      // Check if avatars bucket exists
+      const bucketExists = await checkBucketExists('avatars');
+      if (!bucketExists) {
+        toast.error("The 'avatars' bucket does not exist in Supabase. Please create it in the Supabase dashboard.");
+        setUploadingAvatar(false);
+        setUploadError("Storage bucket 'avatars' not found. Contact administrator.");
+        return;
+      }
       
       // Generate a unique filename with timestamp
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
       
-      console.log("Attempting to upload avatar to bucket 'avatars'");
+      console.log("Attempting to upload avatar");
       // We're assuming the avatars bucket already exists
       const avatarUrl = await uploadFileToStorage('avatars', fileName, file);
       
@@ -216,7 +246,7 @@ const ProfilePage = () => {
                       variant="outline"
                       size="sm"
                       className="mt-2"
-                      disabled={uploadingAvatar}
+                      disabled={uploadingAvatar || bucketStatus === false}
                     >
                       {uploadingAvatar ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -230,11 +260,11 @@ const ProfilePage = () => {
                       accept="image/*"
                       className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={handleAvatarChange}
-                      disabled={uploadingAvatar}
+                      disabled={uploadingAvatar || bucketStatus === false}
                     />
                   </div>
                   {uploadError && (
-                    <p className="text-sm text-red-500 mt-1">{uploadError}</p>
+                    <p className="text-sm text-red-500 mt-1 text-center max-w-[200px]">{uploadError}</p>
                   )}
                 </div>
 

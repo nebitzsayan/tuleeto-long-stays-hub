@@ -7,9 +7,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { checkBucketExists } from "@/lib/supabaseStorage";
 
 const ListPropertyPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -21,22 +22,13 @@ const ListPropertyPage = () => {
     const checkStorage = async () => {
       if (user) {
         try {
-          // Just check if we can list buckets (not trying to create them here)
-          const { data, error } = await supabase.storage.listBuckets();
+          // Check if property_images bucket exists
+          const bucketExists = await checkBucketExists('property_images');
+          setStorageReady(bucketExists);
           
-          if (error) {
-            console.error("Storage system check failed:", error);
-            setStorageReady(false);
-            return;
-          }
-          
-          // Check specifically for property_images bucket
-          const hasPropertyBucket = data.some(bucket => bucket.name === 'property_images');
-          setStorageReady(true);
-          
-          if (!hasPropertyBucket) {
+          if (!bucketExists) {
             console.warn("Property images bucket doesn't exist yet");
-            // We'll try to create it when needed in the upload function
+            toast.warning("Storage system not fully configured. Contact administrator.");
           }
         } catch (err) {
           console.error("Error checking storage:", err);
@@ -51,10 +43,10 @@ const ListPropertyPage = () => {
   const handleTestStorage = async () => {
     try {
       toast.info("Testing storage connection...");
-      const { data, error } = await supabase.storage.listBuckets();
+      const bucketExists = await checkBucketExists('property_images');
       
-      if (error) {
-        throw error;
+      if (!bucketExists) {
+        throw new Error("Property images bucket does not exist");
       }
       
       // If we got here, connection is working
@@ -83,8 +75,8 @@ const ListPropertyPage = () => {
         {storageReady === false && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center">
-              Storage system is currently unavailable. Photos may not upload correctly.
+            <AlertDescription className="flex items-center justify-between">
+              <span>Storage system is currently unavailable. Photos may not upload correctly.</span>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -93,6 +85,15 @@ const ListPropertyPage = () => {
               >
                 Test Connection
               </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {storageReady === true && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <AlertDescription className="text-green-700">
+              Storage system is ready for uploads.
             </AlertDescription>
           </Alert>
         )}
