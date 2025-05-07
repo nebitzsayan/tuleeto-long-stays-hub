@@ -16,24 +16,27 @@ const ListPropertyPage = () => {
   const { user } = useAuth();
   const [storageReady, setStorageReady] = useState<boolean | null>(null);
   
-  // Check storage system on load
+  // Check storage system on load - but don't try to create buckets here
   useEffect(() => {
     const checkStorage = async () => {
       if (user) {
         try {
           // Just check if we can list buckets (not trying to create them here)
           const { data, error } = await supabase.storage.listBuckets();
-          setStorageReady(error ? false : true);
           
           if (error) {
             console.error("Storage system check failed:", error);
-          } else {
-            // Check specifically for property_images bucket
-            const hasPropertyBucket = data.some(bucket => bucket.name === 'property_images');
-            if (!hasPropertyBucket) {
-              console.warn("Property images bucket doesn't exist yet");
-              // We'll create it when needed, not here
-            }
+            setStorageReady(false);
+            return;
+          }
+          
+          // Check specifically for property_images bucket
+          const hasPropertyBucket = data.some(bucket => bucket.name === 'property_images');
+          setStorageReady(true);
+          
+          if (!hasPropertyBucket) {
+            console.warn("Property images bucket doesn't exist yet");
+            // We'll try to create it when needed in the upload function
           }
         } catch (err) {
           console.error("Error checking storage:", err);
@@ -54,6 +57,7 @@ const ListPropertyPage = () => {
         throw error;
       }
       
+      // If we got here, connection is working
       toast.success("Storage connection successful!");
       setStorageReady(true);
     } catch (err: any) {
@@ -79,7 +83,7 @@ const ListPropertyPage = () => {
         {storageReady === false && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="flex items-center">
               Storage system is currently unavailable. Photos may not upload correctly.
               <Button 
                 variant="outline" 

@@ -30,6 +30,13 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
         
         if (createError) {
           console.error(`Error creating bucket ${bucketName}:`, createError);
+          
+          // Special note: For avatar uploads, recommend manual creation
+          if (bucketName === 'avatars') {
+            console.warn("The avatars bucket should be created manually in Supabase console");
+            return false;
+          }
+          
           // Try one more time with a delay - sometimes Supabase needs a moment
           await new Promise(resolve => setTimeout(resolve, 1000));
           
@@ -44,6 +51,7 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
           }
         }
         
+        // Add RLS policy for the bucket to make it publicly accessible
         console.log(`Successfully created bucket ${bucketName} with public access`);
         
         // Add a small delay to ensure bucket creation is registered
@@ -80,7 +88,7 @@ export const uploadFileToStorage = async (
       bucketExists = await ensureBucketExists(bucketName);
     }
     
-    if (!bucketExists) {
+    if (!bucketExists && bucketName !== "avatars") {
       console.error(`Failed to ensure bucket ${bucketName} exists`);
       return null;
     }
@@ -142,7 +150,7 @@ export const uploadMultipleFiles = async (
     bucketCreated = await ensureBucketExists(bucketName);
   }
   
-  if (!bucketCreated) {
+  if (!bucketCreated && bucketName !== "avatars") {
     // Try one more time with a delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     const secondAttempt = await ensureBucketExists(bucketName);
@@ -156,7 +164,7 @@ export const uploadMultipleFiles = async (
     try {
       const file = files[i];
       const fileExt = file.name.split('.').pop() || 'jpg';
-      // Simplified path with user ID and timestamp
+      // Ensure unique filenames with timestamp and index
       const fileName = `${pathPrefix}/${Date.now()}-${i}.${fileExt}`;
       
       const url = await uploadFileToStorage(bucketName, fileName, file);
@@ -164,11 +172,11 @@ export const uploadMultipleFiles = async (
       if (url) {
         urls.push(url);
         successCount++;
-      }
-      
-      // Update progress
-      if (onProgress) {
-        onProgress(Math.round(((i + 1) / totalFiles) * 100));
+        
+        // Update progress after each successful upload
+        if (onProgress) {
+          onProgress(Math.round(((i + 1) / totalFiles) * 100));
+        }
       }
     } catch (err) {
       console.error("Error uploading file:", err);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -133,13 +134,15 @@ const ProfilePage = () => {
         return;
       }
       
-      // We assume the avatars bucket exists - no need to try creating it at runtime
-      // This should be created in the Supabase console
+      // Important note: The 'avatars' bucket should be created manually in the Supabase console
+      // with public read access. Don't try to create it at runtime.
       
+      // Generate a unique filename with timestamp
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
       
       console.log("Attempting to upload avatar to bucket 'avatars'");
+      // We're assuming the avatars bucket already exists
       const avatarUrl = await uploadFileToStorage('avatars', fileName, file);
       
       if (!avatarUrl) {

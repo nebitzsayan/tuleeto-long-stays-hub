@@ -62,6 +62,7 @@ const PropertyListingForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
     "Pet friendly", 
     "Air conditioning", 
@@ -96,11 +97,13 @@ const PropertyListingForm = ({
       if (photoUrls.length > 0) {
         return photoUrls;
       }
+      setUploadError("Please upload at least one photo of your property");
       return [];
     }
     
     setIsUploading(true);
     setUploadProgress(0);
+    setUploadError(null);
     
     try {
       console.log(`Starting upload of ${photos.length} photos...`);
@@ -108,15 +111,21 @@ const PropertyListingForm = ({
       
       const files = photos.map(photo => photo.file);
       
-      const pathPrefix = user?.id || 'anonymous';
+      // Generate a unique pathPrefix with timestamp
+      const pathPrefix = user?.id ? `${user.id}/${Date.now()}` : `anonymous/${Date.now()}`;
+      
       const urls = await uploadMultipleFiles(
         'property_images',
         files,
         pathPrefix,
-        (progress) => setUploadProgress(progress)
+        (progress) => {
+          setUploadProgress(progress);
+          console.log(`Upload progress: ${progress}%`);
+        }
       );
       
       if (urls.length === 0) {
+        setUploadError("Failed to upload photos. Please try again.");
         toast.error("Failed to upload photos. Please try again.");
         return [];
       }
@@ -131,6 +140,7 @@ const PropertyListingForm = ({
       return urls;
     } catch (error: any) {
       console.error("Error in uploadPhotos:", error);
+      setUploadError(`Upload error: ${error.message || "Unknown error"}`);
       toast.error(`Upload error: ${error.message || "Unknown error"}`);
       return [];
     } finally {
@@ -141,6 +151,7 @@ const PropertyListingForm = ({
   const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
+      setUploadError(null);
       
       if (!user) {
         toast.error("You must be logged in to list a property");
@@ -150,6 +161,7 @@ const PropertyListingForm = ({
       // Check if we have photos to upload
       if (photos.length === 0 && photoUrls.length === 0) {
         toast.error("Please upload at least one photo of your property");
+        setUploadError("Please upload at least one photo of your property");
         setIsSubmitting(false);
         return;
       }
@@ -161,6 +173,7 @@ const PropertyListingForm = ({
         
         // Double-check we have URLs after upload
         if (finalPhotoUrls.length === 0) {
+          setUploadError("Photo upload failed. Please try again.");
           toast.error("Photo upload failed. Please try again.");
           setIsSubmitting(false);
           return;
@@ -199,7 +212,7 @@ const PropertyListingForm = ({
         throw error;
       }
       
-      toast.success("Your property has been listed!");
+      toast.success("Your property has been listed successfully!");
       
       if (insertedProperty?.id) {
         navigate(`/property/${insertedProperty.id}`);
@@ -209,6 +222,7 @@ const PropertyListingForm = ({
     } catch (error: any) {
       console.error("Submit error:", error);
       toast.error(`Error listing property: ${error.message}`);
+      setUploadError(`Error listing property: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -226,6 +240,11 @@ const PropertyListingForm = ({
         break;
       case 2:
         fieldsToValidate = ["bedrooms", "bathrooms", "area", "price", "availableFrom"];
+        // Additionally check if photos are added when on this step
+        if (photos.length === 0 && photoUrls.length === 0) {
+          toast.warning("Please upload at least one photo before continuing");
+          return;
+        }
         break;
     }
     
@@ -281,6 +300,12 @@ const PropertyListingForm = ({
             </div>
           )}
           
+          {uploadError && (
+            <div className="text-red-500 text-sm p-2 bg-red-50 border border-red-200 rounded">
+              {uploadError}
+            </div>
+          )}
+          
           <div className="flex justify-between pt-4 border-t border-gray-100">
             {step > 0 ? (
               <Button 
@@ -321,6 +346,7 @@ const PropertyListingForm = ({
                     
                     if (photos.length === 0 && photoUrls.length === 0) {
                       toast.error("Please add at least one photo of your property");
+                      setUploadError("Please add at least one photo of your property");
                       return;
                     }
                     
@@ -329,6 +355,7 @@ const PropertyListingForm = ({
                   } catch (error: any) {
                     console.error("Error during submission:", error);
                     toast.error(`Submission error: ${error.message}`);
+                    setUploadError(`Submission error: ${error.message}`);
                   }
                 }}
               >

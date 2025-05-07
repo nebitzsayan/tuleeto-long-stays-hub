@@ -29,6 +29,7 @@ export const FeaturesPhotosStep = ({
 }: FeaturesPhotosStepProps) => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewsGenerated, setPreviewsGenerated] = useState<boolean>(false);
 
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
@@ -74,6 +75,7 @@ export const FeaturesPhotosStep = ({
         if (e.target?.result) {
           const preview = e.target.result.toString();
           setPhotos(prevPhotos => [...prevPhotos, { file, preview }]);
+          setPreviewsGenerated(true); // Mark that previews have been successfully generated
           toast.success(`Photo "${file.name}" added successfully`);
           console.log(`Photo preview generated successfully for ${file.name}`);
         }
@@ -267,11 +269,11 @@ export const FeaturesPhotosStep = ({
       </div>
       
       <div className="space-y-4">
-        <FormLabel>Property Photos</FormLabel>
+        <FormLabel>Property Photos (Required)</FormLabel>
         <div className="flex flex-wrap gap-3">
           {photos.map((photo, i) => (
             <div key={i} className="relative group">
-              <div className="w-24 h-24 overflow-hidden rounded-md">
+              <div className="w-24 h-24 overflow-hidden rounded-md border border-gray-300">
                 <img 
                   src={photo.preview} 
                   alt={`Property photo ${i+1}`}
@@ -297,7 +299,7 @@ export const FeaturesPhotosStep = ({
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-24 h-24 flex flex-col items-center justify-center border-dashed"
+                className="w-24 h-24 flex flex-col items-center justify-center border-dashed border-2 border-gray-300"
                 disabled={uploading}
               >
                 <Upload className="h-6 w-6 mb-1" />
@@ -315,7 +317,7 @@ export const FeaturesPhotosStep = ({
         </div>
         <div className="text-xs space-y-1">
           <p className="text-gray-500">Upload up to 5 photos (Max 5MB each)</p>
-          <p className="text-amber-600">Tip: Smaller images load faster. Compress your photos before uploading for best performance.</p>
+          <p className="text-amber-600 font-medium">At least one photo is required to list your property.</p>
         </div>
         
         <Alert className="bg-blue-50 border-blue-200">

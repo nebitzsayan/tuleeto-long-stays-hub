@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -95,8 +96,13 @@
   /* Fix for boxy outlines in footer and amenities */
   footer ul li a,
   footer ul li span,
-  .amenities-list li {
-    @apply border-0 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 transition-colors;
+  .amenities-list li,
+  footer button,
+  .mobile-menu a,
+  .mobile-menu button,
+  .amenities-list button {
+    @apply border-0 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 
+    transition-colors hover:bg-transparent active:bg-transparent;
   }
   
   /* Remove border from grid items on mobile */
@@ -105,8 +111,9 @@
   }
   
   /* Additional fixes for mobile footer links */
-  footer a, footer span {
-    @apply transition-colors duration-200 outline-none ring-0 focus:ring-0 focus:outline-none active:outline-none;
+  footer a, footer span, footer button {
+    @apply transition-colors duration-200 outline-none ring-0 
+    focus:ring-0 focus:outline-none active:outline-none;
   }
   
   /* Ensure icons have consistent size in mobile view */
@@ -135,8 +142,10 @@ button svg {
 /* Fix for Dropdown Menu Avatar Button */
 .DropdownMenuTrigger[data-state="open"],
 button:has(.Avatar):focus,
-button:has(.Avatar):active {
-  @apply outline-none ring-0 shadow-none border-0;
+button:has(.Avatar):active,
+button:focus-visible,
+button:focus {
+  @apply outline-none ring-0 shadow-none;
 }
 
 /* Avatar enhancements */
@@ -146,6 +155,48 @@ button:has(.Avatar):active {
 
 /* Additional fix for mobile menu items to avoid boxy outlines */
 .mobile-menu a,
-.mobile-menu button {
+.mobile-menu button,
+.mobile-menu div {
   @apply border-0 outline-none ring-0 shadow-none transition-colors;
+}
+
+/* Fix for form elements focus states */
+input:focus,
+select:focus,
+textarea:focus {
+  @apply ring-1 ring-tuleeto-orange outline-none;
+}
+
+/* Fix for checkboxes and radio buttons */
+input[type="checkbox"]:focus,
+input[type="radio"]:focus {
+  @apply ring-0 outline-none;
+}
+
+/* Image upload container styles */
+.image-upload-container {
+  @apply border-2 border-dashed border-gray-300 rounded-md p-4
+  flex flex-col items-center justify-center cursor-pointer
+  hover:border-tuleeto-orange transition-colors;
+}
+
+/* Toast improvements */
+.toast {
+  @apply shadow-lg;
+}
+
+/* Avatar button outline fix */
+.Avatar-button:focus,
+.Avatar-button:active,
+.Avatar-button:hover {
+  @apply outline-none ring-0 shadow-none border-0;
+}
+
+/* Fix for Supabase storage interactions */
+.storage-upload-button {
+  @apply relative overflow-hidden inline-flex;
+}
+
+.storage-upload-button input[type="file"] {
+  @apply absolute inset-0 opacity-0 w-full h-full cursor-pointer;
 }
