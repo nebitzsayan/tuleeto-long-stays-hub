@@ -22,6 +22,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { uploadFileToStorage, checkBucketExists } from "@/lib/supabaseStorage";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
@@ -57,8 +59,7 @@ const ProfilePage = () => {
           console.log("Avatars bucket status:", exists ? "Exists" : "Does not exist");
           
           if (!exists) {
-            setUploadError("The 'avatars' bucket does not exist in Supabase. Please create it in the Supabase dashboard.");
-            toast.error("Storage bucket 'avatars' not found. Contact administrator.");
+            setUploadError("Storage system not properly configured. Avatar uploads may not work correctly.");
           }
         } catch (err) {
           console.error("Error checking avatar bucket:", err);
@@ -161,9 +162,9 @@ const ProfilePage = () => {
       // Check if avatars bucket exists
       const bucketExists = await checkBucketExists('avatars');
       if (!bucketExists) {
-        toast.error("The 'avatars' bucket does not exist in Supabase. Please create it in the Supabase dashboard.");
+        toast.error("Storage system not properly configured. Avatar uploads may not work correctly.");
         setUploadingAvatar(false);
-        setUploadError("Storage bucket 'avatars' not found. Contact administrator.");
+        setUploadError("Storage system not properly configured");
         return;
       }
       
@@ -172,7 +173,6 @@ const ProfilePage = () => {
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
       
       console.log("Attempting to upload avatar");
-      // We're assuming the avatars bucket already exists
       const avatarUrl = await uploadFileToStorage('avatars', fileName, file);
       
       if (!avatarUrl) {
@@ -228,6 +228,24 @@ const ProfilePage = () => {
         <div className="container max-w-2xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-6">My Profile</h1>
 
+          {bucketStatus === false && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Storage system not properly configured. Avatar uploads may not work correctly.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {bucketStatus === true && (
+            <Alert className="mb-4 bg-green-50 border-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-green-700">
+                Storage system is ready for avatar uploads.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
@@ -253,7 +271,7 @@ const ProfilePage = () => {
                       ) : (
                         <Upload className="h-4 w-4 mr-2" />
                       )}
-                      Change Avatar
+                      {uploadingAvatar ? 'Uploading...' : 'Change Avatar'}
                     </Button>
                     <input
                       type="file"

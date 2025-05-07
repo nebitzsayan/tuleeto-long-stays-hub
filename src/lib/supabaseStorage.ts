@@ -13,10 +13,11 @@ export const checkBucketExists = async (bucketName: string): Promise<boolean> =>
     
     if (bucketsError) {
       console.error("Error checking buckets:", bucketsError);
-      return false;
+      throw bucketsError;
     }
     
     const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    console.log(`Bucket ${bucketName} exists: ${bucketExists}`);
     return bucketExists || false;
   } catch (error: any) {
     console.error("Error checking bucket:", error);
@@ -26,7 +27,6 @@ export const checkBucketExists = async (bucketName: string): Promise<boolean> =>
 
 /**
  * Simple direct upload of a file to storage with better error handling
- * Uses existing buckets - does not try to create them
  */
 export const uploadFileToStorage = async (
   bucketName: string,
@@ -39,7 +39,7 @@ export const uploadFileToStorage = async (
     
     if (!bucketExists) {
       console.error(`Bucket ${bucketName} does not exist`);
-      throw new Error(`Storage bucket '${bucketName}' does not exist. It needs to be created in the Supabase dashboard.`);
+      throw new Error(`Storage bucket '${bucketName}' does not exist or you don't have access to it.`);
     }
     
     console.log(`Uploading file ${file.name} (${file.size} bytes) to ${bucketName}/${filePath}`);
@@ -96,7 +96,7 @@ export const uploadMultipleFiles = async (
   const bucketExists = await checkBucketExists(bucketName);
   
   if (!bucketExists) {
-    throw new Error(`Storage bucket '${bucketName}' does not exist. It needs to be created in the Supabase dashboard.`);
+    throw new Error(`Storage bucket '${bucketName}' does not exist or you don't have access to it.`);
   }
   
   for (let i = 0; i < files.length; i++) {

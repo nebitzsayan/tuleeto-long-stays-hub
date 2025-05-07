@@ -5,7 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
@@ -42,7 +42,7 @@ export const FeaturesPhotosStep = ({
         console.log("Property images bucket status:", exists ? "Exists" : "Does not exist");
         
         if (!exists) {
-          setUploadError("The 'property_images' bucket does not exist in Supabase. Please create it in the Supabase dashboard.");
+          setUploadError("The storage system is not properly configured. Please try again later or contact support.");
         }
       } catch (err) {
         console.error("Error checking property images bucket:", err);
@@ -66,8 +66,8 @@ export const FeaturesPhotosStep = ({
       
       // Check if property_images bucket exists
       if (bucketStatus === false) {
-        toast.error("The 'property_images' bucket does not exist in Supabase. Please contact administrator.");
-        setUploadError("Storage bucket 'property_images' not found. Contact administrator.");
+        toast.error("The storage system is not properly configured. Please try again later or contact support.");
+        setUploadError("Storage system not properly configured. Contact support.");
         setUploading(false);
         fileInput.value = '';
         return;
@@ -179,8 +179,8 @@ export const FeaturesPhotosStep = ({
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            The 'property_images' bucket does not exist in Supabase storage.
-            Photo uploads will not work until this is created.
+            Storage system not properly configured.
+            Photo uploads may not work correctly.
           </AlertDescription>
         </Alert>
       )}
@@ -353,7 +353,11 @@ export const FeaturesPhotosStep = ({
                 className="w-24 h-24 flex flex-col items-center justify-center border-dashed border-2 border-gray-300"
                 disabled={uploading || bucketStatus === false}
               >
-                <Upload className="h-6 w-6 mb-1" />
+                {uploading ? (
+                  <Loader2 className="h-6 w-6 animate-spin mb-1" />
+                ) : (
+                  <Upload className="h-6 w-6 mb-1" />
+                )}
                 <span className="text-xs">{uploading ? 'Processing...' : 'Add'}</span>
               </Button>
               <input
@@ -379,7 +383,6 @@ export const FeaturesPhotosStep = ({
               <li>Use common formats like JPG, PNG, or WebP</li>
               <li>Try a different browser if problems persist</li>
               <li>Check your internet connection</li>
-              <li>Clear your browser cache and cookies</li>
             </ul>
           </AlertDescription>
         </Alert>

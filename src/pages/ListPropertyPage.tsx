@@ -17,7 +17,7 @@ const ListPropertyPage = () => {
   const { user } = useAuth();
   const [storageReady, setStorageReady] = useState<boolean | null>(null);
   
-  // Check storage system on load - but don't try to create buckets here
+  // Check storage system on load
   useEffect(() => {
     const checkStorage = async () => {
       if (user) {
@@ -28,7 +28,7 @@ const ListPropertyPage = () => {
           
           if (!bucketExists) {
             console.warn("Property images bucket doesn't exist yet");
-            toast.warning("Storage system not fully configured. Contact administrator.");
+            toast.warning("Storage system not properly configured. Please try again or contact support.");
           }
         } catch (err) {
           console.error("Error checking storage:", err);
@@ -46,7 +46,7 @@ const ListPropertyPage = () => {
       const bucketExists = await checkBucketExists('property_images');
       
       if (!bucketExists) {
-        throw new Error("Property images bucket does not exist");
+        throw new Error("Property images bucket does not exist or you don't have access to it");
       }
       
       // If we got here, connection is working
