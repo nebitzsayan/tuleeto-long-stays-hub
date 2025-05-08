@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export async function uploadImage(imageFile: File, userId: string): Promise<string | null> {
@@ -24,6 +25,53 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
   } catch (error: any) {
     console.error("Unexpected error uploading image:", error.message);
     return null;
+  }
+}
+
+export async function uploadMultipleFiles(
+  bucketName: string,
+  files: File[],
+  pathPrefix: string = '',
+  onProgress?: (progress: number) => void
+): Promise<string[]> {
+  const uploadedUrls: string[] = [];
+  
+  try {
+    // Set initial progress
+    onProgress?.(0);
+    
+    // Upload each file sequentially
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const filePath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
+      
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) {
+        console.error(`Error uploading file ${i+1}/${files.length}:`, error);
+        continue;
+      }
+      
+      // Get public URL
+      const publicUrl = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
+      uploadedUrls.push(publicUrl);
+      
+      // Update progress
+      const progress = Math.round(((i + 1) / files.length) * 100);
+      onProgress?.(progress);
+    }
+    
+    return uploadedUrls;
+  } catch (error: any) {
+    console.error("Error in batch upload:", error.message);
+    // Return whatever URLs were successfully uploaded
+    return uploadedUrls;
   }
 }
 
@@ -65,7 +113,7 @@ export async function fetchPropertyReviews(propertyId: string) {
         rating,
         comment,
         created_at,
-        profiles:profiles(full_name, avatar_url),
+        profiles (full_name, avatar_url),
         reactions:review_reactions(*),
         replies:review_replies(*)
       `)

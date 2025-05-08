@@ -76,11 +76,22 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       try {
         setLoading(true);
         const data = await fetchPropertyReviews(propertyId);
-        setReviews(data as Review[]);
+        // Cast to Review[] after ensuring the data shape matches
+        setReviews(data.map((review: any) => ({
+          id: review.id,
+          property_id: review.property_id,
+          user_id: review.user_id,
+          rating: review.rating,
+          comment: review.comment,
+          created_at: review.created_at,
+          profiles: review.profiles || { full_name: null, avatar_url: null },
+          reactions: review.reactions,
+          replies: review.replies
+        })) as Review[]);
         
         // Check if user has already reviewed
         if (user) {
-          const userReview = data.find(review => review.user_id === user.id);
+          const userReview = data.find((review: any) => review.user_id === user.id);
           setHasReviewed(!!userReview);
         }
       } catch (err: any) {
@@ -122,7 +133,18 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       
       // Refresh reviews
       const data = await fetchPropertyReviews(propertyId);
-      setReviews(data as Review[]);
+      // Cast to Review[] after ensuring the data shape matches
+      setReviews(data.map((review: any) => ({
+        id: review.id,
+        property_id: review.property_id,
+        user_id: review.user_id,
+        rating: review.rating,
+        comment: review.comment,
+        created_at: review.created_at,
+        profiles: review.profiles || { full_name: null, avatar_url: null },
+        reactions: review.reactions,
+        replies: review.replies
+      })) as Review[]);
       
       // Reset form
       setUserRating(0);
@@ -149,7 +171,18 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       
       // Refresh reviews
       const data = await fetchPropertyReviews(propertyId);
-      setReviews(data as Review[]);
+      // Cast to Review[] after ensuring the data shape matches
+      setReviews(data.map((review: any) => ({
+        id: review.id,
+        property_id: review.property_id,
+        user_id: review.user_id,
+        rating: review.rating,
+        comment: review.comment,
+        created_at: review.created_at,
+        profiles: review.profiles || { full_name: null, avatar_url: null },
+        reactions: review.reactions,
+        replies: review.replies
+      })) as Review[]);
     } catch (err: any) {
       console.error("Error updating reaction:", err);
       toast.error(`Failed to update reaction: ${err.message}`);
@@ -179,7 +212,18 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       
       // Refresh reviews
       const data = await fetchPropertyReviews(propertyId);
-      setReviews(data as Review[]);
+      // Cast to Review[] after ensuring the data shape matches
+      setReviews(data.map((review: any) => ({
+        id: review.id,
+        property_id: review.property_id,
+        user_id: review.user_id,
+        rating: review.rating,
+        comment: review.comment,
+        created_at: review.created_at,
+        profiles: review.profiles || { full_name: null, avatar_url: null },
+        reactions: review.reactions,
+        replies: review.replies
+      })) as Review[]);
       
       // Reset form
       setReplyContent(prev => ({

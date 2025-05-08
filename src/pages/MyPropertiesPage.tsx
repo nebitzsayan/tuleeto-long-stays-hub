@@ -75,37 +75,48 @@ const MyPropertiesPage = () => {
       try {
         if (!user) return;
         
+        // Use a simpler query first to avoid the parser error
         const { data, error } = await supabase
           .from('properties')
-          .select(`
-            *,
-            average_rating:property_reviews(rating).avg(rating),
-            review_count:property_reviews(id).count()
-          `)
+          .select('*')
           .eq('owner_id', user.id);
         
         if (error) {
           throw error;
         }
         
+        // Then fetch review data separately if needed
         if (data) {
-          // Format the data to match the PropertyType with string id
-          const formattedProperties = data.map(prop => ({
-            id: prop.id,
-            title: prop.title,
-            description: prop.description,
-            location: prop.location,
-            price: prop.price,
-            bedrooms: prop.bedrooms,
-            bathrooms: prop.bathrooms,
-            area: prop.area,
-            image: prop.images[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-            type: prop.type,
-            features: prop.features,
-            contact_phone: prop.contact_phone || "",
-            is_public: prop.is_public !== false, // Default to true if not set
-            average_rating: prop.average_rating,
-            review_count: prop.review_count
+          const formattedProperties = await Promise.all(data.map(async (prop) => {
+            // Optionally fetch review data for each property
+            const { data: reviewData, error: reviewError } = await supabase
+              .from('property_reviews')
+              .select('rating')
+              .eq('property_id', prop.id);
+            
+            let averageRating;
+            if (reviewData && reviewData.length > 0) {
+              const sum = reviewData.reduce((total: number, review: any) => total + review.rating, 0);
+              averageRating = sum / reviewData.length;
+            }
+            
+            return {
+              id: prop.id,
+              title: prop.title,
+              description: prop.description,
+              location: prop.location,
+              price: prop.price,
+              bedrooms: prop.bedrooms,
+              bathrooms: prop.bathrooms,
+              area: prop.area,
+              image: prop.images[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
+              type: prop.type,
+              features: prop.features,
+              contact_phone: prop.contact_phone || "",
+              is_public: prop.is_public !== false, // Default to true if not set
+              average_rating: averageRating,
+              review_count: reviewData?.length || 0
+            };
           }));
           
           setProperties(formattedProperties);
