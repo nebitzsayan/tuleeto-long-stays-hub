@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Star, MessageSquare, ThumbsUp, ThumbsDown, AlertCircle, Send } from "lucide-react";
-import { fetchPropertyReviews, submitReview, updateReviewReaction, submitReviewReply } from "@/lib/supabaseStorage";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
@@ -75,23 +74,62 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
     const getReviews = async () => {
       try {
         setLoading(true);
-        const data = await fetchPropertyReviews(propertyId);
-        // Cast to Review[] after ensuring the data shape matches
-        setReviews(data.map((review: any) => ({
-          id: review.id,
-          property_id: review.property_id,
-          user_id: review.user_id,
-          rating: review.rating,
-          comment: review.comment,
-          created_at: review.created_at,
-          profiles: review.profiles || { full_name: null, avatar_url: null },
-          reactions: review.reactions,
-          replies: review.replies
-        })) as Review[]);
+        
+        // First, fetch the reviews
+        const { data: reviewData, error: reviewError } = await supabase
+          .from('property_reviews')
+          .select(`
+            id,
+            property_id,
+            user_id,
+            rating,
+            comment,
+            created_at
+          `)
+          .eq('property_id', propertyId);
+          
+        if (reviewError) throw reviewError;
+        
+        if (!reviewData) {
+          setReviews([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Then fetch profiles for each review
+        const formattedReviews = await Promise.all(reviewData.map(async (review) => {
+          // Fetch the user profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('id', review.user_id)
+            .single();
+            
+          // Fetch reactions for this review
+          const { data: reactionsData } = await supabase
+            .from('review_reactions')
+            .select('*')
+            .eq('review_id', review.id);
+            
+          // Fetch replies for this review
+          const { data: repliesData } = await supabase
+            .from('review_replies')
+            .select('*')
+            .eq('review_id', review.id);
+          
+          return {
+            ...review,
+            profiles: profileData || { full_name: null, avatar_url: null },
+            reactions: reactionsData || [],
+            replies: repliesData || []
+          };
+        }));
+        
+        setReviews(formattedReviews);
         
         // Check if user has already reviewed
         if (user) {
-          const userReview = data.find((review: any) => review.user_id === user.id);
+          const userReview = formattedReviews.find((review: any) => review.user_id === user.id);
           setHasReviewed(!!userReview);
         }
       } catch (err: any) {
@@ -124,27 +162,56 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
     try {
       setSubmitting(true);
       
-      await submitReview({
-        property_id: propertyId,
-        user_id: user.id,
-        rating: userRating,
-        comment: comment.trim()
-      });
+      const { error } = await supabase
+        .from('property_reviews')
+        .insert({
+          property_id: propertyId,
+          user_id: user.id,
+          rating: userRating,
+          comment: comment.trim()
+        });
+      
+      if (error) throw error;
       
       // Refresh reviews
-      const data = await fetchPropertyReviews(propertyId);
-      // Cast to Review[] after ensuring the data shape matches
-      setReviews(data.map((review: any) => ({
-        id: review.id,
-        property_id: review.property_id,
-        user_id: review.user_id,
-        rating: review.rating,
-        comment: review.comment,
-        created_at: review.created_at,
-        profiles: review.profiles || { full_name: null, avatar_url: null },
-        reactions: review.reactions,
-        replies: review.replies
-      })) as Review[]);
+      const { data: reviewData } = await supabase
+        .from('property_reviews')
+        .select(`
+          id,
+          property_id,
+          user_id,
+          rating,
+          comment,
+          created_at
+        `)
+        .eq('property_id', propertyId);
+      
+      const formattedReviews = await Promise.all(reviewData.map(async (review) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', review.user_id)
+          .single();
+        
+        const { data: reactionsData } = await supabase
+          .from('review_reactions')
+          .select('*')
+          .eq('review_id', review.id);
+        
+        const { data: repliesData } = await supabase
+          .from('review_replies')
+          .select('*')
+          .eq('review_id', review.id);
+        
+        return {
+          ...review,
+          profiles: profileData || { full_name: null, avatar_url: null },
+          reactions: reactionsData || [],
+          replies: repliesData || []
+        };
+      }));
+      
+      setReviews(formattedReviews);
       
       // Reset form
       setUserRating(0);
@@ -167,22 +234,84 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
     }
     
     try {
-      await updateReviewReaction(reviewId, user.id, reactionType);
+      // Check if a reaction already exists
+      const { data: existingReaction } = await supabase
+        .from('review_reactions')
+        .select('*')
+        .eq('review_id', reviewId)
+        .eq('user_id', user.id)
+        .single();
+      
+      // If reaction exists and is the same type, remove it
+      if (existingReaction && existingReaction.reaction_type === reactionType) {
+        const { error } = await supabase
+          .from('review_reactions')
+          .delete()
+          .eq('id', existingReaction.id);
+        
+        if (error) throw error;
+      }
+      // If reaction exists but is different type, update it
+      else if (existingReaction) {
+        const { error } = await supabase
+          .from('review_reactions')
+          .update({ reaction_type: reactionType })
+          .eq('id', existingReaction.id);
+        
+        if (error) throw error;
+      }
+      // If no reaction exists, create a new one
+      else {
+        const { error } = await supabase
+          .from('review_reactions')
+          .insert({
+            review_id: reviewId,
+            user_id: user.id,
+            reaction_type: reactionType
+          });
+        
+        if (error) throw error;
+      }
       
       // Refresh reviews
-      const data = await fetchPropertyReviews(propertyId);
-      // Cast to Review[] after ensuring the data shape matches
-      setReviews(data.map((review: any) => ({
-        id: review.id,
-        property_id: review.property_id,
-        user_id: review.user_id,
-        rating: review.rating,
-        comment: review.comment,
-        created_at: review.created_at,
-        profiles: review.profiles || { full_name: null, avatar_url: null },
-        reactions: review.reactions,
-        replies: review.replies
-      })) as Review[]);
+      const { data: reviewData } = await supabase
+        .from('property_reviews')
+        .select(`
+          id,
+          property_id,
+          user_id,
+          rating,
+          comment,
+          created_at
+        `)
+        .eq('property_id', propertyId);
+      
+      const formattedReviews = await Promise.all(reviewData.map(async (review) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', review.user_id)
+          .single();
+        
+        const { data: reactionsData } = await supabase
+          .from('review_reactions')
+          .select('*')
+          .eq('review_id', review.id);
+        
+        const { data: repliesData } = await supabase
+          .from('review_replies')
+          .select('*')
+          .eq('review_id', review.id);
+        
+        return {
+          ...review,
+          profiles: profileData || { full_name: null, avatar_url: null },
+          reactions: reactionsData || [],
+          replies: repliesData || []
+        };
+      }));
+      
+      setReviews(formattedReviews);
     } catch (err: any) {
       console.error("Error updating reaction:", err);
       toast.error(`Failed to update reaction: ${err.message}`);
@@ -204,26 +333,55 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
     try {
       setSubmitting(true);
       
-      await submitReviewReply({
-        review_id: reviewId,
-        user_id: user.id,
-        content: content.trim()
-      });
+      const { error } = await supabase
+        .from('review_replies')
+        .insert({
+          review_id: reviewId,
+          user_id: user.id,
+          content: content.trim()
+        });
+      
+      if (error) throw error;
       
       // Refresh reviews
-      const data = await fetchPropertyReviews(propertyId);
-      // Cast to Review[] after ensuring the data shape matches
-      setReviews(data.map((review: any) => ({
-        id: review.id,
-        property_id: review.property_id,
-        user_id: review.user_id,
-        rating: review.rating,
-        comment: review.comment,
-        created_at: review.created_at,
-        profiles: review.profiles || { full_name: null, avatar_url: null },
-        reactions: review.reactions,
-        replies: review.replies
-      })) as Review[]);
+      const { data: reviewData } = await supabase
+        .from('property_reviews')
+        .select(`
+          id,
+          property_id,
+          user_id,
+          rating,
+          comment,
+          created_at
+        `)
+        .eq('property_id', propertyId);
+      
+      const formattedReviews = await Promise.all(reviewData.map(async (review) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', review.user_id)
+          .single();
+        
+        const { data: reactionsData } = await supabase
+          .from('review_reactions')
+          .select('*')
+          .eq('review_id', review.id);
+        
+        const { data: repliesData } = await supabase
+          .from('review_replies')
+          .select('*')
+          .eq('review_id', review.id);
+        
+        return {
+          ...review,
+          profiles: profileData || { full_name: null, avatar_url: null },
+          reactions: reactionsData || [],
+          replies: repliesData || []
+        };
+      }));
+      
+      setReviews(formattedReviews);
       
       // Reset form
       setReplyContent(prev => ({

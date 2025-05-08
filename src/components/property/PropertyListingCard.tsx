@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, BedDouble, Bath, Square, IndianRupee, Trash2, Star, Eye, EyeOff } from "lucide-react";
+import { MapPin, BedDouble, Square, IndianRupee, Trash2, Star, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -65,10 +65,11 @@ const PropertyListingCard = ({
   
   return (
     <Card 
-      className={`overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer h-full ${!property.is_public ? 'opacity-70' : ''}`}
+      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer h-full"
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      style={{ opacity: property.is_public === false ? 0.7 : 1 }}
     >
       <div className="relative">
         <AspectRatio ratio={16/9}>
@@ -87,7 +88,7 @@ const PropertyListingCard = ({
                 <Button
                   variant="outline"
                   size="icon"
-                  className={`absolute top-3 left-3 bg-white hover:bg-gray-100 ${isHovered ? 'opacity-100' : 'opacity-50'}`}
+                  className={`absolute top-3 left-3 bg-white hover:bg-gray-100 ${isHovered ? 'opacity-100' : 'opacity-70'}`}
                   onClick={handleToggleVisibility}
                 >
                   {property.is_public ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -124,12 +125,14 @@ const PropertyListingCard = ({
             <span className="text-xs font-medium">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
           </div>
           <div className="flex items-center text-gray-600">
-            <Bath className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs font-medium">{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
-          </div>
-          <div className="flex items-center text-gray-600">
             <Square className="h-3 w-3 md:h-4 md:w-4 mr-1" />
             <span className="text-xs font-medium">{property.area} sq ft</span>
+          </div>
+          <div className="flex items-center text-gray-600">
+            <Star className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+            <span className="text-xs font-medium">
+              {property.average_rating ? property.average_rating.toFixed(1) : "N/A"}
+            </span>
           </div>
         </div>
         

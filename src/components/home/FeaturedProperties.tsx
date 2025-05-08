@@ -18,23 +18,35 @@ const FeaturedProperties = () => {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        // First get properties
+        const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
-          .select('*, reviews:property_reviews(rating)')
+          .select('*')
           .eq('is_public', true)
           .limit(4);
         
-        if (error) throw error;
+        if (propertiesError) throw propertiesError;
         
-        if (data) {
-          console.log("Fetched featured properties:", data);
+        if (propertiesData) {
+          console.log("Fetched featured properties:", propertiesData);
           
-          // Calculate average rating for each property
-          const formattedProperties = data.map(prop => {
-            const reviews = prop.reviews as any[] || [];
-            const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
-            const averageRating = reviews.length ? totalRatings / reviews.length : undefined;
-            const reviewCount = reviews.length;
+          // Fetch ratings for each property separately
+          const formattedProperties = await Promise.all(propertiesData.map(async (prop) => {
+            // Get reviews for this property
+            const { data: reviewsData } = await supabase
+              .from('property_reviews')
+              .select('rating')
+              .eq('property_id', prop.id);
+              
+            // Calculate average rating
+            let averageRating;
+            let reviewCount = 0;
+            
+            if (reviewsData && reviewsData.length > 0) {
+              reviewCount = reviewsData.length;
+              const sum = reviewsData.reduce((total, review) => total + review.rating, 0);
+              averageRating = sum / reviewCount;
+            }
             
             return {
               id: prop.id.toString(),
@@ -48,9 +60,10 @@ const FeaturedProperties = () => {
               type: prop.type || "Apartment",
               contact_phone: prop.contact_phone || "",
               average_rating: averageRating,
-              review_count: reviewCount || 0
+              review_count: reviewCount,
+              is_public: prop.is_public !== false
             };
-          });
+          }));
           
           setProperties(formattedProperties);
         }
@@ -75,7 +88,7 @@ const FeaturedProperties = () => {
         </div>
 
         {loading ? (
-          <div className="loading-container">
+          <div className="flex flex-col items-center justify-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
             <p className="mt-4 text-gray-500">Loading featured properties...</p>
           </div>
