@@ -28,6 +28,34 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
   }
 }
 
+// Added uploadFileToStorage function that was missing
+export async function uploadFileToStorage(
+  bucketName: string, 
+  filePath: string, 
+  file: File
+): Promise<string | null> {
+  try {
+    const { error } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error("Error uploading file:", error);
+      return null;
+    }
+
+    // Construct public URL
+    const publicURL = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
+    return publicURL;
+  } catch (error: any) {
+    console.error("Unexpected error uploading file:", error.message);
+    return null;
+  }
+}
+
 export async function uploadMultipleFiles(
   bucketName: string,
   files: File[],
