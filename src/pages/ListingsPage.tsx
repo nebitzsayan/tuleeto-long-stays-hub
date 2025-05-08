@@ -23,11 +23,7 @@ const ListingsPage = () => {
         
         const { data, error } = await supabase
           .from('properties')
-          .select(`
-            *,
-            average_rating:property_reviews(rating).avg(rating),
-            review_count:property_reviews(id).count()
-          `)
+          .select('*, reviews:property_reviews(rating)')
           .eq('is_public', true);
         
         if (error) throw error;
@@ -36,20 +32,27 @@ const ListingsPage = () => {
           console.log("Fetched properties:", data);
           
           // Format the data to match the PropertyType with string id
-          const properties = data.map(prop => ({
-            id: prop.id.toString(),
-            title: prop.title || "Untitled Property",
-            location: prop.location || "Unknown Location",
-            price: prop.price || 0,
-            bedrooms: prop.bedrooms || 0,
-            bathrooms: prop.bathrooms || 0,
-            area: prop.area || 0,
-            image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-            type: prop.type || "Apartment",
-            contact_phone: prop.contact_phone || "",
-            average_rating: prop.average_rating ? parseFloat(prop.average_rating).toFixed(1) : undefined,
-            review_count: prop.review_count || 0
-          }));
+          const properties = data.map(prop => {
+            const reviews = prop.reviews as any[] || [];
+            const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
+            const averageRating = reviews.length ? totalRatings / reviews.length : undefined;
+            const reviewCount = reviews.length;
+            
+            return {
+              id: prop.id.toString(),
+              title: prop.title || "Untitled Property",
+              location: prop.location || "Unknown Location",
+              price: prop.price || 0,
+              bedrooms: prop.bedrooms || 0,
+              bathrooms: prop.bathrooms || 0,
+              area: prop.area || 0,
+              image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
+              type: prop.type || "Apartment",
+              contact_phone: prop.contact_phone || "",
+              average_rating: averageRating,
+              review_count: reviewCount || 0
+            };
+          });
           
           setAllProperties(properties);
           

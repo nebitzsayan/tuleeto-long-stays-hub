@@ -1,257 +1,200 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Checks if a bucket exists without trying to create it
- */
-export const checkBucketExists = async (bucketName: string): Promise<boolean> => {
+export async function uploadImage(imageFile: File, userId: string): Promise<string | null> {
   try {
-    console.log(`Checking if bucket ${bucketName} exists...`);
-    
-    // Check if bucket exists
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
-    if (bucketsError) {
-      console.error("Error checking buckets:", bucketsError);
-      throw bucketsError;
-    }
-    
-    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-    console.log(`Bucket ${bucketName} exists: ${bucketExists}`);
-    return bucketExists || false;
-  } catch (error: any) {
-    console.error("Error checking bucket:", error);
-    return false;
-  }
-};
+    const timestamp = new Date().getTime();
+    const imageName = `property_image_${timestamp}_${imageFile.name}`;
+    const imagePath = `${userId}/${imageName}`;
 
-/**
- * Simple direct upload of a file to storage with better error handling
- */
-export const uploadFileToStorage = async (
-  bucketName: string,
-  filePath: string,
-  file: File
-): Promise<string | null> => {
-  try {
-    // Check if bucket exists first
-    const bucketExists = await checkBucketExists(bucketName);
-    
-    if (!bucketExists) {
-      console.error(`Bucket ${bucketName} does not exist`);
-      throw new Error(`Storage bucket '${bucketName}' does not exist or you don't have access to it.`);
-    }
-    
-    console.log(`Uploading file ${file.name} (${file.size} bytes) to ${bucketName}/${filePath}`);
-    
-    // Direct upload attempt
     const { data, error } = await supabase.storage
-      .from(bucketName)
-      .upload(filePath, file, {
+      .from('property_images')
+      .upload(imagePath, imageFile, {
         cacheControl: '3600',
-        upsert: true
+        upsert: false
       });
-    
+
     if (error) {
-      console.error(`Upload error:`, error);
-      throw error;
+      console.error("Error uploading image:", error);
+      return null;
     }
-    
-    if (!data) {
-      console.error("No data returned from upload");
-      throw new Error("Upload failed - no data returned");
-    }
-    
-    // Get the public URL
-    const { data: urlData } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(filePath);
-    
-    console.log(`Upload successful! URL: ${urlData.publicUrl}`);
-    return urlData.publicUrl;
+
+    // Construct public URL
+    const publicURL = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/property_images/${imagePath}`;
+    return publicURL;
   } catch (error: any) {
-    console.error("Unexpected upload error:", error);
-    throw error;
+    console.error("Unexpected error uploading image:", error.message);
+    return null;
   }
-};
+}
 
-/**
- * Simplified multiple files upload with better error handling
- */
-export const uploadMultipleFiles = async (
-  bucketName: string,
-  files: File[],
-  pathPrefix: string,
-  onProgress?: (progress: number) => void
-): Promise<string[]> => {
-  if (files.length === 0) {
-    return [];
-  }
-  
-  const urls: string[] = [];
-  const totalFiles = files.length;
-  let successCount = 0;
-  
-  // Check if bucket exists
-  const bucketExists = await checkBucketExists(bucketName);
-  
-  if (!bucketExists) {
-    throw new Error(`Storage bucket '${bucketName}' does not exist or you don't have access to it.`);
-  }
-  
-  for (let i = 0; i < files.length; i++) {
+export async function deleteImage(imagePath: string): Promise<boolean> {
     try {
-      const file = files[i];
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      // Ensure unique filenames with timestamp and index
-      const fileName = `${pathPrefix}/${Date.now()}-${i}.${fileExt}`;
-      
-      const url = await uploadFileToStorage(bucketName, fileName, file);
-      
-      if (url) {
-        urls.push(url);
-        successCount++;
-        
-        // Update progress after each successful upload
-        if (onProgress) {
-          onProgress(Math.round(((i + 1) / totalFiles) * 100));
+        // Extract the path within the bucket from the full URL
+        const pathParts = imagePath.split('/property_images/');
+        if (pathParts.length < 2) {
+            console.error("Invalid image path:", imagePath);
+            return false;
         }
-      }
-    } catch (err) {
-      console.error("Error uploading file:", err);
-      // Continue with other files even if one fails
-      continue;
-    }
-  }
-  
-  console.log(`Uploaded ${successCount}/${totalFiles} files successfully`);
-  return urls;
-};
+        const bucketPath = pathParts[1];
 
-// Reviews API
-export const fetchPropertyReviews = async (propertyId: string) => {
+        const { error } = await supabase.storage
+            .from('property_images')
+            .remove([bucketPath]);
+
+        if (error) {
+            console.error("Error deleting image:", error);
+            return false;
+        }
+
+        return true;
+    } catch (error: any) {
+        console.error("Unexpected error deleting image:", error.message);
+        return false;
+    }
+}
+
+// Review system functions
+export async function fetchPropertyReviews(propertyId: string) {
   try {
     const { data, error } = await supabase
       .from('property_reviews')
       .select(`
-        *,
-        profiles:user_id(full_name, avatar_url)
+        id,
+        property_id,
+        user_id,
+        rating,
+        comment,
+        created_at,
+        profiles:profiles(full_name, avatar_url),
+        reactions:review_reactions(*),
+        replies:review_replies(*)
       `)
       .eq('property_id', propertyId)
       .order('created_at', { ascending: false });
-    
+
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error("Error fetching property reviews:", error);
+    console.error('Error fetching property reviews:', error);
     throw error;
   }
-};
+}
 
-export const submitReview = async (reviewData: {
+export async function submitReview(reviewData: {
   property_id: string;
   user_id: string;
   rating: number;
-  comment: string;
-}) => {
+  comment?: string;
+}) {
   try {
     const { data, error } = await supabase
       .from('property_reviews')
-      .insert([reviewData])
+      .insert(reviewData)
       .select();
-    
+
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error("Error submitting review:", error);
+    console.error('Error submitting review:', error);
     throw error;
   }
-};
+}
 
-export const updateReviewReaction = async (
+export async function updateReviewReaction(
   reviewId: string,
   userId: string,
   reactionType: 'like' | 'dislike'
-) => {
+) {
   try {
-    // Check if reaction already exists
+    // Check if a reaction already exists
     const { data: existingReaction } = await supabase
       .from('review_reactions')
       .select('*')
       .eq('review_id', reviewId)
       .eq('user_id', userId)
       .single();
-    
-    if (existingReaction) {
-      // Update existing reaction
-      if (existingReaction.reaction_type === reactionType) {
-        // Remove reaction if clicking the same button
-        const { error } = await supabase
-          .from('review_reactions')
-          .delete()
-          .eq('id', existingReaction.id);
-        
-        if (error) throw error;
-      } else {
-        // Change reaction type
-        const { error } = await supabase
-          .from('review_reactions')
-          .update({ reaction_type: reactionType })
-          .eq('id', existingReaction.id);
-        
-        if (error) throw error;
-      }
-    } else {
-      // Create new reaction
+
+    // If reaction exists and is the same type, remove it
+    if (existingReaction && existingReaction.reaction_type === reactionType) {
       const { error } = await supabase
         .from('review_reactions')
-        .insert([{
-          review_id: reviewId,
-          user_id: userId,
-          reaction_type: reactionType
-        }]);
-      
+        .delete()
+        .eq('id', existingReaction.id);
+
       if (error) throw error;
+      return { action: 'removed' };
+    } 
+    // If reaction exists but is different type, update it
+    else if (existingReaction) {
+      const { error } = await supabase
+        .from('review_reactions')
+        .update({ reaction_type: reactionType })
+        .eq('id', existingReaction.id);
+
+      if (error) throw error;
+      return { action: 'updated' };
+    } 
+    // If no reaction exists, create a new one
+    else {
+      const { error } = await supabase.from('review_reactions').insert({
+        review_id: reviewId,
+        user_id: userId,
+        reaction_type: reactionType
+      });
+
+      if (error) throw error;
+      return { action: 'added' };
     }
-    
-    return true;
   } catch (error) {
-    console.error("Error updating review reaction:", error);
+    console.error('Error updating review reaction:', error);
     throw error;
   }
-};
+}
 
-export const submitReviewReply = async (replyData: {
+export async function submitReviewReply(replyData: {
   review_id: string;
   user_id: string;
   content: string;
-}) => {
+}) {
   try {
     const { data, error } = await supabase
       .from('review_replies')
-      .insert([replyData])
+      .insert(replyData)
       .select();
-    
+
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error("Error submitting review reply:", error);
+    console.error('Error submitting reply:', error);
     throw error;
   }
-};
+}
 
-export const updatePropertyVisibility = async (propertyId: string, isPublic: boolean) => {
+export async function updatePropertyVisibility(propertyId: string, isPublic: boolean) {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('properties')
       .update({ is_public: isPublic })
-      .eq('id', propertyId)
-      .select();
-    
+      .eq('id', propertyId);
+
     if (error) throw error;
-    return data;
+    return { success: true };
   } catch (error) {
-    console.error("Error updating property visibility:", error);
+    console.error('Error updating property visibility:', error);
     throw error;
   }
-};
+}
+
+export async function checkBucketExists(bucketName: string) {
+  try {
+    const { data, error } = await supabase.storage.getBucket(bucketName);
+    if (error) {
+      console.error(`Error checking bucket ${bucketName}:`, error);
+      return false;
+    }
+    return !!data;
+  } catch (error) {
+    console.error(`Error checking bucket ${bucketName}:`, error);
+    return false;
+  }
+}

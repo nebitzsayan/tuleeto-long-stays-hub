@@ -76,7 +76,7 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       try {
         setLoading(true);
         const data = await fetchPropertyReviews(propertyId);
-        setReviews(data);
+        setReviews(data as Review[]);
         
         // Check if user has already reviewed
         if (user) {
@@ -122,7 +122,7 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       
       // Refresh reviews
       const data = await fetchPropertyReviews(propertyId);
-      setReviews(data);
+      setReviews(data as Review[]);
       
       // Reset form
       setUserRating(0);
@@ -149,7 +149,7 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       
       // Refresh reviews
       const data = await fetchPropertyReviews(propertyId);
-      setReviews(data);
+      setReviews(data as Review[]);
     } catch (err: any) {
       console.error("Error updating reaction:", err);
       toast.error(`Failed to update reaction: ${err.message}`);
@@ -179,7 +179,7 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       
       // Refresh reviews
       const data = await fetchPropertyReviews(propertyId);
-      setReviews(data);
+      setReviews(data as Review[]);
       
       // Reset form
       setReplyContent(prev => ({

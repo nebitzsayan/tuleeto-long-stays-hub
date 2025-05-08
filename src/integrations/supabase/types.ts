@@ -45,6 +45,7 @@ export type Database = {
           features: string[] | null
           id: string
           images: string[]
+          is_public: boolean | null
           location: string
           owner_id: string
           price: number
@@ -62,6 +63,7 @@ export type Database = {
           features?: string[] | null
           id?: string
           images: string[]
+          is_public?: boolean | null
           location: string
           owner_id: string
           price: number
@@ -79,6 +81,7 @@ export type Database = {
           features?: string[] | null
           id?: string
           images?: string[]
+          is_public?: boolean | null
           location?: string
           owner_id?: string
           price?: number
@@ -86,6 +89,105 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      property_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          property_id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          property_id: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          property_id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          reaction_type: string
+          review_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reaction_type: string
+          review_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          review_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_reactions_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "property_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_replies: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          review_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          review_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          review_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_replies_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "property_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

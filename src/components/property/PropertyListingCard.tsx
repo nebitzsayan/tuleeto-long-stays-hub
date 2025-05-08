@@ -100,11 +100,11 @@ const PropertyListingCard = ({
           </TooltipProvider>
         )}
         
-        {property.average_rating && property.average_rating > 0 && (
+        {property.average_rating !== undefined && property.average_rating > 0 && (
           <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-md text-sm flex items-center">
             <Star className="h-3.5 w-3.5 text-yellow-400 mr-1 fill-yellow-400" />
-            <span>{property.average_rating}</span>
-            {property.review_count && (
+            <span>{property.average_rating.toFixed(1)}</span>
+            {property.review_count && property.review_count > 0 && (
               <span className="text-xs ml-1">({property.review_count})</span>
             )}
           </div>
@@ -115,21 +115,21 @@ const PropertyListingCard = ({
         <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 line-clamp-1">{property.title}</h3>
         <div className="flex items-center text-gray-500 mb-2">
           <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-          <span className="text-xs md:text-sm line-clamp-1">{property.location}</span>
+          <span className="text-xs md:text-sm line-clamp-1 font-medium">{property.location}</span>
         </div>
         
         <div className="grid grid-cols-3 gap-1 mb-2">
           <div className="flex items-center text-gray-600">
             <BedDouble className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
+            <span className="text-xs font-medium">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
           </div>
           <div className="flex items-center text-gray-600">
             <Bath className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs">{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
+            <span className="text-xs font-medium">{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
           </div>
           <div className="flex items-center text-gray-600">
             <Square className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs">{property.area} sq ft</span>
+            <span className="text-xs font-medium">{property.area} sq ft</span>
           </div>
         </div>
         
