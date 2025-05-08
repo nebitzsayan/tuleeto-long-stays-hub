@@ -23,7 +23,12 @@ const ListingsPage = () => {
         
         const { data, error } = await supabase
           .from('properties')
-          .select('*');
+          .select(`
+            *,
+            average_rating:property_reviews(rating).avg(rating),
+            review_count:property_reviews(id).count()
+          `)
+          .eq('is_public', true);
         
         if (error) throw error;
         
@@ -41,7 +46,9 @@ const ListingsPage = () => {
             area: prop.area || 0,
             image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
             type: prop.type || "Apartment",
-            contact_phone: prop.contact_phone || ""
+            contact_phone: prop.contact_phone || "",
+            average_rating: prop.average_rating ? parseFloat(prop.average_rating).toFixed(1) : undefined,
+            review_count: prop.review_count || 0
           }));
           
           setAllProperties(properties);
@@ -108,8 +115,9 @@ const ListingsPage = () => {
           <PropertyFilter />
           
           {loading ? (
-            <div className="flex justify-center py-12">
+            <div className="loading-container">
               <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+              <p className="mt-4 text-gray-500">Loading properties...</p>
             </div>
           ) : filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">

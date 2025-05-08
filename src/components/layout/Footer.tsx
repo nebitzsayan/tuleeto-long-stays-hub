@@ -5,7 +5,7 @@ import Logo from "@/components/ui/logo";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-gray-900 text-white mt-auto">
       <div className="container max-w-7xl mx-auto py-12 px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
@@ -27,7 +27,7 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links - Modified to have fewer links */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
@@ -46,15 +46,10 @@ const Footer = () => {
                   About Us
                 </Link>
               </li>
-              <li>
-                <Link to="/contact" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
-                  Contact Us
-                </Link>
-              </li>
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Legal - Modified to combine some items */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
@@ -68,22 +63,12 @@ const Footer = () => {
                   Privacy Policy
                 </Link>
               </li>
-              <li>
-                <Link to="/cookies" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
-                  Cookie Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/accessibility" className="text-gray-400 hover:text-tuleeto-orange transition-colors duration-200 inline-block">
-                  Accessibility
-                </Link>
-              </li>
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Contact - Renamed to Help & Support */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
+            <h3 className="text-lg font-semibold mb-4">Help & Support</h3>
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
                 <Mail className="h-5 w-5 mr-2 flex-shrink-0" />

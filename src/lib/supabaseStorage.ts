@@ -127,3 +127,131 @@ export const uploadMultipleFiles = async (
   console.log(`Uploaded ${successCount}/${totalFiles} files successfully`);
   return urls;
 };
+
+// Reviews API
+export const fetchPropertyReviews = async (propertyId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('property_reviews')
+      .select(`
+        *,
+        profiles:user_id(full_name, avatar_url)
+      `)
+      .eq('property_id', propertyId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching property reviews:", error);
+    throw error;
+  }
+};
+
+export const submitReview = async (reviewData: {
+  property_id: string;
+  user_id: string;
+  rating: number;
+  comment: string;
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('property_reviews')
+      .insert([reviewData])
+      .select();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    throw error;
+  }
+};
+
+export const updateReviewReaction = async (
+  reviewId: string,
+  userId: string,
+  reactionType: 'like' | 'dislike'
+) => {
+  try {
+    // Check if reaction already exists
+    const { data: existingReaction } = await supabase
+      .from('review_reactions')
+      .select('*')
+      .eq('review_id', reviewId)
+      .eq('user_id', userId)
+      .single();
+    
+    if (existingReaction) {
+      // Update existing reaction
+      if (existingReaction.reaction_type === reactionType) {
+        // Remove reaction if clicking the same button
+        const { error } = await supabase
+          .from('review_reactions')
+          .delete()
+          .eq('id', existingReaction.id);
+        
+        if (error) throw error;
+      } else {
+        // Change reaction type
+        const { error } = await supabase
+          .from('review_reactions')
+          .update({ reaction_type: reactionType })
+          .eq('id', existingReaction.id);
+        
+        if (error) throw error;
+      }
+    } else {
+      // Create new reaction
+      const { error } = await supabase
+        .from('review_reactions')
+        .insert([{
+          review_id: reviewId,
+          user_id: userId,
+          reaction_type: reactionType
+        }]);
+      
+      if (error) throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating review reaction:", error);
+    throw error;
+  }
+};
+
+export const submitReviewReply = async (replyData: {
+  review_id: string;
+  user_id: string;
+  content: string;
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('review_replies')
+      .insert([replyData])
+      .select();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error submitting review reply:", error);
+    throw error;
+  }
+};
+
+export const updatePropertyVisibility = async (propertyId: string, isPublic: boolean) => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .update({ is_public: isPublic })
+      .eq('id', propertyId)
+      .select();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error updating property visibility:", error);
+    throw error;
+  }
+};

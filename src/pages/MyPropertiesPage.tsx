@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, Pencil, Edit } from "lucide-react";
+import { Plus, Loader2, Pencil, Edit, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,10 +33,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Switch } from "@/components/ui/switch";
+import { updatePropertyVisibility } from "@/lib/supabaseStorage";
 
 interface ExtendedPropertyType extends PropertyType {
   description?: string;
   features?: string[];
+  is_public?: boolean;
 }
 
 const MyPropertiesPage = () => {
@@ -56,6 +60,7 @@ const MyPropertiesPage = () => {
   const [editBedrooms, setEditBedrooms] = useState("");
   const [editBathrooms, setEditBathrooms] = useState("");
   const [editFeatures, setEditFeatures] = useState<string[]>([]);
+  const [editIsPublic, setEditIsPublic] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const availableFeatures = [
@@ -72,7 +77,11 @@ const MyPropertiesPage = () => {
         
         const { data, error } = await supabase
           .from('properties')
-          .select('*')
+          .select(`
+            *,
+            average_rating:property_reviews(rating).avg(rating),
+            review_count:property_reviews(id).count()
+          `)
           .eq('owner_id', user.id);
         
         if (error) {
@@ -93,7 +102,10 @@ const MyPropertiesPage = () => {
             image: prop.images[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
             type: prop.type,
             features: prop.features,
-            contact_phone: prop.contact_phone || ""
+            contact_phone: prop.contact_phone || "",
+            is_public: prop.is_public !== false, // Default to true if not set
+            average_rating: prop.average_rating,
+            review_count: prop.review_count
           }));
           
           setProperties(formattedProperties);
@@ -122,8 +134,10 @@ const MyPropertiesPage = () => {
 
       // Remove the property from the local state
       setProperties(properties.filter(property => property.id !== id));
+      toast.success("Property deleted successfully");
     } catch (error: any) {
       console.error(`Error deleting property: ${error.message}`);
+      toast.error(`Error deleting property: ${error.message}`);
     } finally {
       setIsDeleting(false);
       setDeletingPropertyId(null);
@@ -142,6 +156,7 @@ const MyPropertiesPage = () => {
     setEditBedrooms(property.bedrooms.toString());
     setEditBathrooms(property.bathrooms.toString());
     setEditFeatures(property.features || []);
+    setEditIsPublic(property.is_public !== false); // Default to true if not set
     setIsEditing(true);
   };
 
@@ -158,7 +173,8 @@ const MyPropertiesPage = () => {
           price: parseInt(editPrice),
           bedrooms: parseInt(editBedrooms),
           bathrooms: parseFloat(editBathrooms),
-          features: editFeatures
+          features: editFeatures,
+          is_public: editIsPublic
         })
         .eq('id', editingProperty.id);
 
@@ -176,16 +192,40 @@ const MyPropertiesPage = () => {
               price: parseInt(editPrice),
               bedrooms: parseInt(editBedrooms),
               bathrooms: parseFloat(editBathrooms),
-              features: editFeatures
+              features: editFeatures,
+              is_public: editIsPublic
             }
           : prop
       ));
 
       setIsEditing(false);
+      toast.success("Property updated successfully");
     } catch (error: any) {
       console.error(`Error updating property: ${error.message}`);
+      toast.error(`Error updating property: ${error.message}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleToggleVisibility = async (propertyId: string, isPublic: boolean) => {
+    try {
+      await updatePropertyVisibility(propertyId, isPublic);
+      
+      // Update the property in the local state
+      setProperties(properties.map(prop => 
+        prop.id === propertyId 
+          ? {
+              ...prop,
+              is_public: isPublic
+            }
+          : prop
+      ));
+      
+      toast.success(`Property is now ${isPublic ? 'public' : 'private'}`);
+    } catch (error: any) {
+      console.error(`Error toggling visibility: ${error.message}`);
+      toast.error(`Error updating visibility: ${error.message}`);
     }
   };
 
@@ -217,8 +257,9 @@ const MyPropertiesPage = () => {
           </div>
           
           {isLoading ? (
-            <div className="flex justify-center py-12">
+            <div className="loading-container">
               <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+              <p className="mt-2 text-gray-500">Loading your properties...</p>
             </div>
           ) : properties.length > 0 ? (
             <div className="grid grid-cols-2 gap-2 md:gap-6 mb-8">
@@ -228,11 +269,13 @@ const MyPropertiesPage = () => {
                     property={property} 
                     showDeleteButton={true}
                     onDelete={showDeleteConfirmation}
+                    showOwnerControls={true}
+                    onToggleVisibility={handleToggleVisibility}
                   />
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="absolute top-2 left-2 bg-white hover:bg-gray-100 p-1 md:p-2 z-10"
+                    className="absolute top-2 left-14 bg-white hover:bg-gray-100 p-1 md:p-2 z-10"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditProperty(property);
@@ -340,6 +383,27 @@ const MyPropertiesPage = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label className="flex items-center justify-between">
+                <span>Listing Visibility</span>
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="is-public"
+                    checked={editIsPublic} 
+                    onCheckedChange={setEditIsPublic}
+                  />
+                  <Label htmlFor="is-public" className="text-sm font-normal">
+                    {editIsPublic ? 'Public' : 'Private'}
+                  </Label>
+                </div>
+              </Label>
+              <p className="text-xs text-gray-500">
+                {editIsPublic 
+                  ? 'Your property will be visible to everyone' 
+                  : 'Your property will be hidden from listings and search results'}
+              </p>
             </div>
             
             <div className="grid gap-2">

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
+import PropertyReviews from "@/components/property/PropertyReviews";
 
 interface PropertyDetails {
   id: string;
@@ -31,6 +33,7 @@ interface PropertyDetails {
   owner_email?: string;
   owner_name?: string;
   contact_phone?: string;
+  is_public?: boolean;
 }
 
 const PropertyDetailPage = () => {
@@ -40,6 +43,7 @@ const PropertyDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("description");
   
   useEffect(() => {
     const fetchProperty = async () => {
@@ -63,6 +67,13 @@ const PropertyDetailPage = () => {
 
         if (!propertyData) {
           setError("Property not found");
+          setLoading(false);
+          return;
+        }
+        
+        // Check if property is public or belongs to the current user
+        if (propertyData.is_public === false && propertyData.owner_id !== user?.id) {
+          setError("This property is currently not available");
           setLoading(false);
           return;
         }
@@ -100,7 +111,7 @@ const PropertyDetailPage = () => {
     };
 
     fetchProperty();
-  }, [id]);
+  }, [id, user]);
 
   const handleContact = () => {
     if (!user) {
@@ -122,7 +133,10 @@ const PropertyDetailPage = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+          <div className="loading-container">
+            <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+            <p className="mt-4 text-gray-500">Loading property details...</p>
+          </div>
         </div>
         <Footer />
       </div>
@@ -203,7 +217,7 @@ const PropertyDetailPage = () => {
                     </div>
                   </div>
                   
-                  <Tabs defaultValue="description">
+                  <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="grid grid-cols-3 mb-6">
                       <TabsTrigger value="description">Description</TabsTrigger>
                       <TabsTrigger value="features">Features</TabsTrigger>
@@ -236,6 +250,9 @@ const PropertyDetailPage = () => {
                   </Tabs>
                 </CardContent>
               </Card>
+              
+              {/* Reviews Section */}
+              <PropertyReviews propertyId={property.id} ownerId={property.owner_id} className="mt-8" />
             </div>
             
             <div>

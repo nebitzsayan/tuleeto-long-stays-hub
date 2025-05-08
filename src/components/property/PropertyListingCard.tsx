@@ -2,10 +2,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, BedDouble, Bath, Square, IndianRupee, Trash2 } from "lucide-react";
+import { MapPin, BedDouble, Bath, Square, IndianRupee, Trash2, Star, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState } from "react";
 
 export interface PropertyType {
   id: string;
@@ -18,21 +20,30 @@ export interface PropertyType {
   image: string;
   type: string;
   contact_phone: string;
+  average_rating?: number;
+  review_count?: number;
+  is_public?: boolean;
+  owner_id?: string;
 }
 
 interface PropertyListingCardProps {
   property: PropertyType;
   onDelete?: (id: string) => void;
   showDeleteButton?: boolean;
+  onToggleVisibility?: (id: string, isPublic: boolean) => void;
+  showOwnerControls?: boolean;
 }
 
 const PropertyListingCard = ({ 
   property, 
   onDelete, 
-  showDeleteButton = false 
+  showDeleteButton = false,
+  onToggleVisibility,
+  showOwnerControls = false
 }: PropertyListingCardProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
   
   const handleCardClick = () => {
     navigate(`/property/${property.id}`);
@@ -45,10 +56,19 @@ const PropertyListingCard = ({
     }
   };
   
+  const handleToggleVisibility = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation
+    if (onToggleVisibility) {
+      onToggleVisibility(property.id, !property.is_public);
+    }
+  };
+  
   return (
     <Card 
-      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer h-full"
+      className={`overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer h-full ${!property.is_public ? 'opacity-70' : ''}`}
       onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative">
         <AspectRatio ratio={16/9}>
@@ -59,6 +79,36 @@ const PropertyListingCard = ({
           />
         </AspectRatio>
         <Badge className="absolute top-3 right-3 bg-tuleeto-orange">{property.type}</Badge>
+        
+        {showOwnerControls && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`absolute top-3 left-3 bg-white hover:bg-gray-100 ${isHovered ? 'opacity-100' : 'opacity-50'}`}
+                  onClick={handleToggleVisibility}
+                >
+                  {property.is_public ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{property.is_public ? "Make private" : "Make public"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
+        {property.average_rating && property.average_rating > 0 && (
+          <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-md text-sm flex items-center">
+            <Star className="h-3.5 w-3.5 text-yellow-400 mr-1 fill-yellow-400" />
+            <span>{property.average_rating}</span>
+            {property.review_count && (
+              <span className="text-xs ml-1">({property.review_count})</span>
+            )}
+          </div>
+        )}
       </div>
       
       <CardContent className="p-3 md:p-4">
