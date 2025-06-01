@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -120,7 +121,10 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
           return {
             ...review,
             profiles: profileData || { full_name: null, avatar_url: null },
-            reactions: reactionsData || [],
+            reactions: reactionsData?.map(r => ({
+              ...r,
+              reaction_type: r.reaction_type as 'like' | 'dislike'
+            })) || [],
             replies: repliesData || []
           };
         }));
@@ -206,7 +210,10 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
         return {
           ...review,
           profiles: profileData || { full_name: null, avatar_url: null },
-          reactions: reactionsData || [],
+          reactions: reactionsData?.map(r => ({
+            ...r,
+            reaction_type: r.reaction_type as 'like' | 'dislike'
+          })) || [],
           replies: repliesData || []
         };
       }));
@@ -306,7 +313,10 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
         return {
           ...review,
           profiles: profileData || { full_name: null, avatar_url: null },
-          reactions: reactionsData || [],
+          reactions: reactionsData?.map(r => ({
+            ...r,
+            reaction_type: r.reaction_type as 'like' | 'dislike'
+          })) || [],
           replies: repliesData || []
         };
       }));
@@ -376,7 +386,10 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
         return {
           ...review,
           profiles: profileData || { full_name: null, avatar_url: null },
-          reactions: reactionsData || [],
+          reactions: reactionsData?.map(r => ({
+            ...r,
+            reaction_type: r.reaction_type as 'like' | 'dislike'
+          })) || [],
           replies: repliesData || []
         };
       }));
