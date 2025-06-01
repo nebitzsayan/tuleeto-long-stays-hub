@@ -1,29 +1,44 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tuleeto - A Rental Hub</title>
-    <meta name="description" content="Find your perfect long-term home in India" />
-    <meta name="author" content="Tuleeto" />
-
-    <meta property="og:title" content="Tuleeto - Long Stays Hub" />
-    <meta property="og:description" content="Find your perfect long-term home in India" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="public/lovable-uploads/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@tuleeto" />
-    <meta name="twitter:image" content="public/lovable-uploads/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png" />
-    
-    <link rel="icon" href="public/lovable-uploads/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png" type="image/png">
+    <title>Tuleeto - Find Your Perfect Rental Property</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      @font-face {
+        font-family: 'Product Sans';
+        font-style: normal;
+        font-weight: 400;
+        src: url('https://fonts.gstatic.com/s/productsans/v5/HYvgU2fE2nRJvZ5JFAumwegdm0LZdjqr5-oayXSOefg.woff2') format('woff2');
+      }
+    </style>
+    <script>
+      // Auto dark mode detection
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+      
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!('theme' in localStorage)) {
+          if (e.matches) {
+            document.documentElement.classList.add('dark')
+          } else {
+            document.documentElement.classList.remove('dark')
+          }
+        }
+      });
+    </script>
   </head>
-
   <body>
     <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
+    <script src="https://cdn.gpteng.co/gptengineer.js"></script>
   </body>
 </html>

@@ -45,19 +45,19 @@ const PropertyListingCard = ({
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   
-  const handleCardClick = () => {
+  const handleImageClick = () => {
     navigate(`/property/${property.id}`);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete
+    e.stopPropagation();
     if (onDelete) {
       onDelete(property.id);
     }
   };
   
   const handleToggleVisibility = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation
+    e.stopPropagation();
     if (onToggleVisibility) {
       onToggleVisibility(property.id, !property.is_public);
     }
@@ -65,13 +65,12 @@ const PropertyListingCard = ({
   
   return (
     <Card 
-      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer h-full"
-      onClick={handleCardClick}
+      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ opacity: property.is_public === false ? 0.7 : 1 }}
     >
-      <div className="relative">
+      <div className="relative cursor-pointer" onClick={handleImageClick}>
         <AspectRatio ratio={16/9}>
           <img 
             src={property.image} 
