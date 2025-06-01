@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -63,6 +64,7 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [userProfiles, setUserProfiles] = useState<Record<string, ReviewProfile>>({});
+  const [reactionLoading, setReactionLoading] = useState<Record<string, boolean>>({});
   
   // Calculate average rating
   const averageRating = reviews.length 
@@ -235,38 +237,18 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
       toast.error("Please log in to react to reviews");
       return;
     }
+
+    // Find the review to check if user is trying to like their own review
+    const review = reviews.find(r => r.id === reviewId);
+    if (review && review.user_id === user.id) {
+      toast.error("You cannot like your own review");
+      return;
+    }
+    
+    // Set loading state for this specific reaction
+    setReactionLoading(prev => ({ ...prev, [reviewId]: true }));
     
     try {
-      // Optimistic update
-      setReviews(prevReviews => 
-        prevReviews.map(review => {
-          if (review.id !== reviewId) return review;
-          
-          const existingReaction = review.reactions?.find(r => r.user_id === user.id);
-          let newReactions = review.reactions || [];
-          
-          if (existingReaction && existingReaction.reaction_type === reactionType) {
-            // Remove reaction
-            newReactions = newReactions.filter(r => r.user_id !== user.id);
-          } else if (existingReaction) {
-            // Update reaction
-            newReactions = newReactions.map(r => 
-              r.user_id === user.id ? { ...r, reaction_type: reactionType } : r
-            );
-          } else {
-            // Add new reaction
-            newReactions = [...newReactions, {
-              id: `temp-${Date.now()}`,
-              user_id: user.id,
-              review_id: reviewId,
-              reaction_type: reactionType
-            }];
-          }
-          
-          return { ...review, reactions: newReactions };
-        })
-      );
-
       // Check if a reaction already exists
       const { data: existingReaction } = await supabase
         .from('review_reactions')
@@ -293,8 +275,8 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
     } catch (err: any) {
       console.error("Error updating reaction:", err);
       toast.error(`Failed to update reaction: ${err.message}`);
-      // Revert optimistic update on error
-      await fetchReviews();
+    } finally {
+      setReactionLoading(prev => ({ ...prev, [reviewId]: false }));
     }
   };
   
@@ -348,9 +330,9 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`h-6 w-6 ${
+            className={`h-6 w-6 transition-colors duration-200 ${
               star <= (hoverRating || value) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-            } ${interactive ? "cursor-pointer" : ""}`}
+            } ${interactive ? "cursor-pointer hover:scale-110 transition-transform" : ""}`}
             onClick={() => interactive && onChange(star)}
             onMouseEnter={() => interactive && onHover(star)}
             onMouseLeave={() => interactive && onLeave()}
@@ -465,22 +447,36 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-gray-500 hover:text-tuleeto-orange flex items-center space-x-1"
+                        className={`text-gray-500 hover:text-tuleeto-orange flex items-center space-x-1 transition-all duration-200 ${
+                          reactionLoading[review.id] ? 'opacity-50' : ''
+                        }`}
                         onClick={() => handleReaction(review.id, 'like')}
+                        disabled={reactionLoading[review.id] || review.user_id === user?.id}
                       >
-                        <ThumbsUp className="h-4 w-4" />
+                        <ThumbsUp className={`h-4 w-4 transition-transform duration-200 ${
+                          review.reactions?.some(r => r.user_id === user?.id && r.reaction_type === 'like') 
+                            ? 'text-tuleeto-orange scale-110' 
+                            : ''
+                        }`} />
                         <span>{review.reactions?.filter(r => r.reaction_type === 'like').length || 0}</span>
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-gray-500 hover:text-tuleeto-orange flex items-center space-x-1"
+                        className={`text-gray-500 hover:text-tuleeto-orange flex items-center space-x-1 transition-all duration-200 ${
+                          reactionLoading[review.id] ? 'opacity-50' : ''
+                        }`}
                         onClick={() => handleReaction(review.id, 'dislike')}
+                        disabled={reactionLoading[review.id] || review.user_id === user?.id}
                       >
-                        <ThumbsDown className="h-4 w-4" />
+                        <ThumbsDown className={`h-4 w-4 transition-transform duration-200 ${
+                          review.reactions?.some(r => r.user_id === user?.id && r.reaction_type === 'dislike') 
+                            ? 'text-tuleeto-orange scale-110' 
+                            : ''
+                        }`} />
                         <span>{review.reactions?.filter(r => r.reaction_type === 'dislike').length || 0}</span>
                       </Button>
-                      {user && (user.id === ownerId || user.id === review.user_id) && (
+                      {user && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -499,17 +495,19 @@ const PropertyReviews = ({ propertyId, ownerId, className = "" }: PropertyReview
                         {review.replies.map(reply => (
                           <div key={reply.id} className="mb-3 last:mb-0">
                             <div className="flex items-start space-x-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={reply.user_profile?.avatar_url || undefined} />
-                                <AvatarFallback>
-                                  {reply.user_profile?.full_name?.[0] || (reply.user_id === ownerId ? 'O' : 'U')}
-                                </AvatarFallback>
-                              </Avatar>
+                              <Link to={`/owner/${reply.user_id}`}>
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={reply.user_profile?.avatar_url || undefined} />
+                                  <AvatarFallback>
+                                    {reply.user_profile?.full_name?.[0] || (reply.user_id === ownerId ? 'O' : 'U')}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </Link>
                               <div>
                                 <div className="flex items-center">
-                                  <span className="font-medium">
+                                  <Link to={`/owner/${reply.user_id}`} className="font-medium hover:text-tuleeto-orange">
                                     {reply.user_profile?.full_name || (reply.user_id === ownerId ? 'Property Owner' : 'User')}
-                                  </span>
+                                  </Link>
                                   <span className="ml-2 text-xs text-gray-500">
                                     {format(new Date(reply.created_at), 'MMM d, yyyy')}
                                   </span>

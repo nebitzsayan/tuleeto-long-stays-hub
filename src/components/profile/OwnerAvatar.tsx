@@ -23,6 +23,7 @@ const OwnerAvatar = ({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState(ownerName);
   
   // Size mapping
   const sizeClass = {
@@ -50,14 +51,18 @@ const OwnerAvatar = ({
           console.error("Error fetching owner profile:", error);
           setError(error.message);
         } else if (data) {
-          // If we have a profile with avatar_url
+          // Set avatar URL if available
           if (data.avatar_url) {
-            setAvatarUrl(data.avatar_url);
-            
-            // If ownerName wasn't provided but we have it in profile, use that
-            if (ownerName === "Property Owner" && data.full_name) {
-              ownerName = data.full_name;
-            }
+            // Handle both full URLs and relative paths
+            const fullAvatarUrl = data.avatar_url.startsWith('http') 
+              ? data.avatar_url 
+              : `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/avatars/${data.avatar_url}`;
+            setAvatarUrl(fullAvatarUrl);
+          }
+          
+          // Set display name if available and not already provided
+          if (data.full_name && (ownerName === "Property Owner" || !ownerName)) {
+            setDisplayName(data.full_name);
           }
         }
       } catch (error: any) {
@@ -72,11 +77,18 @@ const OwnerAvatar = ({
   }, [ownerId, ownerName]);
   
   const AvatarComponent = () => (
-    <Avatar className={`${sizeClass[size]} ${className}`}>
-      <AvatarImage src={avatarUrl || ""} alt={ownerName} />
+    <Avatar className={`${sizeClass[size]} ${className} transition-transform hover:scale-105`}>
+      <AvatarImage 
+        src={avatarUrl || ""} 
+        alt={displayName}
+        onError={() => {
+          console.log("Avatar image failed to load:", avatarUrl);
+          setAvatarUrl(null);
+        }}
+      />
       <AvatarFallback className="bg-tuleeto-orange text-white">
-        {!loading ? (
-          ownerName
+        {!loading && displayName ? (
+          displayName
             .split(' ')
             .map(name => name[0])
             .join('')

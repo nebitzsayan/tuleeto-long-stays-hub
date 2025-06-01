@@ -1,10 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export async function uploadImage(imageFile: File, userId: string): Promise<string | null> {
   try {
     const timestamp = new Date().getTime();
-    const imageName = `property_image_${timestamp}_${imageFile.name}`;
+    const fileExtension = imageFile.name.split('.').pop() || 'jpg';
+    const imageName = `property_image_${timestamp}.${fileExtension}`;
     const imagePath = `${userId}/${imageName}`;
 
     const { data, error } = await supabase.storage
@@ -28,7 +28,44 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
   }
 }
 
-// Added uploadFileToStorage function that was missing
+export async function uploadAvatar(avatarFile: File, userId: string): Promise<string | null> {
+  try {
+    const fileExtension = avatarFile.name.split('.').pop() || 'jpg';
+    const fileName = `avatar_${userId}_${Date.now()}.${fileExtension}`;
+    
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, avatarFile, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (error) {
+      console.error("Error uploading avatar:", error);
+      return null;
+    }
+
+    // Construct public URL
+    const publicURL = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/avatars/${fileName}`;
+    
+    // Update user profile with new avatar URL
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicURL })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error("Error updating profile:", updateError);
+      return null;
+    }
+
+    return publicURL;
+  } catch (error: any) {
+    console.error("Unexpected error uploading avatar:", error.message);
+    return null;
+  }
+}
+
 export async function uploadFileToStorage(
   bucketName: string, 
   filePath: string, 
@@ -71,8 +108,22 @@ export async function uploadMultipleFiles(
     // Upload each file sequentially
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const fileName = `${Date.now()}_${i}.${fileExtension}`;
       const filePath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        console.error(`File ${file.name} is too large (max 10MB)`);
+        continue;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        console.error(`File ${file.name} has unsupported type: ${file.type}`);
+        continue;
+      }
       
       const { data, error } = await supabase.storage
         .from(bucketName)

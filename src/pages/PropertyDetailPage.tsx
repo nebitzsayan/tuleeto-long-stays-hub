@@ -54,7 +54,6 @@ const PropertyDetailPage = () => {
           return;
         }
 
-        // First, fetch the property data
         const { data: propertyData, error: propertyError } = await supabase
           .from("properties")
           .select("*")
@@ -71,7 +70,6 @@ const PropertyDetailPage = () => {
           return;
         }
         
-        // Check if property is public or belongs to the current user
         if (propertyData.is_public === false && propertyData.owner_id !== user?.id) {
           setError("This property is currently not available");
           setLoading(false);
@@ -80,7 +78,6 @@ const PropertyDetailPage = () => {
 
         console.log("Fetched property data:", propertyData);
 
-        // Fetch the owner's profile to get contact details
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("email, full_name")
@@ -91,7 +88,6 @@ const PropertyDetailPage = () => {
           console.error("Error fetching profile:", profileError);
         }
         
-        // Get owner phone number directly from property data
         const ownerPhone = propertyData.contact_phone || "";
         
         console.log("Phone number from database:", ownerPhone);
@@ -119,7 +115,6 @@ const PropertyDetailPage = () => {
       return;
     }
     
-    // If on mobile and we have a phone number, open the phone dialer
     if (isMobile && property?.contact_phone) {
       window.location.href = `tel:${property.contact_phone.replace(/\s+/g, '')}`;
       return;
@@ -250,9 +245,6 @@ const PropertyDetailPage = () => {
                   </Tabs>
                 </CardContent>
               </Card>
-              
-              {/* Reviews Section */}
-              <PropertyReviews propertyId={property.id} ownerId={property.owner_id} className="mt-8" />
             </div>
             
             <div>
@@ -337,6 +329,9 @@ const PropertyDetailPage = () => {
               </Card>
             </div>
           </div>
+          
+          {/* Reviews Section - Moved below contact section */}
+          <PropertyReviews propertyId={property.id} ownerId={property.owner_id} className="mt-8" />
         </div>
       </main>
       
