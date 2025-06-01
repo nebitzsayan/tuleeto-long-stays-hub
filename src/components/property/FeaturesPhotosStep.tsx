@@ -5,13 +5,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { checkBucketExists } from "@/lib/supabaseStorage";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -29,29 +26,6 @@ export const FeaturesPhotosStep = ({
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [previewsGenerated, setPreviewsGenerated] = useState<boolean>(false);
-  const [bucketStatus, setBucketStatus] = useState<boolean | null>(null);
-
-  // Check if property_images bucket exists on component mount
-  useEffect(() => {
-    const checkPropertyImagesBucket = async () => {
-      try {
-        const exists = await checkBucketExists('property_images');
-        setBucketStatus(exists);
-        console.log("Property images bucket status:", exists ? "Exists" : "Does not exist");
-        
-        if (!exists) {
-          setUploadError("The storage system is not properly configured. Please try again later or contact support.");
-        }
-      } catch (err) {
-        console.error("Error checking property images bucket:", err);
-        setBucketStatus(false);
-      }
-    };
-    
-    checkPropertyImagesBucket();
-  }, []);
 
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
@@ -59,24 +33,13 @@ export const FeaturesPhotosStep = ({
     
     const file = fileInput.files[0];
     setUploading(true);
-    setUploadError(null);
     
     try {
       console.log(`Processing photo: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
       
-      // Check if property_images bucket exists
-      if (bucketStatus === false) {
-        toast.error("The storage system is not properly configured. Please try again later or contact support.");
-        setUploadError("Storage system not properly configured. Contact support.");
-        setUploading(false);
-        fileInput.value = '';
-        return;
-      }
-      
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
         toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
-        setUploadError("File size exceeds 5MB limit. Please choose a smaller image.");
         setUploading(false);
         fileInput.value = '';
         return;
@@ -84,7 +47,6 @@ export const FeaturesPhotosStep = ({
       
       if (photos.length >= 5) {
         toast.warning("Maximum 5 photos allowed");
-        setUploadError("Maximum 5 photos allowed");
         setUploading(false);
         fileInput.value = '';
         return;
@@ -94,7 +56,6 @@ export const FeaturesPhotosStep = ({
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
       if (!validTypes.includes(file.type)) {
         toast.error(`Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`);
-        setUploadError(`Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`);
         setUploading(false);
         fileInput.value = '';
         return;
@@ -107,7 +68,6 @@ export const FeaturesPhotosStep = ({
         if (e.target?.result) {
           const preview = e.target.result.toString();
           setPhotos(prevPhotos => [...prevPhotos, { file, preview }]);
-          setPreviewsGenerated(true); // Mark that previews have been successfully generated
           toast.success(`Photo "${file.name}" added successfully`);
           console.log(`Photo preview generated successfully for ${file.name}`);
         }
@@ -116,14 +76,12 @@ export const FeaturesPhotosStep = ({
       reader.onerror = () => {
         console.error("FileReader error:", reader.error);
         toast.error("Failed to preview image. Please try another file.");
-        setUploadError("Failed to preview image. Please try another file.");
       };
       
       reader.readAsDataURL(file);
     } catch (error: any) {
       console.error("Error adding photo:", error);
       toast.error(`Failed to add photo: ${error.message}`);
-      setUploadError(`Failed to add photo: ${error.message}`);
     } finally {
       setUploading(false);
       fileInput.value = '';
@@ -167,32 +125,6 @@ export const FeaturesPhotosStep = ({
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Features & Photos</h2>
-      
-      {uploadError && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{uploadError}</AlertDescription>
-        </Alert>
-      )}
-      
-      {bucketStatus === false && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Storage system not properly configured.
-            Photo uploads may not work correctly.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {bucketStatus === true && (
-        <Alert className="mb-4 bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <AlertDescription className="text-green-700">
-            Storage system is ready for uploads.
-          </AlertDescription>
-        </Alert>
-      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField
@@ -351,7 +283,7 @@ export const FeaturesPhotosStep = ({
                 type="button" 
                 variant="outline" 
                 className="w-24 h-24 flex flex-col items-center justify-center border-dashed border-2 border-gray-300"
-                disabled={uploading || bucketStatus === false}
+                disabled={uploading}
               >
                 {uploading ? (
                   <Loader2 className="h-6 w-6 animate-spin mb-1" />
@@ -365,7 +297,7 @@ export const FeaturesPhotosStep = ({
                 accept="image/*"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleAddPhoto}
-                disabled={photos.length >= 5 || uploading || bucketStatus === false}
+                disabled={photos.length >= 5 || uploading}
               />
             </div>
           )}
@@ -374,18 +306,6 @@ export const FeaturesPhotosStep = ({
           <p className="text-gray-500">Upload up to 5 photos (Max 5MB each)</p>
           <p className="text-amber-600 font-medium">At least one photo is required to list your property.</p>
         </div>
-        
-        <Alert className="bg-blue-50 border-blue-200">
-          <AlertDescription className="text-sm">
-            <p><strong>Having trouble uploading?</strong> Try these tips:</p>
-            <ul className="list-disc pl-5 mt-1 text-xs">
-              <li>Make sure your image is smaller than 5MB</li>
-              <li>Use common formats like JPG, PNG, or WebP</li>
-              <li>Try a different browser if problems persist</li>
-              <li>Check your internet connection</li>
-            </ul>
-          </AlertDescription>
-        </Alert>
       </div>
     </div>
   );
