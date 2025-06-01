@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,7 +21,7 @@ import { Loader2, Upload, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { uploadFileToStorage, checkBucketExists } from "@/lib/supabaseStorage";
+import { uploadAvatar, checkBucketExists } from "@/lib/supabaseStorage";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -56,10 +57,6 @@ const ProfilePage = () => {
           const exists = await checkBucketExists('avatars');
           setBucketStatus(exists);
           console.log("Avatars bucket status:", exists ? "Exists" : "Does not exist");
-          
-          if (!exists) {
-            setUploadError("Storage system not properly configured. Avatar uploads may not work correctly.");
-          }
         } catch (err) {
           console.error("Error checking avatar bucket:", err);
           setBucketStatus(false);
@@ -158,41 +155,13 @@ const ProfilePage = () => {
         return;
       }
       
-      // Check if avatars bucket exists
-      const bucketExists = await checkBucketExists('avatars');
-      if (!bucketExists) {
-        toast.error("Storage system not properly configured. Avatar uploads may not work correctly.");
-        setUploadingAvatar(false);
-        setUploadError("Storage system not properly configured");
-        return;
-      }
-      
-      // Generate a unique filename with timestamp
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
-      
       console.log("Attempting to upload avatar");
-      const avatarUrl = await uploadFileToStorage('avatars', fileName, file);
+      const avatarUrl = await uploadAvatar(file, user.id);
       
       if (!avatarUrl) {
         toast.error("Failed to upload avatar. Please try again later.");
         setUploadingAvatar(false);
         setUploadError("Upload failed");
-        return;
-      }
-
-      console.log("Avatar uploaded successfully, updating profile");
-      // Update the profile with the new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', user.id);
-
-      if (updateError) {
-        console.error("Profile update error:", updateError);
-        toast.error(`Error updating profile: ${updateError.message}`);
-        setUploadingAvatar(false);
-        setUploadError("Profile update failed");
         return;
       }
 
@@ -227,15 +196,6 @@ const ProfilePage = () => {
         <div className="container max-w-2xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-6">My Profile</h1>
 
-          {bucketStatus === false && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Storage system not properly configured. Avatar uploads may not work correctly.
-              </AlertDescription>
-            </Alert>
-          )}
-          
           {bucketStatus === true && (
             <Alert className="mb-4 bg-green-50 border-green-200">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -263,7 +223,7 @@ const ProfilePage = () => {
                       variant="outline"
                       size="sm"
                       className="mt-2"
-                      disabled={uploadingAvatar || bucketStatus === false}
+                      disabled={uploadingAvatar}
                     >
                       {uploadingAvatar ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -277,7 +237,7 @@ const ProfilePage = () => {
                       accept="image/*"
                       className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={handleAvatarChange}
-                      disabled={uploadingAvatar || bucketStatus === false}
+                      disabled={uploadingAvatar}
                     />
                   </div>
                   {uploadError && (

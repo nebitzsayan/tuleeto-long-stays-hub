@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export async function uploadImage(imageFile: File, userId: string): Promise<string | null> {
@@ -19,9 +20,12 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
       return null;
     }
 
-    // Construct public URL
-    const publicURL = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/property_images/${imagePath}`;
-    return publicURL;
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('property_images')
+      .getPublicUrl(imagePath);
+
+    return publicUrl;
   } catch (error: any) {
     console.error("Unexpected error uploading image:", error.message);
     return null;
@@ -45,13 +49,15 @@ export async function uploadAvatar(avatarFile: File, userId: string): Promise<st
       return null;
     }
 
-    // Construct public URL
-    const publicURL = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/avatars/${fileName}`;
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(fileName);
     
     // Update user profile with new avatar URL
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ avatar_url: publicURL })
+      .update({ avatar_url: publicUrl })
       .eq('id', userId);
 
     if (updateError) {
@@ -59,7 +65,7 @@ export async function uploadAvatar(avatarFile: File, userId: string): Promise<st
       return null;
     }
 
-    return publicURL;
+    return publicUrl;
   } catch (error: any) {
     console.error("Unexpected error uploading avatar:", error.message);
     return null;
@@ -84,9 +90,12 @@ export async function uploadFileToStorage(
       return null;
     }
 
-    // Construct public URL
-    const publicURL = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
-    return publicURL;
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(filePath);
+
+    return publicUrl;
   } catch (error: any) {
     console.error("Unexpected error uploading file:", error.message);
     return null;
@@ -138,7 +147,10 @@ export async function uploadMultipleFiles(
       }
       
       // Get public URL
-      const publicUrl = `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+      
       uploadedUrls.push(publicUrl);
       
       // Update progress
