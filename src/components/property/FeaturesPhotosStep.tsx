@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, Loader2 } from "lucide-react";
+import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, Loader2, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -26,6 +26,7 @@ export const FeaturesPhotosStep = ({
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
@@ -33,31 +34,34 @@ export const FeaturesPhotosStep = ({
     
     const file = fileInput.files[0];
     setUploading(true);
+    setUploadError(null);
     
     try {
       console.log(`Processing photo: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
       
-      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      // Validate file size
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB to match the backend validation
       if (file.size > MAX_FILE_SIZE) {
-        toast.error("File size exceeds 5MB limit. Please choose a smaller image.");
-        setUploading(false);
-        fileInput.value = '';
+        const errorMessage = "File size exceeds 10MB limit. Please choose a smaller image.";
+        setUploadError(errorMessage);
+        toast.error(errorMessage);
         return;
       }
       
+      // Check photo count limit
       if (photos.length >= 5) {
-        toast.warning("Maximum 5 photos allowed");
-        setUploading(false);
-        fileInput.value = '';
+        const errorMessage = "Maximum 5 photos allowed";
+        setUploadError(errorMessage);
+        toast.warning(errorMessage);
         return;
       }
       
       // Validate image type
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
       if (!validTypes.includes(file.type)) {
-        toast.error(`Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`);
-        setUploading(false);
-        fileInput.value = '';
+        const errorMessage = `Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`;
+        setUploadError(errorMessage);
+        toast.error(errorMessage);
         return;
       }
       
@@ -70,18 +74,23 @@ export const FeaturesPhotosStep = ({
           setPhotos(prevPhotos => [...prevPhotos, { file, preview }]);
           toast.success(`Photo "${file.name}" added successfully`);
           console.log(`Photo preview generated successfully for ${file.name}`);
+          setUploadError(null); // Clear any previous errors
         }
       };
       
       reader.onerror = () => {
+        const errorMessage = "Failed to preview image. Please try another file.";
         console.error("FileReader error:", reader.error);
-        toast.error("Failed to preview image. Please try another file.");
+        setUploadError(errorMessage);
+        toast.error(errorMessage);
       };
       
       reader.readAsDataURL(file);
     } catch (error: any) {
       console.error("Error adding photo:", error);
-      toast.error(`Failed to add photo: ${error.message}`);
+      const errorMessage = `Failed to add photo: ${error.message}`;
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
       fileInput.value = '';
@@ -101,9 +110,12 @@ export const FeaturesPhotosStep = ({
       newPhotos.splice(index, 1);
       setPhotos(newPhotos);
       toast.info("Photo removed");
+      setUploadError(null); // Clear errors when removing photos
     } catch (error: any) {
       console.error("Error removing photo:", error);
-      toast.error(`Error removing photo: ${error.message}`);
+      const errorMessage = `Error removing photo: ${error.message}`;
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -253,6 +265,14 @@ export const FeaturesPhotosStep = ({
       
       <div className="space-y-4">
         <FormLabel>Property Photos (Required)</FormLabel>
+        
+        {uploadError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{uploadError}</AlertDescription>
+          </Alert>
+        )}
+        
         <div className="flex flex-wrap gap-3">
           {photos.map((photo, i) => (
             <div key={i} className="relative group">
@@ -294,7 +314,7 @@ export const FeaturesPhotosStep = ({
               </Button>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleAddPhoto}
                 disabled={photos.length >= 5 || uploading}
@@ -303,8 +323,13 @@ export const FeaturesPhotosStep = ({
           )}
         </div>
         <div className="text-xs space-y-1">
-          <p className="text-gray-500">Upload up to 5 photos (Max 5MB each)</p>
+          <p className="text-gray-500">Upload up to 5 photos (Max 10MB each)</p>
           <p className="text-amber-600 font-medium">At least one photo is required to list your property.</p>
+          {uploadError && (
+            <p className="text-red-600 font-medium">
+              Upload issue detected. Please resolve before continuing.
+            </p>
+          )}
         </div>
       </div>
     </div>
