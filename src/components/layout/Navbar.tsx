@@ -60,7 +60,7 @@ const Navbar = () => {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
+                  <DropdownMenuContent className="w-56 bg-white shadow-lg border" align="end" forceMount>
                     <DropdownMenuItem asChild>
                       <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
@@ -103,21 +103,21 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu - Show profile avatar if authenticated, hamburger if not */}
+          {/* Mobile menu - ALWAYS show profile avatar if authenticated */}
           <div className="md:hidden">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name || "User"} />
                       <AvatarFallback className="bg-tuleeto-orange text-white">
-                        <User className="h-4 w-4" />
+                        <User className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
+                <DropdownMenuContent className="w-56 bg-white shadow-lg border" align="end" forceMount>
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center">
                       <User className="mr-2 h-4 w-4" />

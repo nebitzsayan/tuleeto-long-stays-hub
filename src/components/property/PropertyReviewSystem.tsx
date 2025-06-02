@@ -9,18 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Review {
-  id: string;
-  user_id: string;
-  property_id: string;
-  rating: number;
-  comment: string;
-  created_at: string;
-  user_profile?: {
-    full_name: string;
-    avatar_url: string;
-  };
-  replies?: Reply[];
+interface UserProfile {
+  full_name: string | null;
+  avatar_url: string | null;
 }
 
 interface Reply {
@@ -29,12 +20,20 @@ interface Reply {
   user_id: string;
   content: string;
   created_at: string;
-  parent_reply_id?: string;
-  user_profile?: {
-    full_name: string;
-    avatar_url: string;
-  };
+  parent_reply_id?: string | null;
+  user_profile?: UserProfile | null;
   nested_replies?: Reply[];
+}
+
+interface Review {
+  id: string;
+  user_id: string;
+  property_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user_profile?: UserProfile | null;
+  replies?: Reply[];
 }
 
 interface PropertyReviewSystemProps {
@@ -57,25 +56,47 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
 
   const fetchReviews = async () => {
     try {
-      const { data, error } = await supabase
+      // First fetch reviews with user profiles
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('property_reviews')
         .select(`
           *,
-          user_profile:profiles(full_name, avatar_url),
-          replies:review_replies(
-            *,
-            user_profile:profiles(full_name, avatar_url),
-            nested_replies:review_replies!parent_reply_id(
-              *,
-              user_profile:profiles(full_name, avatar_url)
-            )
-          )
+          profiles!property_reviews_user_id_fkey(full_name, avatar_url)
         `)
         .eq('property_id', propertyId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setReviews(data || []);
+      if (reviewsError) throw reviewsError;
+
+      // Then fetch replies with user profiles
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('review_replies')
+        .select(`
+          *,
+          profiles!review_replies_user_id_fkey(full_name, avatar_url)
+        `)
+        .in('review_id', reviewsData?.map(r => r.id) || [])
+        .order('created_at', { ascending: true });
+
+      if (repliesError) throw repliesError;
+
+      // Organize replies by review
+      const reviewsWithReplies = reviewsData?.map(review => ({
+        ...review,
+        user_profile: review.profiles,
+        replies: repliesData?.filter(reply => reply.review_id === review.id).map(reply => ({
+          ...reply,
+          user_profile: reply.profiles,
+          nested_replies: repliesData?.filter(nestedReply => 
+            nestedReply.parent_reply_id === reply.id
+          ).map(nestedReply => ({
+            ...nestedReply,
+            user_profile: nestedReply.profiles
+          })) || []
+        })) || []
+      })) || [];
+
+      setReviews(reviewsWithReplies);
     } catch (error) {
       console.error('Error fetching reviews:', error);
       toast.error('Failed to load reviews');
@@ -162,15 +183,18 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
     setExpandedReplies(newExpanded);
   };
 
-  const renderStars = (rating: number, size = "w-4 h-4") => {
+  const renderStars = (rating: number, interactive = false) => {
     return (
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`${size} ${
-              star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-            }`}
+            className={`w-5 h-5 transition-all duration-100 ${
+              star <= rating 
+                ? 'fill-yellow-400 text-yellow-400' 
+                : 'text-gray-300'
+            } ${interactive ? 'cursor-pointer hover:scale-110' : ''}`}
+            onClick={interactive ? () => setNewReview(prev => ({ ...prev, rating: star })) : undefined}
           />
         ))}
       </div>
@@ -180,72 +204,70 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
   const renderReply = (reply: Reply, level = 0) => (
     <div
       key={reply.id}
-      className={`animate-fade-in transition-all duration-300 ${
-        level > 0 ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''
+      className={`transition-all duration-200 ${
+        level > 0 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''
       }`}
     >
-      <Card className="mb-3 bg-gray-50 border border-gray-200">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={reply.user_profile?.avatar_url} />
-              <AvatarFallback className="bg-tuleeto-orange text-white text-xs">
-                {reply.user_profile?.full_name?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium text-sm">{reply.user_profile?.full_name || 'Anonymous'}</span>
-                <span className="text-xs text-gray-500">
-                  {new Date(reply.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              <p className="text-sm text-gray-700 mb-2">{reply.content}</p>
-              {level < 2 && (
+      <div className="mb-3 p-4 bg-gray-50 rounded-lg border">
+        <div className="flex items-start space-x-3">
+          <Avatar className="h-8 w-8 flex-shrink-0">
+            <AvatarImage src={reply.user_profile?.avatar_url || undefined} />
+            <AvatarFallback className="bg-tuleeto-orange text-white text-xs">
+              {reply.user_profile?.full_name?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-sm">{reply.user_profile?.full_name || 'Anonymous'}</span>
+              <span className="text-xs text-gray-500">
+                {new Date(reply.created_at).toLocaleDateString()}
+              </span>
+            </div>
+            <p className="text-sm text-gray-700 mb-2">{reply.content}</p>
+            {level < 2 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReplyingTo(reply.id)}
+                className="text-xs h-6 px-2 text-tuleeto-orange hover:text-tuleeto-orange-dark transition-colors"
+              >
+                <MessageCircle className="w-3 h-3 mr-1" />
+                Reply
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {replyingTo === reply.id && (
+          <div className="mt-3 transition-all duration-200">
+            <div className="flex gap-2">
+              <Textarea
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                placeholder="Write your reply..."
+                className="min-h-[60px] text-sm resize-none"
+              />
+              <div className="flex flex-col gap-1 flex-shrink-0">
+                <Button
+                  size="sm"
+                  onClick={() => submitReply(reply.review_id, reply.id)}
+                  className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark h-8 px-3"
+                >
+                  <Send className="w-3 h-3" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setReplyingTo(reply.id)}
-                  className="text-xs h-6 px-2 text-tuleeto-orange hover:text-tuleeto-orange-dark"
+                  onClick={() => setReplyingTo(null)}
+                  className="h-8 px-3 text-xs"
                 >
-                  <MessageCircle className="w-3 h-3 mr-1" />
-                  Reply
+                  Cancel
                 </Button>
-              )}
-            </div>
-          </div>
-          
-          {replyingTo === reply.id && (
-            <div className="mt-3 animate-fade-in">
-              <div className="flex gap-2">
-                <Textarea
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder="Write your reply..."
-                  className="min-h-[60px] text-sm"
-                />
-                <div className="flex flex-col gap-1">
-                  <Button
-                    size="sm"
-                    onClick={() => submitReply(reply.review_id, reply.id)}
-                    className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark h-8 px-3"
-                  >
-                    <Send className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReplyingTo(null)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    Cancel
-                  </Button>
-                </div>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
       
       {reply.nested_replies?.map((nestedReply) => renderReply(nestedReply, level + 1))}
     </div>
@@ -276,43 +298,27 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
     <div className="space-y-6">
       {/* Submit Review Form */}
       {user && (
-        <Card className="border-2 border-tuleeto-orange/20">
+        <Card className="border border-tuleeto-orange/30 shadow-lg">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Leave a Review</h3>
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">Leave a Review</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Rating</label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => setNewReview(prev => ({ ...prev, rating: star }))}
-                      className="transition-transform hover:scale-110"
-                    >
-                      <Star
-                        className={`w-6 h-6 ${
-                          star <= newReview.rating 
-                            ? 'fill-yellow-400 text-yellow-400' 
-                            : 'text-gray-300 hover:text-yellow-200'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Rating</label>
+                {renderStars(newReview.rating, true)}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Comment</label>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Comment</label>
                 <Textarea
                   value={newReview.comment}
                   onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
                   placeholder="Share your experience with this property..."
-                  className="min-h-[100px]"
+                  className="min-h-[100px] resize-none"
                 />
               </div>
               <Button
                 onClick={submitReview}
                 disabled={submitting}
-                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark transition-all duration-200"
+                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark transition-all duration-200 px-6 py-2"
               >
                 {submitting ? 'Submitting...' : 'Submit Review'}
               </Button>
@@ -323,29 +329,29 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
 
       {/* Reviews List */}
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold">Reviews ({reviews.length})</h3>
+        <h3 className="text-2xl font-semibold text-gray-800">Reviews ({reviews.length})</h3>
         
         {reviews.length === 0 ? (
-          <Card>
+          <Card className="border-gray-200">
             <CardContent className="p-8 text-center">
-              <p className="text-gray-500">No reviews yet. Be the first to leave a review!</p>
+              <p className="text-gray-500 text-lg">No reviews yet. Be the first to leave a review!</p>
             </CardContent>
           </Card>
         ) : (
           reviews.map((review) => (
-            <Card key={review.id} className="transition-all duration-200 hover:shadow-md">
+            <Card key={review.id} className="transition-all duration-200 hover:shadow-lg border-gray-200">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={review.user_profile?.avatar_url} />
-                    <AvatarFallback className="bg-tuleeto-orange text-white">
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    <AvatarImage src={review.user_profile?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-tuleeto-orange text-white font-medium">
                       {review.user_profile?.full_name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <h4 className="font-medium">{review.user_profile?.full_name || 'Anonymous'}</h4>
+                        <h4 className="font-semibold text-gray-800">{review.user_profile?.full_name || 'Anonymous'}</h4>
                         <div className="flex items-center gap-2 mt-1">
                           {renderStars(review.rating)}
                           <span className="text-sm text-gray-500">
@@ -354,14 +360,14 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
                         </div>
                       </div>
                     </div>
-                    <p className="text-gray-700 mb-4">{review.comment}</p>
+                    <p className="text-gray-700 mb-4 leading-relaxed">{review.comment}</p>
                     
                     <div className="flex items-center gap-4">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setReplyingTo(review.id)}
-                        className="text-tuleeto-orange hover:text-tuleeto-orange-dark transition-colors"
+                        className="text-tuleeto-orange hover:text-tuleeto-orange-dark transition-colors hover:bg-tuleeto-orange/5"
                       >
                         <MessageCircle className="w-4 h-4 mr-1" />
                         Reply
@@ -385,15 +391,15 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
                     </div>
 
                     {replyingTo === review.id && (
-                      <div className="mt-4 animate-fade-in">
+                      <div className="mt-4 transition-all duration-200">
                         <div className="flex gap-2">
                           <Textarea
                             value={replyContent}
                             onChange={(e) => setReplyContent(e.target.value)}
                             placeholder="Write your reply..."
-                            className="min-h-[80px]"
+                            className="min-h-[80px] resize-none"
                           />
-                          <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-2 flex-shrink-0">
                             <Button
                               size="sm"
                               onClick={() => submitReply(review.id)}
