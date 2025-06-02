@@ -60,18 +60,17 @@ const Navbar = () => {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <div className="flex flex-col space-y-1 p-2">
-                      <p className="text-sm font-medium leading-none">{user.user_metadata?.full_name || "User"}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                    </div>
-                    <DropdownMenuSeparator />
+                  <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
                     <DropdownMenuItem asChild>
                       <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
-                        Profile
+                        <div className="flex flex-col">
+                          <span>My Profile</span>
+                          <span className="text-xs text-gray-500">{user.email}</span>
+                        </div>
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link to="/my-properties" className="flex items-center">
                         <Home className="mr-2 h-4 w-4" />
@@ -104,20 +103,69 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu - Show profile avatar if authenticated, hamburger if not */}
           <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name || "User"} />
+                      <AvatarFallback className="bg-tuleeto-orange text-white">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span>My Profile</span>
+                        <span className="text-xs text-gray-500">{user.email}</span>
+                      </div>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/listings" className="flex items-center">
+                      Find Properties
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/my-properties" className="flex items-center">
+                      <Home className="mr-2 h-4 w-4" />
+                      My Properties
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/list-property" className="flex items-center">
+                      <Plus className="mr-2 h-4 w-4" />
+                      List Property
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
+        {/* Mobile Navigation - Only show when not authenticated */}
+        {isMobileMenuOpen && !user && (
           <div className="md:hidden border-t border-gray-100 py-4">
             <div className="flex flex-col space-y-4">
               <Link 
@@ -135,64 +183,18 @@ const Navbar = () => {
                 List Property
               </Link>
               
-              {user ? (
-                <>
-                  <div className="border-t border-gray-100 pt-4">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name || "User"} />
-                        <AvatarFallback className="bg-tuleeto-orange text-white">
-                          <User className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{user.user_metadata?.full_name || "User"}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <Link 
-                    to="/profile" 
-                    className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 flex items-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
+              <div className="flex flex-col space-y-2 border-t border-gray-100 pt-4">
+                <Button variant="ghost" asChild>
+                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                    Sign In
                   </Link>
-                  <Link 
-                    to="/my-properties" 
-                    className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 flex items-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Home className="mr-2 h-4 w-4" />
-                    My Properties
+                </Button>
+                <Button className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark" asChild>
+                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                    Get Started
                   </Link>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => {
-                      handleSignOut();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="justify-start p-0 h-auto text-gray-700 hover:text-tuleeto-orange"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </Button>
-                </>
-              ) : (
-                <div className="flex flex-col space-y-2 border-t border-gray-100 pt-4">
-                  <Button variant="ghost" asChild>
-                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark" asChild>
-                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      Get Started
-                    </Link>
-                  </Button>
-                </div>
-              )}
+                </Button>
+              </div>
             </div>
           </div>
         )}
