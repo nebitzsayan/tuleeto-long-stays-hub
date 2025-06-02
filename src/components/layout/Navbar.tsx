@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Menu, X, User, LogOut, Home, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Logo } from "@/components/ui/logo";
+import Logo from "@/components/ui/logo";
 import { toast } from "sonner";
 
 const Navbar = () => {
