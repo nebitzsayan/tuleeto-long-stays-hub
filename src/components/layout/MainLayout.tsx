@@ -1,14 +1,20 @@
 
-import { Outlet } from "react-router-dom";
+import { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { cn } from "@/lib/utils";
 
-const MainLayout = () => {
+interface MainLayoutProps {
+  children: ReactNode;
+  className?: string;
+}
+
+const MainLayout = ({ children, className }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 pt-16">
-        <Outlet />
+      <main className={cn("flex-grow", className)}>
+        {children}
       </main>
       <Footer />
     </div>
