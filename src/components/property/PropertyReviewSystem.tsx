@@ -54,52 +54,71 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
 
   const fetchReviews = async () => {
     try {
+      // First fetch reviews
       const { data: reviewsData, error: reviewsError } = await supabase
         .from("property_reviews")
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("property_id", propertyId)
         .order("created_at", { ascending: false });
 
       if (reviewsError) throw reviewsError;
 
+      // Fetch user profiles for reviews
+      const reviewUserIds = reviewsData?.map(r => r.user_id) || [];
+      const { data: reviewProfiles, error: reviewProfilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", reviewUserIds);
+
+      if (reviewProfilesError) throw reviewProfilesError;
+
+      // Fetch replies
       const { data: repliesData, error: repliesError } = await supabase
         .from("review_replies")
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .in("review_id", reviewsData?.map(r => r.id) || [])
         .order("created_at", { ascending: true });
 
       if (repliesError) throw repliesError;
 
+      // Fetch user profiles for replies
+      const replyUserIds = repliesData?.map(r => r.user_id) || [];
+      const { data: replyProfiles, error: replyProfilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", replyUserIds);
+
+      if (replyProfilesError) throw replyProfilesError;
+
+      // Combine data
       const reviewsWithReplies = reviewsData?.map(review => {
+        const reviewProfile = reviewProfiles?.find(p => p.id === review.user_id);
         const reviewReplies = repliesData?.filter(reply => 
           reply.review_id === review.id && !reply.parent_reply_id
         ) || [];
         
         const organizeReplies = (parentReplies: any[]): Reply[] => {
-          return parentReplies.map(reply => ({
-            ...reply,
-            user_profile: reply.profiles || { full_name: null, avatar_url: null },
-            replies: organizeReplies(
-              repliesData?.filter(r => r.parent_reply_id === reply.id) || []
-            )
-          }));
+          return parentReplies.map(reply => {
+            const replyProfile = replyProfiles?.find(p => p.id === reply.user_id);
+            return {
+              ...reply,
+              user_profile: {
+                full_name: replyProfile?.full_name || null,
+                avatar_url: replyProfile?.avatar_url || null
+              },
+              replies: organizeReplies(
+                repliesData?.filter(r => r.parent_reply_id === reply.id) || []
+              )
+            };
+          });
         };
 
         return {
           ...review,
-          user_profile: review.profiles || { full_name: null, avatar_url: null },
+          user_profile: {
+            full_name: reviewProfile?.full_name || null,
+            avatar_url: reviewProfile?.avatar_url || null
+          },
           replies: organizeReplies(reviewReplies)
         };
       }) || [];
