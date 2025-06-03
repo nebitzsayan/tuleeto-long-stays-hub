@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, ThumbsUp, MessageCircle, Send, User } from "lucide-react";
+import { Star, MessageCircle, Send, User } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -149,6 +150,24 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
 
     setSubmitting(true);
     try {
+      // Check if user already reviewed this property
+      const { data: existingReview, error: checkError } = await supabase
+        .from("property_reviews")
+        .select("id")
+        .eq("property_id", propertyId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (existingReview) {
+        toast.error("You have already reviewed this property");
+        setSubmitting(false);
+        return;
+      }
+
       const { error } = await supabase
         .from("property_reviews")
         .insert({
@@ -158,7 +177,10 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
           comment: comment.trim() || null
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Review submission error:", error);
+        throw error;
+      }
 
       setRating(0);
       setComment("");
@@ -166,7 +188,11 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
       fetchReviews();
     } catch (error: any) {
       console.error("Error submitting review:", error);
-      toast.error("Failed to submit review");
+      if (error.code === '23505') {
+        toast.error("You have already reviewed this property");
+      } else {
+        toast.error(`Failed to submit review: ${error.message}`);
+      }
     } finally {
       setSubmitting(false);
     }

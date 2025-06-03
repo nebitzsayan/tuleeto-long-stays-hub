@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { uploadAvatar, checkBucketExists } from "@/lib/supabaseStorage";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
@@ -33,8 +33,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const ProfilePage = () => {
-  const { user } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { user, userProfile, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -68,39 +67,14 @@ const ProfilePage = () => {
   }, [user]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        if (!user) return;
-
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        if (data) {
-          form.reset({
-            fullName: data.full_name || "",
-            email: data.email || user.email || "",
-          });
-
-          if (data.avatar_url) {
-            setAvatarUrl(data.avatar_url);
-          }
-        }
-      } catch (error: any) {
-        console.error("Error fetching profile:", error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [user, form]);
+    if (userProfile) {
+      form.reset({
+        fullName: userProfile.full_name || "",
+        email: userProfile.email || user?.email || "",
+      });
+      setIsLoading(false);
+    }
+  }, [userProfile, user, form]);
 
   const onSubmit = async (values: ProfileFormValues) => {
     try {
@@ -118,6 +92,7 @@ const ProfilePage = () => {
       if (error) throw error;
       
       toast.success("Profile updated successfully!");
+      await refreshProfile();
     } catch (error: any) {
       console.error("Error updating profile:", error.message);
       toast.error(`Failed to update profile: ${error.message}`);
@@ -165,8 +140,8 @@ const ProfilePage = () => {
         return;
       }
 
-      setAvatarUrl(avatarUrl);
       toast.success('Avatar updated successfully!');
+      await refreshProfile();
     } catch (error: any) {
       console.error("Avatar upload error:", error);
       toast.error(`Avatar upload failed: ${error.message}`);
@@ -213,9 +188,21 @@ const ProfilePage = () => {
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <div className="flex flex-col items-center gap-2 mb-4 md:mb-0">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={avatarUrl || ""} alt={form.getValues().fullName} />
+                    <AvatarImage 
+                      src={userProfile?.avatar_url || ""} 
+                      alt={userProfile?.full_name || "User"} 
+                    />
                     <AvatarFallback className="bg-tuleeto-orange text-white">
-                      <User className="h-12 w-12" />
+                      {userProfile?.full_name ? (
+                        userProfile.full_name
+                          .split(' ')
+                          .map(name => name[0])
+                          .join('')
+                          .toUpperCase()
+                          .substring(0, 2)
+                      ) : (
+                        <User className="h-12 w-12" />
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <div className="relative">

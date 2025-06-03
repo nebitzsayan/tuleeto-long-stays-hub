@@ -10,14 +10,14 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, Home, Plus } from "lucide-react";
+import { Menu, X, User, LogOut, Home, Plus, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/ui/logo";
 import { toast } from "sonner";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, userProfile, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -53,9 +53,21 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name || "User"} />
+                        <AvatarImage 
+                          src={userProfile?.avatar_url || ""} 
+                          alt={userProfile?.full_name || "User"} 
+                        />
                         <AvatarFallback className="bg-tuleeto-orange text-white">
-                          <User className="h-4 w-4" />
+                          {userProfile?.full_name ? (
+                            userProfile.full_name
+                              .split(' ')
+                              .map(name => name[0])
+                              .join('')
+                              .toUpperCase()
+                              .substring(0, 2)
+                          ) : (
+                            <User className="h-4 w-4" />
+                          )}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -83,6 +95,17 @@ const Navbar = () => {
                         List Property
                       </Link>
                     </DropdownMenuItem>
+                    {userProfile?.isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="flex items-center">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Admin Panel
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
@@ -103,16 +126,28 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu - ALWAYS show profile avatar if authenticated */}
+          {/* Mobile menu */}
           <div className="md:hidden">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name || "User"} />
+                      <AvatarImage 
+                        src={userProfile?.avatar_url || ""} 
+                        alt={userProfile?.full_name || "User"} 
+                      />
                       <AvatarFallback className="bg-tuleeto-orange text-white">
-                        <User className="h-5 w-5" />
+                        {userProfile?.full_name ? (
+                          userProfile.full_name
+                            .split(' ')
+                            .map(name => name[0])
+                            .join('')
+                            .toUpperCase()
+                            .substring(0, 2)
+                        ) : (
+                          <User className="h-5 w-5" />
+                        )}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -145,6 +180,17 @@ const Navbar = () => {
                       List Property
                     </Link>
                   </DropdownMenuItem>
+                  {userProfile?.isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Panel
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
