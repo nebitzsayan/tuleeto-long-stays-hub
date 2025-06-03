@@ -66,7 +66,16 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
         .eq('property_id', propertyId)
         .order('created_at', { ascending: false });
 
-      if (reviewsError) throw reviewsError;
+      if (reviewsError) {
+        console.error('Reviews error:', reviewsError);
+        throw reviewsError;
+      }
+
+      if (!reviewsData || reviewsData.length === 0) {
+        setReviews([]);
+        setLoading(false);
+        return;
+      }
 
       // Then fetch replies with user profiles
       const { data: repliesData, error: repliesError } = await supabase
@@ -75,26 +84,29 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
           *,
           profiles!review_replies_user_id_fkey(full_name, avatar_url)
         `)
-        .in('review_id', reviewsData?.map(r => r.id) || [])
+        .in('review_id', reviewsData.map(r => r.id))
         .order('created_at', { ascending: true });
 
-      if (repliesError) throw repliesError;
+      if (repliesError) {
+        console.error('Replies error:', repliesError);
+        throw repliesError;
+      }
 
       // Organize replies by review
-      const reviewsWithReplies = reviewsData?.map(review => ({
+      const reviewsWithReplies = reviewsData.map(review => ({
         ...review,
-        user_profile: review.profiles,
+        user_profile: Array.isArray(review.profiles) ? review.profiles[0] : review.profiles,
         replies: repliesData?.filter(reply => reply.review_id === review.id).map(reply => ({
           ...reply,
-          user_profile: reply.profiles,
+          user_profile: Array.isArray(reply.profiles) ? reply.profiles[0] : reply.profiles,
           nested_replies: repliesData?.filter(nestedReply => 
             nestedReply.parent_reply_id === reply.id
           ).map(nestedReply => ({
             ...nestedReply,
-            user_profile: nestedReply.profiles
+            user_profile: Array.isArray(nestedReply.profiles) ? nestedReply.profiles[0] : nestedReply.profiles
           })) || []
         })) || []
-      })) || [];
+      }));
 
       setReviews(reviewsWithReplies);
     } catch (error) {
@@ -295,10 +307,10 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Submit Review Form */}
       {user && (
-        <Card className="border border-tuleeto-orange/30 shadow-lg">
+        <Card className="border-2 border-tuleeto-orange/20 shadow-lg bg-gradient-to-br from-white to-orange-50/30">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">Leave a Review</h3>
             <div className="space-y-4">
@@ -312,13 +324,13 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
                   value={newReview.comment}
                   onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
                   placeholder="Share your experience with this property..."
-                  className="min-h-[100px] resize-none"
+                  className="min-h-[100px] resize-none border-tuleeto-orange/30 focus:border-tuleeto-orange"
                 />
               </div>
               <Button
                 onClick={submitReview}
                 disabled={submitting}
-                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark transition-all duration-200 px-6 py-2"
+                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark transition-all duration-200 px-6 py-2 shadow-md hover:shadow-lg"
               >
                 {submitting ? 'Submitting...' : 'Submit Review'}
               </Button>
@@ -332,17 +344,20 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
         <h3 className="text-2xl font-semibold text-gray-800">Reviews ({reviews.length})</h3>
         
         {reviews.length === 0 ? (
-          <Card className="border-gray-200">
+          <Card className="border-gray-200 bg-gradient-to-br from-gray-50 to-white">
             <CardContent className="p-8 text-center">
+              <div className="text-gray-400 mb-4">
+                <MessageCircle className="w-16 h-16 mx-auto" />
+              </div>
               <p className="text-gray-500 text-lg">No reviews yet. Be the first to leave a review!</p>
             </CardContent>
           </Card>
         ) : (
           reviews.map((review) => (
-            <Card key={review.id} className="transition-all duration-200 hover:shadow-lg border-gray-200">
+            <Card key={review.id} className="transition-all duration-200 hover:shadow-lg border-gray-200 bg-gradient-to-br from-white to-gray-50/30">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <Avatar className="h-12 w-12 flex-shrink-0">
+                  <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-tuleeto-orange/20">
                     <AvatarImage src={review.user_profile?.avatar_url || undefined} />
                     <AvatarFallback className="bg-tuleeto-orange text-white font-medium">
                       {review.user_profile?.full_name?.charAt(0) || 'U'}
@@ -397,7 +412,7 @@ const PropertyReviewSystem = ({ propertyId }: PropertyReviewSystemProps) => {
                             value={replyContent}
                             onChange={(e) => setReplyContent(e.target.value)}
                             placeholder="Write your reply..."
-                            className="min-h-[80px] resize-none"
+                            className="min-h-[80px] resize-none border-tuleeto-orange/30 focus:border-tuleeto-orange"
                           />
                           <div className="flex flex-col gap-2 flex-shrink-0">
                             <Button
