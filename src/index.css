@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,36 +35,6 @@
 
     --radius: 0.5rem;
   }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 24 96% 53%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 24 96% 53%;
-  }
 }
 
 @layer base {
@@ -72,18 +43,45 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-gray-900;
     font-family: 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     font-weight: 400;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium;
-    color: hsl(var(--foreground));
+    @apply font-medium text-gray-900;
   }
   
   p, span, div, a, button {
-    @apply font-normal;
+    @apply font-normal text-gray-900;
+  }
+  
+  /* Force light mode for all components */
+  .card, [data-theme="dark"] .card, .dark .card {
+    @apply bg-white text-gray-900 border-gray-200;
+  }
+  
+  /* Force light mode for property cards */
+  .property-card, 
+  .property-card *,
+  [data-theme="dark"] .property-card,
+  [data-theme="dark"] .property-card *,
+  .dark .property-card,
+  .dark .property-card * {
+    @apply bg-white text-gray-900 border-gray-200;
+  }
+  
+  /* Force light mode for navigation and menus */
+  nav, 
+  .hamburger-menu,
+  .mobile-menu,
+  [data-theme="dark"] nav,
+  [data-theme="dark"] .hamburger-menu,
+  [data-theme="dark"] .mobile-menu,
+  .dark nav,
+  .dark .hamburger-menu,
+  .dark .mobile-menu {
+    @apply bg-white text-gray-900 border-gray-200;
   }
   
   /* Ensure content is always at least full viewport height minus header */
@@ -109,7 +107,7 @@
     }
     
     .card {
-      @apply p-2;
+      @apply p-2 bg-white;
     }
     
     .button, button {
@@ -137,7 +135,7 @@
   }
   
   .grid > * {
-    @apply rounded-md shadow-sm;
+    @apply rounded-md shadow-sm bg-white;
   }
   
   .container {
@@ -153,18 +151,18 @@
   .mobile-menu button,
   .amenities-list button {
     @apply border-0 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 
-    transition-colors hover:bg-transparent active:bg-transparent;
+    transition-colors hover:bg-transparent active:bg-transparent bg-white text-gray-900;
   }
   
   /* Remove border from grid items on mobile */
   .grid > * {
-    @apply border-0;
+    @apply border-0 bg-white;
   }
   
   /* Additional fixes for mobile footer links */
   footer a, footer span, footer button {
     @apply transition-colors duration-200 outline-none ring-0 
-    focus:ring-0 focus:outline-none active:outline-none;
+    focus:ring-0 focus:outline-none active:outline-none bg-white text-gray-900;
   }
   
   /* Ensure icons have consistent size in mobile view */
@@ -214,14 +212,14 @@ button:focus {
 .mobile-menu a,
 .mobile-menu button,
 .mobile-menu div {
-  @apply border-0 outline-none ring-0 shadow-none transition-colors;
+  @apply border-0 outline-none ring-0 shadow-none transition-colors bg-white text-gray-900;
 }
 
 /* Fix for form elements focus states */
 input:focus,
 select:focus,
 textarea:focus {
-  @apply ring-1 ring-tuleeto-orange outline-none;
+  @apply ring-1 ring-tuleeto-orange outline-none bg-white text-gray-900;
 }
 
 /* Fix for checkboxes and radio buttons */
@@ -234,12 +232,12 @@ input[type="radio"]:focus {
 .image-upload-container {
   @apply border-2 border-dashed border-gray-300 rounded-md p-4
   flex flex-col items-center justify-center cursor-pointer
-  hover:border-tuleeto-orange transition-colors;
+  hover:border-tuleeto-orange transition-colors bg-white;
 }
 
 /* Toast improvements */
 .toast {
-  @apply shadow-lg;
+  @apply shadow-lg bg-white;
 }
 
 /* Avatar button outline fix */
@@ -292,4 +290,40 @@ input[type="radio"]:focus {
 /* Visibility toggle styles */
 .visibility-toggle {
   @apply flex items-center space-x-2;
+}
+
+/* Force light mode styles for all components */
+*, 
+*::before, 
+*::after,
+[data-theme="dark"] *,
+[data-theme="dark"] *::before,
+[data-theme="dark"] *::after,
+.dark *,
+.dark *::before,
+.dark *::after {
+  color-scheme: light !important;
+}
+
+/* Override any dark mode card styles */
+.card,
+.property-card,
+[data-theme="dark"] .card,
+[data-theme="dark"] .property-card,
+.dark .card,
+.dark .property-card {
+  @apply bg-white text-gray-900 border-gray-200 !important;
+}
+
+/* Override dark mode navigation */
+nav,
+.navbar,
+.mobile-menu,
+[data-theme="dark"] nav,
+[data-theme="dark"] .navbar,
+[data-theme="dark"] .mobile-menu,
+.dark nav,
+.dark .navbar,
+.dark .mobile-menu {
+  @apply bg-white text-gray-900 border-gray-100 !important;
 }
