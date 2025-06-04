@@ -7,10 +7,13 @@ import { Loader2 } from 'lucide-react';
 interface ProtectedRouteProps {
   children: ReactNode;
   redirectTo?: string;
+  requireAdmin?: boolean;
 }
 
-const ProtectedRoute = ({ children, redirectTo = '/auth' }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
+const ProtectedRoute = ({ children, redirectTo = '/auth', requireAdmin = false }: ProtectedRouteProps) => {
+  const { user, userProfile, isLoading } = useAuth();
+
+  console.log('ProtectedRoute - User:', user?.email, 'Profile:', userProfile, 'Loading:', isLoading);
 
   if (isLoading) {
     return (
@@ -21,7 +24,13 @@ const ProtectedRoute = ({ children, redirectTo = '/auth' }: ProtectedRouteProps)
   }
 
   if (!user) {
+    console.log('No user, redirecting to:', redirectTo);
     return <Navigate to={redirectTo} />;
+  }
+
+  if (requireAdmin && !userProfile?.isAdmin) {
+    console.log('Admin required but user is not admin, redirecting to home');
+    return <Navigate to="/" />;
   }
 
   return <>{children}</>;

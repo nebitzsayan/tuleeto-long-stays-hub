@@ -6,7 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Home, MessageSquare, Shield, Trash2, Eye } from "lucide-react";
+import { Users, Home, MessageSquare, Shield, Trash2, Eye, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -48,7 +48,7 @@ interface Review {
 }
 
 const AdminPanel = () => {
-  const { userProfile, user } = useAuth();
+  const { userProfile, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -57,23 +57,32 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState<'users' | 'properties' | 'reviews'>('users');
 
   useEffect(() => {
+    console.log('AdminPanel - Auth loading:', authLoading, 'User:', user?.email, 'Profile:', userProfile);
+    
+    if (authLoading) {
+      return; // Wait for auth to load
+    }
+
     if (!user) {
+      console.log('No user, redirecting to auth');
       navigate('/auth');
       return;
     }
 
     if (!userProfile?.isAdmin) {
+      console.log('User is not admin, redirecting to home');
       toast.error("Access denied. Admin privileges required.");
       navigate('/');
       return;
     }
 
     fetchData();
-  }, [user, userProfile, navigate]);
+  }, [user, userProfile, authLoading, navigate]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log('Fetching admin data...');
       
       // Fetch users with their roles
       const { data: usersData, error: usersError } = await supabase
@@ -86,14 +95,19 @@ const AdminPanel = () => {
           created_at
         `);
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        throw usersError;
+      }
 
       // Fetch user roles
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+      }
 
       // Combine users with their roles
       const usersWithRoles = usersData?.map(user => ({
@@ -102,6 +116,7 @@ const AdminPanel = () => {
       })) || [];
 
       setUsers(usersWithRoles);
+      console.log('Users fetched:', usersWithRoles.length);
 
       // Fetch properties with owner info
       const { data: propertiesData, error: propertiesError } = await supabase
@@ -116,7 +131,10 @@ const AdminPanel = () => {
           owner_id
         `);
 
-      if (propertiesError) throw propertiesError;
+      if (propertiesError) {
+        console.error('Error fetching properties:', propertiesError);
+        throw propertiesError;
+      }
 
       // Get owner profiles
       const ownerIds = propertiesData?.map(p => p.owner_id) || [];
@@ -125,7 +143,9 @@ const AdminPanel = () => {
         .select('id, email, full_name')
         .in('id', ownerIds);
 
-      if (ownersError) throw ownersError;
+      if (ownersError) {
+        console.error('Error fetching owners:', ownersError);
+      }
 
       const propertiesWithOwners = propertiesData?.map(property => ({
         ...property,
@@ -133,6 +153,7 @@ const AdminPanel = () => {
       })) || [];
 
       setProperties(propertiesWithOwners);
+      console.log('Properties fetched:', propertiesWithOwners.length);
 
       // Fetch reviews with user and property info
       const { data: reviewsData, error: reviewsError } = await supabase
@@ -147,7 +168,10 @@ const AdminPanel = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (reviewsError) throw reviewsError;
+      if (reviewsError) {
+        console.error('Error fetching reviews:', reviewsError);
+        throw reviewsError;
+      }
 
       // Get user and property info for reviews
       const reviewUserIds = reviewsData?.map(r => r.user_id) || [];
@@ -158,14 +182,18 @@ const AdminPanel = () => {
         .select('id, email, full_name')
         .in('id', reviewUserIds);
 
-      if (reviewUsersError) throw reviewUsersError;
+      if (reviewUsersError) {
+        console.error('Error fetching review users:', reviewUsersError);
+      }
 
       const { data: reviewPropertiesData, error: reviewPropertiesError } = await supabase
         .from('properties')
         .select('id, title')
         .in('id', reviewPropertyIds);
 
-      if (reviewPropertiesError) throw reviewPropertiesError;
+      if (reviewPropertiesError) {
+        console.error('Error fetching review properties:', reviewPropertiesError);
+      }
 
       const reviewsWithDetails = reviewsData?.map(review => ({
         ...review,
@@ -174,6 +202,7 @@ const AdminPanel = () => {
       })) || [];
 
       setReviews(reviewsWithDetails);
+      console.log('Reviews fetched:', reviewsWithDetails.length);
 
     } catch (error: any) {
       console.error('Error fetching admin data:', error);
@@ -217,18 +246,16 @@ const AdminPanel = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow pt-24 px-4 pb-12 bg-tuleeto-off-white">
           <div className="container max-w-6xl mx-auto">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-32 bg-gray-200 rounded"></div>
-                ))}
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange mx-auto mb-4" />
+                <p className="text-gray-500">Loading admin panel...</p>
               </div>
             </div>
           </div>
@@ -357,7 +384,7 @@ const AdminPanel = () => {
                         <Badge variant={property.is_public ? 'default' : 'secondary'}>
                           {property.is_public ? 'Public' : 'Private'}
                         </Badge>
-                        <p className="font-bold text-tuleeto-orange">${property.price}</p>
+                        <p className="font-bold text-tuleeto-orange">₹{property.price}</p>
                         <Button
                           variant="outline"
                           size="sm"

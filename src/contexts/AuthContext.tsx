@@ -35,15 +35,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
+      
       // Fetch user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         console.error('Error fetching profile:', profileError);
+        // If profile doesn't exist, create one
+        const currentUser = await supabase.auth.getUser();
+        if (currentUser.data.user) {
+          console.log('Creating new profile for user:', userId);
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              email: currentUser.data.user.email!,
+              full_name: currentUser.data.user.user_metadata?.full_name || null
+            });
+
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+          } else {
+            // Grant admin role to specific email
+            if (currentUser.data.user.email === 'sayangayan4976@gmail.com') {
+              console.log('Granting admin role to:', currentUser.data.user.email);
+              const { error: roleError } = await supabase
+                .from('user_roles')
+                .upsert({
+                  user_id: userId,
+                  role: 'admin'
+                });
+
+              if (roleError) {
+                console.error('Error granting admin role:', roleError);
+              }
+            }
+          }
+
+          setUserProfile({
+            id: userId,
+            full_name: currentUser.data.user.user_metadata?.full_name || null,
+            avatar_url: null,
+            email: currentUser.data.user.email!,
+            isAdmin: currentUser.data.user.email === 'sayangayan4976@gmail.com'
+          });
+        }
         return;
       }
 
@@ -59,45 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const isAdmin = roles?.some(r => r.role === 'admin') || false;
 
-      // If profile doesn't exist, create one
-      if (!profile) {
-        const currentUser = await supabase.auth.getUser();
-        if (currentUser.data.user) {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              email: currentUser.data.user.email!,
-              full_name: currentUser.data.user.user_metadata?.full_name || null
-            });
-
-          if (insertError) {
-            console.error('Error creating profile:', insertError);
-          }
-
-          // Grant admin role to specific email
-          if (currentUser.data.user.email === 'sayangayan4976@gmail.com') {
-            const { error: roleError } = await supabase
-              .from('user_roles')
-              .insert({
-                user_id: userId,
-                role: 'admin'
-              });
-
-            if (roleError && !roleError.message.includes('duplicate')) {
-              console.error('Error granting admin role:', roleError);
-            }
-          }
-
-          setUserProfile({
-            id: userId,
-            full_name: currentUser.data.user.user_metadata?.full_name || null,
-            avatar_url: null,
-            email: currentUser.data.user.email!,
-            isAdmin: currentUser.data.user.email === 'sayangayan4976@gmail.com'
-          });
-        }
-      } else {
+      if (profile) {
+        console.log('Profile fetched successfully:', profile);
         setUserProfile({
           id: profile.id,
           full_name: profile.full_name,
@@ -118,19 +122,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        if (!mounted) return;
+        
+        console.log('Auth state changed:', event, currentSession?.user?.email);
+        
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        if (currentSession?.user) {
-          await fetchUserProfile(currentSession.user.id);
+        if (currentSession?.user && event === 'SIGNED_IN') {
+          // Defer profile fetching to avoid deadlocks
+          setTimeout(() => {
+            if (mounted) {
+              fetchUserProfile(currentSession.user.id);
+            }
+          }, 100);
         } else {
           setUserProfile(null);
         }
         
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
         
         if (event === 'SIGNED_IN') {
           toast.success('Successfully signed in!');
@@ -140,19 +157,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!mounted) return;
+      
+      console.log('Initial session check:', currentSession?.user?.email);
+      
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        await fetchUserProfile(currentSession.user.id);
+        fetchUserProfile(currentSession.user.id);
+      } else {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
+    }).catch(error => {
+      console.error('Error getting session:', error);
+      if (mounted) {
+        setIsLoading(false);
+      }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -163,8 +190,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } catch (error: any) {
+      console.error('Sign in error:', error);
       toast.error(`Error signing in: ${error.message}`);
-      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -185,8 +212,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       toast.success('Registration successful! Please check your email for verification.');
     } catch (error: any) {
+      console.error('Sign up error:', error);
       toast.error(`Error signing up: ${error.message}`);
-      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -199,8 +226,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error: any) {
+      console.error('Sign out error:', error);
       toast.error(`Error signing out: ${error.message}`);
-      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -215,8 +242,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (error) throw error;
     } catch (error: any) {
+      console.error('Reset password error:', error);
       toast.error(`Error resetting password: ${error.message}`);
-      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -238,8 +265,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     } catch (error: any) {
+      console.error('Google sign in error:', error);
       toast.error(`Error signing in with Google: ${error.message}`);
-      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
