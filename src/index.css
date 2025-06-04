@@ -46,6 +46,7 @@
     @apply bg-white text-gray-900;
     font-family: 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     font-weight: 400;
+    background-color: #EDC3A4; /* Replace #F2F1F2 with #EDC3A4 */
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -81,7 +82,7 @@
   .dark nav,
   .dark .hamburger-menu,
   .dark .mobile-menu {
-    @apply bg-white text-gray-900 border-gray-200 !important;
+    @apply bg-transparent text-gray-900 border-transparent !important;
   }
   
   /* Ensure content is always at least full viewport height minus header */
@@ -99,7 +100,7 @@
     margin-top: 2rem;
   }
   
-  /* Mobile optimizations - Fixed for better text wrapping and container sizing */
+  /* Mobile optimizations - Fixed for 2x2 grid layout */
   @media (max-width: 640px) {
     [class*="lucide-"] {
       width: 16px;
@@ -108,10 +109,11 @@
     }
     
     .card {
-      @apply p-3 bg-white mx-2 rounded-lg;
-      max-width: calc(100vw - 2rem);
+      @apply p-3 bg-white mx-1 rounded-lg border border-gray-200;
+      max-width: calc(50vw - 1rem);
       word-wrap: break-word;
       overflow-wrap: break-word;
+      box-sizing: border-box;
     }
     
     .card * {
@@ -124,37 +126,40 @@
       @apply text-sm py-2 px-3;
     }
     
-    /* Fix for property cards on mobile */
+    /* Fix for property cards on mobile - 2x2 grid */
+    .grid {
+      @apply gap-2 px-2;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
     .grid > .card {
-      @apply w-full max-w-full mx-0 mb-4;
+      @apply w-full max-w-full mx-0 mb-2;
     }
     
     /* Fix text overflow in cards */
     .card h3, .card p, .card span {
-      @apply text-sm leading-tight;
+      @apply text-xs leading-tight;
       max-width: 100%;
       word-break: break-word;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     /* Fix review cards text overflow */
     .review-card,
     .review-card * {
-      @apply bg-white text-gray-900;
+      @apply bg-white text-gray-900 mx-1 mb-2 p-2 rounded-lg border border-gray-200;
       word-wrap: break-word;
       overflow-wrap: break-word;
-      max-width: 100%;
+      max-width: calc(50vw - 1rem);
+      box-sizing: border-box;
     }
     
     /* Container padding fixes */
     .container {
-      @apply px-3 max-w-full;
-    }
-    
-    /* Grid responsive fixes */
-    .grid {
-      @apply gap-3 px-2;
-      display: grid;
-      grid-template-columns: 1fr;
+      @apply px-2 max-w-full;
     }
   }
 }
@@ -163,7 +168,7 @@
   background: linear-gradient(
     to bottom,
     rgba(255, 255, 255, 0.9),
-    rgba(249, 115, 22, 0.1)
+    rgba(237, 195, 164, 0.3) /* Updated to use #EDC3A4 */
   );
 }
 
@@ -185,15 +190,21 @@
   }
 }
 
+/* Mobile 2x2 grid for property cards */
 @media (max-width: 640px) {
-  .grid {
-    @apply gap-4;
+  .property-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 0.5rem;
   }
   
   .grid > * {
-    @apply rounded-md shadow-sm bg-white border-0;
+    @apply rounded-md shadow-sm bg-white border border-gray-200;
     max-width: 100%;
     word-wrap: break-word;
+    padding: 0.5rem;
+    box-sizing: border-box;
   }
   
   /* Fix for boxy outlines in footer and amenities */
@@ -205,13 +216,13 @@
   .mobile-menu button,
   .amenities-list button {
     @apply border-0 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 
-    transition-colors hover:bg-transparent active:bg-transparent bg-white text-gray-900;
+    transition-colors hover:bg-transparent active:bg-transparent bg-transparent text-gray-900;
   }
   
   /* Additional fixes for mobile footer links */
   footer a, footer span, footer button {
     @apply transition-colors duration-200 outline-none ring-0 
-    focus:ring-0 focus:outline-none active:outline-none bg-white text-gray-900;
+    focus:ring-0 focus:outline-none active:outline-none bg-transparent text-gray-900;
   }
   
   /* Ensure icons have consistent size in mobile view */
@@ -232,9 +243,18 @@ button svg {
   @apply flex-shrink-0;
 }
 
-/* Property image optimization */
+/* Property image optimization - Fix for profile photo being crushed */
 .aspect-square img, .aspect-video img {
   @apply object-cover h-full w-full;
+}
+
+/* Fix for profile photo display issues */
+.profile-photo img,
+.hero img {
+  object-fit: contain !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
 }
 
 /* Fix for Dropdown Menu Avatar Button */
@@ -255,7 +275,7 @@ button:focus {
 .mobile-menu a,
 .mobile-menu button,
 .mobile-menu div {
-  @apply border-0 outline-none ring-0 shadow-none transition-colors bg-white text-gray-900;
+  @apply border-0 outline-none ring-0 shadow-none transition-colors bg-transparent text-gray-900;
 }
 
 /* Fix for form elements focus states */
@@ -361,7 +381,7 @@ input[type="radio"]:focus {
   @apply bg-white text-gray-900 border-gray-200 !important;
 }
 
-/* Override dark mode navigation */
+/* Override dark mode navigation - Make transparent */
 nav,
 .navbar,
 .mobile-menu,
@@ -371,10 +391,10 @@ nav,
 .dark nav,
 .dark .navbar,
 .dark .mobile-menu {
-  @apply bg-white text-gray-900 border-gray-100 !important;
+  @apply bg-transparent text-gray-900 border-transparent shadow-none !important;
 }
 
-/* Mobile text and container fixes */
+/* Mobile text and container fixes for 2x2 layout */
 @media (max-width: 640px) {
   /* Ensure all text stays within containers */
   * {
@@ -382,12 +402,13 @@ nav,
     box-sizing: border-box;
   }
   
-  /* Fix for property listing cards */
+  /* Fix for property listing cards - 2x2 grid */
   .property-card,
   .card {
-    @apply mx-3 mb-4 p-3 bg-white border border-gray-200 rounded-lg;
-    max-width: calc(100vw - 1.5rem);
+    @apply mx-1 mb-2 p-2 bg-white border border-gray-200 rounded-lg;
+    max-width: calc(50vw - 1rem);
     overflow: hidden;
+    box-sizing: border-box;
   }
   
   /* Fix text overflow in property cards */
@@ -397,18 +418,20 @@ nav,
   .card h3,
   .card p,
   .card span {
-    @apply text-sm;
+    @apply text-xs;
     word-break: break-word;
-    white-space: normal;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
     max-width: 100%;
   }
   
   /* Review system mobile fixes */
   .review-card {
-    @apply mx-3 mb-4 p-3 bg-white border border-gray-200 rounded-lg;
-    max-width: calc(100vw - 1.5rem);
+    @apply mx-1 mb-2 p-2 bg-white border border-gray-200 rounded-lg;
+    max-width: calc(50vw - 1rem);
     overflow: hidden;
+    box-sizing: border-box;
   }
   
   .review-card * {

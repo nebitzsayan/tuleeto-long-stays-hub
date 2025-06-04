@@ -65,20 +65,24 @@ const PropertyListingCard = ({
   
   return (
     <Card 
-      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] h-full bg-white border border-gray-200"
+      className={`overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] h-full bg-white border border-gray-200 ${
+        isMobile ? 'max-w-full mx-0 mb-2' : ''
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ opacity: property.is_public === false ? 0.7 : 1 }}
     >
       <div className="relative cursor-pointer" onClick={handleImageClick}>
-        <AspectRatio ratio={16/9}>
+        <AspectRatio ratio={isMobile ? 4/3 : 16/9}>
           <img 
             src={property.image} 
             alt={property.title} 
             className="w-full h-full object-cover"
           />
         </AspectRatio>
-        <Badge className="absolute top-3 right-3 bg-tuleeto-orange text-white">{property.type}</Badge>
+        <Badge className={`absolute top-1 right-1 bg-tuleeto-orange text-white ${isMobile ? 'text-xs px-1 py-0.5' : ''}`}>
+          {property.type}
+        </Badge>
         
         {showOwnerControls && (
           <TooltipProvider>
@@ -86,11 +90,13 @@ const PropertyListingCard = ({
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  size="icon"
-                  className={`absolute top-3 left-3 bg-white hover:bg-gray-100 ${isHovered ? 'opacity-100' : 'opacity-70'}`}
+                  size={isMobile ? "sm" : "icon"}
+                  className={`absolute top-1 left-1 bg-white hover:bg-gray-100 ${isHovered ? 'opacity-100' : 'opacity-70'} ${
+                    isMobile ? 'h-6 w-6 p-1' : ''
+                  }`}
                   onClick={handleToggleVisibility}
                 >
-                  {property.is_public ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  {property.is_public ? <Eye className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} /> : <EyeOff className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -101,8 +107,8 @@ const PropertyListingCard = ({
         )}
         
         {property.average_rating !== undefined && property.average_rating > 0 && (
-          <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-md text-sm flex items-center">
-            <Star className="h-3.5 w-3.5 text-yellow-400 mr-1 fill-yellow-400" />
+          <div className={`absolute bottom-1 left-1 bg-black/60 text-white px-1 py-0.5 rounded-md ${isMobile ? 'text-xs' : 'text-sm'} flex items-center`}>
+            <Star className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5'} text-yellow-400 mr-1 fill-yellow-400`} />
             <span>{property.average_rating.toFixed(1)}</span>
             {property.review_count && property.review_count > 0 && (
               <span className="text-xs ml-1">({property.review_count})</span>
@@ -111,44 +117,57 @@ const PropertyListingCard = ({
         )}
       </div>
       
-      <CardContent className="p-3 md:p-4 bg-white">
-        <h3 className="text-sm md:text-lg font-semibold mb-1 md:mb-2 text-gray-900 truncate">{property.title}</h3>
-        <div className="flex items-center text-gray-500 mb-2">
-          <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
-          <span className="text-xs md:text-sm font-medium truncate">{property.location}</span>
+      <CardContent className={`${isMobile ? 'p-2' : 'p-3 md:p-4'} bg-white`}>
+        <h3 className={`${isMobile ? 'text-xs' : 'text-sm md:text-lg'} font-semibold mb-1 text-gray-900 truncate`}>
+          {property.title}
+        </h3>
+        <div className="flex items-center text-gray-500 mb-1">
+          <MapPin className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3 md:h-4 md:w-4'} mr-1 flex-shrink-0`} />
+          <span className={`${isMobile ? 'text-xs' : 'text-xs md:text-sm'} font-medium truncate`}>
+            {property.location}
+          </span>
         </div>
         
-        <div className="grid grid-cols-3 gap-1 mb-2">
+        <div className={`grid grid-cols-3 ${isMobile ? 'gap-1 mb-1' : 'gap-1 mb-2'}`}>
           <div className="flex items-center text-gray-600">
-            <BedDouble className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
-            <span className="text-xs font-medium truncate">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
+            <BedDouble className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3 md:h-4 md:w-4'} mr-1 flex-shrink-0`} />
+            <span className={`${isMobile ? 'text-xs' : 'text-xs'} font-medium truncate`}>
+              {property.bedrooms}
+            </span>
           </div>
           <div className="flex items-center text-gray-600">
-            <Square className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
-            <span className="text-xs font-medium truncate">{property.area} sq ft</span>
+            <Square className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3 md:h-4 md:w-4'} mr-1 flex-shrink-0`} />
+            <span className={`${isMobile ? 'text-xs' : 'text-xs'} font-medium truncate`}>
+              {property.area}
+            </span>
           </div>
           <div className="flex items-center text-gray-600">
-            <Star className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
-            <span className="text-xs font-medium truncate">
+            <Star className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3 md:h-4 md:w-4'} mr-1 flex-shrink-0`} />
+            <span className={`${isMobile ? 'text-xs' : 'text-xs'} font-medium truncate`}>
               {property.average_rating ? property.average_rating.toFixed(1) : "N/A"}
             </span>
           </div>
         </div>
         
-        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-          <span className="text-tuleeto-orange text-sm md:text-lg font-bold flex items-center">
-            <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
-            <span className="truncate">{property.price.toLocaleString('en-IN')}/m</span>
+        <div className={`flex items-center justify-between ${isMobile ? 'pt-1' : 'pt-2'} border-t border-gray-200`}>
+          <span className={`text-tuleeto-orange ${isMobile ? 'text-xs' : 'text-sm md:text-lg'} font-bold flex items-center`}>
+            <IndianRupee className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3 md:h-4 md:w-4'} mr-1 flex-shrink-0`} />
+            <span className="truncate">
+              {isMobile ? `${(property.price / 1000).toFixed(0)}k` : property.price.toLocaleString('en-IN')}
+              /m
+            </span>
           </span>
           {showDeleteButton && onDelete && (
             <Button 
               variant="outline" 
-              size="sm"
-              className="border-destructive text-destructive hover:bg-destructive hover:text-white z-10"
+              size={isMobile ? "sm" : "sm"}
+              className={`border-destructive text-destructive hover:bg-destructive hover:text-white z-10 ${
+                isMobile ? 'h-6 w-6 p-1' : ''
+              }`}
               onClick={handleDeleteClick}
             >
-              <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden md:inline ml-1">Delete</span>
+              <Trash2 className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3 md:h-4 md:w-4'}`} />
+              {!isMobile && <span className="hidden md:inline ml-1">Delete</span>}
             </Button>
           )}
         </div>
