@@ -65,7 +65,7 @@ const PropertyListingCard = ({
   
   return (
     <Card 
-      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] h-full"
+      className="overflow-hidden transition-transform duration-300 hover:shadow-lg hover:scale-[1.01] h-full bg-white border border-gray-200"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ opacity: property.is_public === false ? 0.7 : 1 }}
@@ -78,7 +78,7 @@ const PropertyListingCard = ({
             className="w-full h-full object-cover"
           />
         </AspectRatio>
-        <Badge className="absolute top-3 right-3 bg-tuleeto-orange">{property.type}</Badge>
+        <Badge className="absolute top-3 right-3 bg-tuleeto-orange text-white">{property.type}</Badge>
         
         {showOwnerControls && (
           <TooltipProvider>
@@ -111,34 +111,34 @@ const PropertyListingCard = ({
         )}
       </div>
       
-      <CardContent className="p-3 md:p-4">
-        <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 line-clamp-1">{property.title}</h3>
+      <CardContent className="p-3 md:p-4 bg-white">
+        <h3 className="text-sm md:text-lg font-semibold mb-1 md:mb-2 text-gray-900 truncate">{property.title}</h3>
         <div className="flex items-center text-gray-500 mb-2">
-          <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-          <span className="text-xs md:text-sm line-clamp-1 font-medium">{property.location}</span>
+          <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+          <span className="text-xs md:text-sm font-medium truncate">{property.location}</span>
         </div>
         
         <div className="grid grid-cols-3 gap-1 mb-2">
           <div className="flex items-center text-gray-600">
-            <BedDouble className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs font-medium">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
+            <BedDouble className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+            <span className="text-xs font-medium truncate">{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
           </div>
           <div className="flex items-center text-gray-600">
-            <Square className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs font-medium">{property.area} sq ft</span>
+            <Square className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+            <span className="text-xs font-medium truncate">{property.area} sq ft</span>
           </div>
           <div className="flex items-center text-gray-600">
-            <Star className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="text-xs font-medium">
+            <Star className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+            <span className="text-xs font-medium truncate">
               {property.average_rating ? property.average_rating.toFixed(1) : "N/A"}
             </span>
           </div>
         </div>
         
         <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-          <span className="text-tuleeto-orange text-base md:text-lg font-bold flex items-center">
-            <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            {property.price.toLocaleString('en-IN')}/m
+          <span className="text-tuleeto-orange text-sm md:text-lg font-bold flex items-center">
+            <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+            <span className="truncate">{property.price.toLocaleString('en-IN')}/m</span>
           </span>
           {showDeleteButton && onDelete && (
             <Button 

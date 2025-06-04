@@ -30,7 +30,7 @@ const Hero = () => {
           <div className="max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto">
             <AspectRatio ratio={16/9} className="bg-transparent rounded-md overflow-hidden">
               <img 
-                src="/lovable-uploads/4e3ca7ad-2ec8-4b08-9eb4-753f2697ea5d.png" 
+                src="/lovable-uploads/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" 
                 alt="Person searching for home" 
                 className="object-contain w-full h-full"
               />

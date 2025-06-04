@@ -58,7 +58,7 @@
   
   /* Force light mode for all components */
   .card, [data-theme="dark"] .card, .dark .card {
-    @apply bg-white text-gray-900 border-gray-200;
+    @apply bg-white text-gray-900 border-gray-200 !important;
   }
   
   /* Force light mode for property cards */
@@ -68,7 +68,7 @@
   [data-theme="dark"] .property-card *,
   .dark .property-card,
   .dark .property-card * {
-    @apply bg-white text-gray-900 border-gray-200;
+    @apply bg-white text-gray-900 border-gray-200 !important;
   }
   
   /* Force light mode for navigation and menus */
@@ -81,7 +81,7 @@
   .dark nav,
   .dark .hamburger-menu,
   .dark .mobile-menu {
-    @apply bg-white text-gray-900 border-gray-200;
+    @apply bg-white text-gray-900 border-gray-200 !important;
   }
   
   /* Ensure content is always at least full viewport height minus header */
@@ -99,19 +99,67 @@
     margin-top: 2rem;
   }
   
-  /* Mobile optimizations */
+  /* Mobile optimizations - Fixed for better text wrapping and container sizing */
   @media (max-width: 640px) {
     [class*="lucide-"] {
       width: 16px;
       height: 16px;
+      flex-shrink: 0;
     }
     
     .card {
-      @apply p-2 bg-white;
+      @apply p-3 bg-white mx-2 rounded-lg;
+      max-width: calc(100vw - 2rem);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .card * {
+      @apply text-gray-900 bg-white;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     
     .button, button {
-      @apply text-sm py-1 px-2;
+      @apply text-sm py-2 px-3;
+    }
+    
+    /* Fix for property cards on mobile */
+    .grid > .card {
+      @apply w-full max-w-full mx-0 mb-4;
+    }
+    
+    /* Fix text overflow in cards */
+    .card h3, .card p, .card span {
+      @apply text-sm leading-tight;
+      max-width: 100%;
+      word-break: break-word;
+    }
+    
+    /* Fix review cards text overflow */
+    .review-card,
+    .review-card * {
+      @apply bg-white text-gray-900;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    
+    /* Container padding fixes */
+    .container {
+      @apply px-3 max-w-full;
+    }
+    
+    /* Grid responsive fixes */
+    .grid {
+      @apply gap-3 px-2;
+    }
+    
+    .grid-cols-1,
+    .grid-cols-2,
+    .grid-cols-3,
+    .grid-cols-4 {
+      @apply grid-cols-1;
     }
   }
 }
@@ -135,11 +183,9 @@
   }
   
   .grid > * {
-    @apply rounded-md shadow-sm bg-white;
-  }
-  
-  .container {
-    @apply px-4;
+    @apply rounded-md shadow-sm bg-white border-0;
+    max-width: 100%;
+    word-wrap: break-word;
   }
   
   /* Fix for boxy outlines in footer and amenities */
@@ -152,11 +198,6 @@
   .amenities-list button {
     @apply border-0 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 
     transition-colors hover:bg-transparent active:bg-transparent bg-white text-gray-900;
-  }
-  
-  /* Remove border from grid items on mobile */
-  .grid > * {
-    @apply border-0 bg-white;
   }
   
   /* Additional fixes for mobile footer links */
@@ -181,12 +222,6 @@
 /* Button size optimizations */
 button svg {
   @apply flex-shrink-0;
-}
-
-@media (max-width: 640px) {
-  [class*="lucide-"] {
-    @apply w-4 h-4;
-  }
 }
 
 /* Property image optimization */
@@ -285,6 +320,9 @@ input[type="radio"]:focus {
 
 .review-card {
   @apply bg-white rounded-lg shadow-sm p-4 mb-4;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Visibility toggle styles */
@@ -326,4 +364,48 @@ nav,
 .dark .navbar,
 .dark .mobile-menu {
   @apply bg-white text-gray-900 border-gray-100 !important;
+}
+
+/* Mobile text and container fixes */
+@media (max-width: 640px) {
+  /* Ensure all text stays within containers */
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Fix for property listing cards */
+  .property-card,
+  .card {
+    @apply mx-3 mb-4 p-3 bg-white border border-gray-200 rounded-lg;
+    max-width: calc(100vw - 1.5rem);
+    overflow: hidden;
+  }
+  
+  /* Fix text overflow in property cards */
+  .property-card h3,
+  .property-card p,
+  .property-card span,
+  .card h3,
+  .card p,
+  .card span {
+    @apply text-sm;
+    word-break: break-word;
+    white-space: normal;
+    overflow: hidden;
+    max-width: 100%;
+  }
+  
+  /* Review system mobile fixes */
+  .review-card {
+    @apply mx-3 mb-4 p-3 bg-white border border-gray-200 rounded-lg;
+    max-width: calc(100vw - 1.5rem);
+    overflow: hidden;
+  }
+  
+  .review-card * {
+    word-break: break-word;
+    white-space: normal;
+    max-width: 100%;
+  }
 }
