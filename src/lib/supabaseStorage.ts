@@ -86,15 +86,11 @@ export async function uploadAvatar(avatarFile: File, userId: string): Promise<st
       fileType: avatarFile.type
     });
 
-    // Check if avatars bucket exists, create if it doesn't
+    // Check if avatars bucket exists
     const bucketExists = await checkBucketExists('avatars');
     if (!bucketExists) {
-      console.log("Avatars bucket doesn't exist, attempting to create...");
-      const { error: createError } = await supabase.storage.createBucket('avatars', { public: true });
-      if (createError) {
-        console.error("Failed to create avatars bucket:", createError);
-        throw new Error("Avatar storage system not available. Please try again later.");
-      }
+      console.error("Avatars bucket doesn't exist");
+      throw new Error("Avatar storage system not available. Please try again later.");
     }
 
     const fileExtension = avatarFile.name.split('.').pop() || 'jpg';
@@ -267,9 +263,6 @@ export async function uploadMultipleFiles(
       uploadedCount: uploadedUrls.length,
       totalFiles: files.length
     });
-    
-    // If we're in the middle of uploading and some succeeded, 
-    // we could optionally clean up the partial uploads here
     
     throw error; // Re-throw the error for the UI to handle
   }
