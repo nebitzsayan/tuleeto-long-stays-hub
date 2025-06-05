@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, BedDouble, Square, IndianRupee, Trash2, Star, Eye, EyeOff } from "lucide-react";
+import { MapPin, BedDouble, Square, IndianRupee, Trash2, ThumbsUp, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -78,7 +78,7 @@ const PropertyListingCard = ({
             className="w-full h-full object-cover"
           />
         </AspectRatio>
-        <Badge className="absolute top-2 right-2 bg-tuleeto-orange text-white">
+        <Badge className="absolute top-2 right-2 bg-tuleeto-orange text-white text-xs px-2 py-1">
           {property.type}
         </Badge>
         
@@ -89,7 +89,7 @@ const PropertyListingCard = ({
                 <Button
                   variant="outline"
                   size="icon"
-                  className={`absolute top-2 left-2 bg-white hover:bg-gray-100 ${isHovered ? 'opacity-100' : 'opacity-70'}`}
+                  className={`absolute top-2 left-2 bg-white hover:bg-gray-100 h-8 w-8 ${isHovered ? 'opacity-100' : 'opacity-70'}`}
                   onClick={handleToggleVisibility}
                 >
                   {property.is_public ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -103,51 +103,51 @@ const PropertyListingCard = ({
         )}
         
         {property.average_rating !== undefined && property.average_rating > 0 && (
-          <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-md text-sm flex items-center">
-            <Star className="h-3.5 w-3.5 text-yellow-400 mr-1 fill-yellow-400" />
-            <span>{property.average_rating.toFixed(1)}</span>
+          <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-md text-xs flex items-center">
+            <ThumbsUp className="h-3 w-3 text-yellow-400 mr-1 fill-yellow-400" />
+            <span className="truncate">{property.average_rating.toFixed(1)}</span>
             {property.review_count && property.review_count > 0 && (
-              <span className="text-xs ml-1">({property.review_count})</span>
+              <span className="text-xs ml-1 truncate">({property.review_count})</span>
             )}
           </div>
         )}
       </div>
       
-      <CardContent className="p-4 bg-white">
-        <h3 className="text-lg font-semibold mb-2 text-gray-900 truncate">
+      <CardContent className="p-3 bg-white">
+        <h3 className="text-sm md:text-lg font-semibold mb-2 text-gray-900 truncate leading-tight">
           {property.title}
         </h3>
         <div className="flex items-center text-gray-500 mb-2">
-          <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-          <span className="text-sm font-medium truncate">
+          <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+          <span className="text-xs md:text-sm font-medium truncate">
             {property.location}
           </span>
         </div>
         
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="flex items-center text-gray-600">
-            <BedDouble className="h-4 w-4 mr-1 flex-shrink-0" />
-            <span className="text-sm font-medium">
+        <div className="grid grid-cols-3 gap-1 md:gap-2 mb-3">
+          <div className="flex items-center text-gray-600 min-w-0">
+            <BedDouble className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-medium truncate">
               {property.bedrooms}
             </span>
           </div>
-          <div className="flex items-center text-gray-600">
-            <Square className="h-4 w-4 mr-1 flex-shrink-0" />
-            <span className="text-sm font-medium">
+          <div className="flex items-center text-gray-600 min-w-0">
+            <Square className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-medium truncate">
               {property.area}
             </span>
           </div>
-          <div className="flex items-center text-gray-600">
-            <Star className="h-4 w-4 mr-1 flex-shrink-0" />
-            <span className="text-sm font-medium">
+          <div className="flex items-center text-gray-600 min-w-0">
+            <ThumbsUp className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-medium truncate">
               {property.average_rating ? property.average_rating.toFixed(1) : "N/A"}
             </span>
           </div>
         </div>
         
         <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-          <span className="text-tuleeto-orange text-lg font-bold flex items-center">
-            <IndianRupee className="h-4 w-4 mr-1 flex-shrink-0" />
+          <span className="text-tuleeto-orange text-sm md:text-lg font-bold flex items-center min-w-0 flex-1">
+            <IndianRupee className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
             <span className="truncate">
               {property.price.toLocaleString('en-IN')}/m
             </span>
@@ -156,10 +156,10 @@ const PropertyListingCard = ({
             <Button 
               variant="outline" 
               size="sm"
-              className="border-destructive text-destructive hover:bg-destructive hover:text-white z-10"
+              className="border-destructive text-destructive hover:bg-destructive hover:text-white z-10 ml-2 flex-shrink-0"
               onClick={handleDeleteClick}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden md:inline ml-1">Delete</span>
             </Button>
           )}

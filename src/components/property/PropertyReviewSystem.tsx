@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, MessageCircle, Send, User } from "lucide-react";
+import { ThumbsUp, MessageCircle, Send, User } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -235,30 +235,30 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
     if (!replies.length) return null;
 
     return (
-      <div className={cn("space-y-3", depth > 0 && "ml-6 border-l-2 border-gray-100 pl-4")}>
+      <div className={cn("space-y-3", depth > 0 && "ml-4 md:ml-6 border-l-2 border-gray-100 pl-3 md:pl-4")}>
         {replies.map((reply) => (
-          <div key={reply.id} className="bg-gray-50 p-3 rounded-lg">
+          <div key={reply.id} className="bg-gray-50 p-3 rounded-lg break-words">
             <div className="flex items-start space-x-3">
-              <Avatar className="h-8 w-8">
+              <Avatar className="h-6 w-6 md:h-8 md:w-8 flex-shrink-0">
                 <AvatarImage src={reply.user_profile?.avatar_url || ""} />
                 <AvatarFallback className="bg-tuleeto-orange text-white text-xs">
-                  <User className="h-4 w-4" />
+                  <User className="h-3 w-3 md:h-4 md:w-4" />
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="font-medium text-sm">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="font-medium text-xs md:text-sm truncate">
                     {reply.user_profile?.full_name || "Anonymous User"}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 flex-shrink-0">
                     {new Date(reply.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700">{reply.content}</p>
+                <p className="text-xs md:text-sm text-gray-700 break-words leading-relaxed">{reply.content}</p>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="mt-2 text-xs"
+                  className="mt-2 text-xs h-6 px-2"
                   onClick={() => setReplyingTo(reply.id)}
                 >
                   <MessageCircle className="h-3 w-3 mr-1" />
@@ -271,14 +271,14 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                       placeholder="Write a reply..."
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
-                      className="text-sm"
+                      className="text-xs md:text-sm resize-none"
                       rows={2}
                     />
                     <div className="flex space-x-2">
                       <Button
                         size="sm"
                         onClick={() => handleSubmitReply(reply.review_id, reply.id)}
-                        className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+                        className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-xs h-7"
                       >
                         <Send className="h-3 w-3 mr-1" />
                         Reply
@@ -290,6 +290,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                           setReplyingTo(null);
                           setReplyContent("");
                         }}
+                        className="text-xs h-7"
                       >
                         Cancel
                       </Button>
@@ -329,20 +330,20 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Reviews ({reviews.length})</span>
+        <CardTitle className="flex items-center justify-between flex-wrap gap-2">
+          <span className="text-lg md:text-xl">Reviews ({reviews.length})</span>
           {reviews.length > 0 && (
             <div className="flex items-center space-x-1">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span className="font-bold">{averageRating.toFixed(1)}</span>
+              <ThumbsUp className="h-4 w-4 md:h-5 md:w-5 fill-yellow-400 text-yellow-400" />
+              <span className="font-bold text-sm md:text-base">{averageRating.toFixed(1)}</span>
             </div>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-4 md:p-6">
         {user && user.id !== ownerId && (
           <div className="border-b pb-6">
-            <h3 className="font-semibold mb-4">Write a Review</h3>
+            <h3 className="font-semibold mb-4 text-sm md:text-base">Write a Review</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Rating</label>
@@ -353,9 +354,9 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                       onClick={() => setRating(star)}
                       className="focus:outline-none"
                     >
-                      <Star
+                      <ThumbsUp
                         className={cn(
-                          "h-6 w-6 transition-colors",
+                          "h-5 w-5 md:h-6 md:w-6 transition-colors",
                           star <= rating 
                             ? "fill-yellow-400 text-yellow-400" 
                             : "text-gray-300 hover:text-yellow-300"
@@ -373,13 +374,14 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
+                  className="resize-none text-sm"
                 />
               </div>
               
               <Button
                 onClick={handleSubmitReview}
                 disabled={submitting || rating === 0}
-                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-sm"
               >
                 {submitting ? "Submitting..." : "Submit Review"}
               </Button>
@@ -389,31 +391,31 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
 
         <div className="space-y-6">
           {reviews.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-gray-500 text-center py-8 text-sm md:text-base">
               No reviews yet. Be the first to review this property!
             </p>
           ) : (
             reviews.map((review) => (
-              <div key={review.id} className="border-b last:border-b-0 pb-6 last:pb-0">
-                <div className="flex items-start space-x-4">
-                  <Avatar className="h-10 w-10">
+              <div key={review.id} className="border-b last:border-b-0 pb-6 last:pb-0 break-words">
+                <div className="flex items-start space-x-3 md:space-x-4">
+                  <Avatar className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
                     <AvatarImage src={review.user_profile?.avatar_url || ""} />
                     <AvatarFallback className="bg-tuleeto-orange text-white">
-                      <User className="h-5 w-5" />
+                      <User className="h-4 w-4 md:h-5 md:w-5" />
                     </AvatarFallback>
                   </Avatar>
                   
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="font-medium">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span className="font-medium text-sm md:text-base truncate">
                         {review.user_profile?.full_name || "Anonymous User"}
                       </span>
                       <div className="flex space-x-1">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
+                          <ThumbsUp
                             key={star}
                             className={cn(
-                              "h-4 w-4",
+                              "h-3 w-3 md:h-4 md:w-4",
                               star <= review.rating 
                                 ? "fill-yellow-400 text-yellow-400" 
                                 : "text-gray-300"
@@ -421,13 +423,13 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                           />
                         ))}
                       </div>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs md:text-sm text-gray-500">
                         {new Date(review.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     
                     {review.comment && (
-                      <p className="text-gray-700 mb-3">{review.comment}</p>
+                      <p className="text-gray-700 mb-3 text-sm md:text-base break-words leading-relaxed">{review.comment}</p>
                     )}
                     
                     <div className="flex items-center space-x-4">
@@ -435,8 +437,9 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                         variant="ghost"
                         size="sm"
                         onClick={() => setReplyingTo(review.id)}
+                        className="text-xs md:text-sm h-7"
                       >
-                        <MessageCircle className="h-4 w-4 mr-1" />
+                        <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                         Reply
                       </Button>
                     </div>
@@ -448,14 +451,15 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                           value={replyContent}
                           onChange={(e) => setReplyContent(e.target.value)}
                           rows={3}
+                          className="resize-none text-sm"
                         />
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
                             onClick={() => handleSubmitReply(review.id)}
-                            className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+                            className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-xs h-7"
                           >
-                            <Send className="h-4 w-4 mr-1" />
+                            <Send className="h-3 w-3 mr-1" />
                             Submit Reply
                           </Button>
                           <Button
@@ -465,6 +469,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
                               setReplyingTo(null);
                               setReplyContent("");
                             }}
+                            className="text-xs h-7"
                           >
                             Cancel
                           </Button>

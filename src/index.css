@@ -100,7 +100,7 @@
     margin-top: 2rem;
   }
   
-  /* Mobile optimizations - Clean 2x2 grid layout */
+  /* Mobile optimizations - Clean 2x2 grid layout with proper text wrapping */
   @media (max-width: 640px) {
     [class*="lucide-"] {
       width: 16px;
@@ -112,12 +112,16 @@
       @apply p-3 bg-white rounded-lg border border-gray-200;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     
     .card * {
       @apply text-gray-900 bg-white;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     
     .button, button {
@@ -133,6 +137,7 @@
     
     .grid > .card {
       @apply w-full max-w-full mx-0 mb-3;
+      min-width: 0; /* Allows flexbox items to shrink below content size */
     }
     
     /* Fix text overflow in cards */
@@ -140,14 +145,34 @@
       @apply text-sm leading-tight;
       max-width: 100%;
       word-break: break-word;
-      white-space: nowrap;
+      overflow-wrap: break-word;
+      white-space: normal;
       overflow: hidden;
-      text-overflow: ellipsis;
+    }
+    
+    /* Property card specific fixes */
+    .card .grid {
+      min-width: 0;
+    }
+    
+    .card .grid > div {
+      min-width: 0;
+      overflow: hidden;
     }
     
     /* Container padding fixes */
     .container {
       @apply px-3 max-w-full;
+    }
+    
+    /* Review card mobile fixes */
+    .review-card,
+    .review-card * {
+      @apply bg-white text-gray-900;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+      box-sizing: border-box;
     }
   }
 }
@@ -273,7 +298,7 @@ input[type="radio"]:focus {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-/* Review system styles */
+/* Review system styles with improved text wrapping */
 .star-rating {
   @apply flex items-center;
 }
@@ -291,6 +316,7 @@ input[type="radio"]:focus {
   max-width: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 /* Visibility toggle styles */
@@ -332,4 +358,32 @@ nav,
 .dark .navbar,
 .dark .mobile-menu {
   @apply bg-transparent text-gray-900 border-transparent shadow-none !important;
+}
+
+/* Text truncation and overflow fixes for all content */
+.truncate-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wrap-text {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* Ensure proper grid item sizing */
+.grid > * {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Dialog improvements for mobile */
+@media (max-width: 640px) {
+  .dialog-content {
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
 }

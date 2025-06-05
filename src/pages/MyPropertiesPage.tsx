@@ -273,7 +273,7 @@ const MyPropertiesPage = () => {
               <p className="mt-2 text-gray-500">Loading your properties...</p>
             </div>
           ) : properties.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 md:gap-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-8">
               {properties.map((property) => (
                 <div key={property.id} className="relative">
                   <PropertyListingCard 
@@ -286,7 +286,7 @@ const MyPropertiesPage = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="absolute top-2 left-14 bg-white hover:bg-gray-100 p-1 md:p-2 z-10"
+                    className="absolute top-2 left-14 bg-white hover:bg-gray-100 h-8 w-8 p-0 z-10"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditProperty(property);
@@ -316,54 +316,57 @@ const MyPropertiesPage = () => {
       
       <Footer />
 
-      {/* Property Edit Dialog */}
+      {/* Property Edit Dialog - Improved for mobile */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Property</DialogTitle>
-            <DialogDescription>
+        <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[90vh] overflow-y-auto' : 'sm:max-w-md'} p-4`}>
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-lg">Edit Property</DialogTitle>
+            <DialogDescription className="text-sm">
               Update your property details below
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title" className="text-sm font-medium">Title</Label>
               <Input
                 id="title"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
+                className="text-sm"
               />
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
               <Textarea
                 id="description"
                 rows={3}
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
+                className="text-sm resize-none"
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
-                <Label htmlFor="price">Monthly Rent</Label>
+                <Label htmlFor="price" className="text-sm font-medium">Monthly Rent</Label>
                 <Input
                   id="price"
                   type="number"
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
+                  className="text-sm"
                 />
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="bedrooms">Bedrooms</Label>
+                <Label htmlFor="bedrooms" className="text-sm font-medium">Bedrooms</Label>
                 <Select 
                   value={editBedrooms}
                   onValueChange={setEditBedrooms}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -378,12 +381,12 @@ const MyPropertiesPage = () => {
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="bathrooms">Bathrooms</Label>
+              <Label htmlFor="bathrooms" className="text-sm font-medium">Bathrooms</Label>
               <Select 
                 value={editBathrooms}
                 onValueChange={setEditBathrooms}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -397,7 +400,7 @@ const MyPropertiesPage = () => {
             </div>
             
             <div className="grid gap-2">
-              <Label className="flex items-center justify-between">
+              <Label className="flex items-center justify-between text-sm font-medium">
                 <span>Listing Visibility</span>
                 <div className="flex items-center space-x-2">
                   <Switch 
@@ -405,7 +408,7 @@ const MyPropertiesPage = () => {
                     checked={editIsPublic} 
                     onCheckedChange={setEditIsPublic}
                   />
-                  <Label htmlFor="is-public" className="text-sm font-normal">
+                  <Label htmlFor="is-public" className="text-xs font-normal">
                     {editIsPublic ? 'Public' : 'Private'}
                   </Label>
                 </div>
@@ -418,8 +421,8 @@ const MyPropertiesPage = () => {
             </div>
             
             <div className="grid gap-2">
-              <Label>Amenities</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <Label className="text-sm font-medium">Amenities</Label>
+              <div className="grid grid-cols-1 gap-2">
                 {availableFeatures.map(feature => (
                   <div key={feature} className="flex items-center space-x-2">
                     <Checkbox 
@@ -439,14 +442,14 @@ const MyPropertiesPage = () => {
             </div>
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditing(false)}>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsEditing(false)} className="text-sm">
               Cancel
             </Button>
             <Button 
               onClick={handleSaveChanges}
               disabled={isSaving}
-              className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark"
+              className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-sm"
             >
               {isSaving ? (
                 <>
