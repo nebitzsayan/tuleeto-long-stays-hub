@@ -31,7 +31,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent border-0 shadow-none backdrop-blur-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center">
@@ -40,10 +40,10 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/listings" className="text-gray-700 hover:text-tuleeto-orange transition-colors">
+            <Link to="/listings" className="text-gray-800 hover:text-tuleeto-orange transition-colors font-medium">
               Find Properties
             </Link>
-            <Link to="/list-property" className="text-gray-700 hover:text-tuleeto-orange transition-colors">
+            <Link to="/list-property" className="text-gray-800 hover:text-tuleeto-orange transition-colors font-medium">
               List Property
             </Link>
             
@@ -116,11 +116,8 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none">
+                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none text-gray-800 font-medium">
                   <Link to="/auth">Sign In</Link>
-                </Button>
-                <Button className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark border-0 shadow-none" asChild>
-                  <Link to="/auth">Get Started</Link>
                 </Button>
               </div>
             )}
@@ -202,7 +199,7 @@ const Navbar = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-transparent border-0 shadow-none"
+                className="bg-transparent border-0 shadow-none text-gray-800"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -213,32 +210,27 @@ const Navbar = () => {
 
         {/* Mobile Navigation - Only show when not authenticated */}
         {isMobileMenuOpen && !user && (
-          <div className="md:hidden border-0 py-4 bg-transparent">
+          <div className="md:hidden border-0 py-4 bg-white rounded-lg shadow-sm mt-2">
             <div className="flex flex-col space-y-4">
               <Link 
                 to="/listings" 
-                className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 bg-transparent border-0 shadow-none"
+                className="text-gray-800 hover:text-tuleeto-orange transition-colors py-2 font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Find Properties
               </Link>
               <Link 
                 to="/list-property" 
-                className="text-gray-700 hover:text-tuleeto-orange transition-colors py-2 bg-transparent border-0 shadow-none"
+                className="text-gray-800 hover:text-tuleeto-orange transition-colors py-2 font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 List Property
               </Link>
               
-              <div className="flex flex-col space-y-2 border-0 pt-4">
-                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none">
+              <div className="flex flex-col space-y-2 border-t pt-4">
+                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none text-gray-800 font-medium">
                   <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                     Sign In
-                  </Link>
-                </Button>
-                <Button className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark border-0 shadow-none" asChild>
-                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                    Get Started
                   </Link>
                 </Button>
               </div>

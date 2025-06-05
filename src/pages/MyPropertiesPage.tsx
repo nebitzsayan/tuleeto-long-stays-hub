@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -316,151 +315,160 @@ const MyPropertiesPage = () => {
       
       <Footer />
 
-      {/* Property Edit Dialog - Improved for mobile */}
+      {/* Property Edit Dialog - Mobile Responsive */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[90vh] overflow-y-auto' : 'sm:max-w-md'} p-4`}>
-          <DialogHeader className="space-y-2">
-            <DialogTitle className="text-lg">Edit Property</DialogTitle>
-            <DialogDescription className="text-sm">
-              Update your property details below
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-            <div className="grid gap-2">
-              <Label htmlFor="title" className="text-sm font-medium">Title</Label>
-              <Input
-                id="title"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                className="text-sm"
-              />
-            </div>
+        <DialogContent className="w-full max-w-[95vw] max-h-[95vh] p-0 gap-0 sm:max-w-2xl">
+          <div className="flex flex-col h-full max-h-[95vh]">
+            <DialogHeader className="p-4 pb-2 border-b">
+              <DialogTitle className="text-lg font-semibold">Edit Property</DialogTitle>
+              <DialogDescription className="text-sm text-gray-600">
+                Update your property details below
+              </DialogDescription>
+            </DialogHeader>
             
-            <div className="grid gap-2">
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-              <Textarea
-                id="description"
-                rows={3}
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                className="text-sm resize-none"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="price" className="text-sm font-medium">Monthly Rent</Label>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-medium">Title</Label>
                 <Input
-                  id="price"
-                  type="number"
-                  value={editPrice}
-                  onChange={(e) => setEditPrice(e.target.value)}
-                  className="text-sm"
+                  id="title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full"
                 />
               </div>
               
-              <div className="grid gap-2">
-                <Label htmlFor="bedrooms" className="text-sm font-medium">Bedrooms</Label>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                <Textarea
+                  id="description"
+                  rows={3}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full resize-none"
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-sm font-medium">Monthly Rent ($)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bedrooms" className="text-sm font-medium">Bedrooms</Label>
+                  <Select 
+                    value={editBedrooms}
+                    onValueChange={setEditBedrooms}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="bathrooms" className="text-sm font-medium">Bathrooms</Label>
                 <Select 
-                  value={editBedrooms}
-                  onValueChange={setEditBedrooms}
+                  value={editBathrooms}
+                  onValueChange={setEditBathrooms}
                 >
-                  <SelectTrigger className="text-sm">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[1, 2, 3, 4, 5, 6].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
+                    {["1", "1.5", "2", "2.5", "3", "3.5", "4"].map((num) => (
+                      <SelectItem key={num} value={num}>
                         {num}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="bathrooms" className="text-sm font-medium">Bathrooms</Label>
-              <Select 
-                value={editBathrooms}
-                onValueChange={setEditBathrooms}
-              >
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {["1", "1.5", "2", "2.5", "3", "3.5", "4"].map((num) => (
-                    <SelectItem key={num} value={num}>
-                      {num}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label className="flex items-center justify-between text-sm font-medium">
-                <span>Listing Visibility</span>
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="is-public"
-                    checked={editIsPublic} 
-                    onCheckedChange={setEditIsPublic}
-                  />
-                  <Label htmlFor="is-public" className="text-xs font-normal">
-                    {editIsPublic ? 'Public' : 'Private'}
-                  </Label>
-                </div>
-              </Label>
-              <p className="text-xs text-gray-500">
-                {editIsPublic 
-                  ? 'Your property will be visible to everyone' 
-                  : 'Your property will be hidden from listings and search results'}
-              </p>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label className="text-sm font-medium">Amenities</Label>
-              <div className="grid grid-cols-1 gap-2">
-                {availableFeatures.map(feature => (
-                  <div key={feature} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`feature-${feature}`}
-                      checked={editFeatures.includes(feature)}
-                      onCheckedChange={() => handleFeatureToggle(feature)}
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Listing Visibility</Label>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="is-public"
+                      checked={editIsPublic} 
+                      onCheckedChange={setEditIsPublic}
                     />
-                    <label 
-                      htmlFor={`feature-${feature}`}
-                      className="text-sm font-medium leading-none"
-                    >
-                      {feature}
-                    </label>
+                    <Label htmlFor="is-public" className="text-sm">
+                      {editIsPublic ? 'Public' : 'Private'}
+                    </Label>
                   </div>
-                ))}
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  {editIsPublic 
+                    ? 'Your property will be visible to everyone searching for rentals' 
+                    : 'Your property will be hidden from listings and search results'}
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Amenities</Label>
+                <div className="space-y-3">
+                  {availableFeatures.map(feature => (
+                    <div key={feature} className="flex items-center space-x-3">
+                      <Checkbox 
+                        id={`feature-${feature}`}
+                        checked={editFeatures.includes(feature)}
+                        onCheckedChange={() => handleFeatureToggle(feature)}
+                        className="flex-shrink-0"
+                      />
+                      <label 
+                        htmlFor={`feature-${feature}`}
+                        className="text-sm leading-none cursor-pointer"
+                      >
+                        {feature}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+            
+            <DialogFooter className="p-4 border-t bg-gray-50">
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditing(false)} 
+                  className="flex-1 sm:flex-none"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSaveChanges}
+                  disabled={isSaving}
+                  className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark flex-1 sm:flex-none"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+              </div>
+            </DialogFooter>
           </div>
-          
-          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setIsEditing(false)} className="text-sm">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveChanges}
-              disabled={isSaving}
-              className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-sm"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
