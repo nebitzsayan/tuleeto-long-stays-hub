@@ -8,13 +8,6 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
       fileType: imageFile.type
     });
 
-    // Check if bucket exists
-    const bucketExists = await checkBucketExists('property_images');
-    if (!bucketExists) {
-      console.error("Property images bucket does not exist");
-      throw new Error("Storage system not properly configured. Please try again or contact support.");
-    }
-
     const timestamp = new Date().getTime();
     const fileExtension = imageFile.name.split('.').pop() || 'jpg';
     const imageName = `property_image_${timestamp}.${fileExtension}`;
@@ -85,13 +78,6 @@ export async function uploadAvatar(avatarFile: File, userId: string): Promise<st
       fileSize: avatarFile.size,
       fileType: avatarFile.type
     });
-
-    // Check if avatars bucket exists
-    const bucketExists = await checkBucketExists('avatars');
-    if (!bucketExists) {
-      console.error("Avatars bucket doesn't exist");
-      throw new Error("Avatar storage system not available. Please try again later.");
-    }
 
     const fileExtension = avatarFile.name.split('.').pop() || 'jpg';
     const fileName = `avatar_${userId}_${Date.now()}.${fileExtension}`;
@@ -187,13 +173,6 @@ export async function uploadMultipleFiles(
   
   try {
     console.log(`Starting batch upload of ${files.length} files to ${bucketName}`);
-    
-    // Check if bucket exists before starting uploads
-    const bucketExists = await checkBucketExists(bucketName);
-    if (!bucketExists) {
-      console.error(`Bucket ${bucketName} does not exist`);
-      throw new Error("Storage system not properly configured. Photo uploads will not work until this is fixed.");
-    }
     
     // Set initial progress
     onProgress?.(0);
