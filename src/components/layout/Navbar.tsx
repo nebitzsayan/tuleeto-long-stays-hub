@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-tuleeto-orange/20 backdrop-blur-md border-b border-tuleeto-orange/30 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center">
@@ -40,10 +39,10 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/listings" className="text-gray-800 hover:text-tuleeto-orange transition-colors font-medium">
+            <Link to="/listings" className="text-gray-900 hover:text-tuleeto-orange transition-colors font-semibold">
               Find Properties
             </Link>
-            <Link to="/list-property" className="text-gray-800 hover:text-tuleeto-orange transition-colors font-medium">
+            <Link to="/list-property" className="text-gray-900 hover:text-tuleeto-orange transition-colors font-semibold">
               List Property
             </Link>
             
@@ -116,7 +115,7 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none text-gray-800 font-medium">
+                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none text-gray-900 font-semibold">
                   <Link to="/auth">Sign In</Link>
                 </Button>
               </div>
@@ -199,7 +198,7 @@ const Navbar = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-transparent border-0 shadow-none text-gray-800"
+                className="bg-transparent border-0 shadow-none text-gray-900"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -210,25 +209,25 @@ const Navbar = () => {
 
         {/* Mobile Navigation - Only show when not authenticated */}
         {isMobileMenuOpen && !user && (
-          <div className="md:hidden border-0 py-4 bg-white rounded-lg shadow-sm mt-2">
+          <div className="md:hidden border-0 py-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm mt-2">
             <div className="flex flex-col space-y-4">
               <Link 
                 to="/listings" 
-                className="text-gray-800 hover:text-tuleeto-orange transition-colors py-2 font-medium"
+                className="text-gray-900 hover:text-tuleeto-orange transition-colors py-2 font-semibold"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Find Properties
               </Link>
               <Link 
                 to="/list-property" 
-                className="text-gray-800 hover:text-tuleeto-orange transition-colors py-2 font-medium"
+                className="text-gray-900 hover:text-tuleeto-orange transition-colors py-2 font-semibold"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 List Property
               </Link>
               
               <div className="flex flex-col space-y-2 border-t pt-4">
-                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none text-gray-800 font-medium">
+                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none text-gray-900 font-semibold">
                   <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                     Sign In
                   </Link>
