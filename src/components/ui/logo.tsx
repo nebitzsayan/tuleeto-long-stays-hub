@@ -10,7 +10,7 @@ const Logo = ({ className = "", showText = true }: LogoProps) => {
   return (
     <Link to="/" className={`flex items-center gap-2 ${className}`}>
       <img 
-        src="/lovable-uploads/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png"
+        src="/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png"
         alt="Tuleeto Logo" 
         className="h-8 w-auto"
       />
