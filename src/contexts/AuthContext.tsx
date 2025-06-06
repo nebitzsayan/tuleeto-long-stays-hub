@@ -3,6 +3,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeInput, logSecurityEvent } from '@/lib/security';
 
 type UserProfile = {
   id: string;
@@ -27,6 +28,20 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Clean up auth state utility
+const cleanupAuthState = () => {
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  Object.keys(sessionStorage || {}).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      sessionStorage.removeItem(key);
+    }
+  });
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -46,49 +61,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
-        // If profile doesn't exist, create one
-        const currentUser = await supabase.auth.getUser();
-        if (currentUser.data.user) {
-          console.log('Creating new profile for user:', userId);
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              email: currentUser.data.user.email!,
-              full_name: currentUser.data.user.user_metadata?.full_name || null
-            });
-
-          if (insertError) {
-            console.error('Error creating profile:', insertError);
-          } else {
-            // Grant admin role to specific email
-            if (currentUser.data.user.email === 'sayangayan4976@gmail.com') {
-              console.log('Granting admin role to:', currentUser.data.user.email);
-              const { error: roleError } = await supabase
-                .from('user_roles')
-                .upsert({
-                  user_id: userId,
-                  role: 'admin'
-                });
-
-              if (roleError) {
-                console.error('Error granting admin role:', roleError);
-              }
-            }
-          }
-
-          setUserProfile({
-            id: userId,
-            full_name: currentUser.data.user.user_metadata?.full_name || null,
-            avatar_url: null,
-            email: currentUser.data.user.email!,
-            isAdmin: currentUser.data.user.email === 'sayangayan4976@gmail.com'
-          });
-        }
         return;
       }
 
-      // Check if user is admin
+      // Check if user has admin role
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
@@ -112,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+      await logSecurityEvent('profile_fetch_error', { userId, error });
     }
   };
 
@@ -124,7 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         if (!mounted) return;
@@ -135,7 +111,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user && event === 'SIGNED_IN') {
-          // Defer profile fetching to avoid deadlocks
           setTimeout(() => {
             if (mounted) {
               fetchUserProfile(currentSession.user.id);
@@ -150,14 +125,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (event === 'SIGNED_IN') {
+          await logSecurityEvent('user_signed_in', { userId: currentSession?.user?.id });
           toast.success('Successfully signed in!');
         } else if (event === 'SIGNED_OUT') {
+          await logSecurityEvent('user_signed_out', {});
           toast.info('You have been signed out');
         }
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       if (!mounted) return;
       
@@ -187,10 +163,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      cleanupAuthState();
+      
+      // Sanitize input
+      const sanitizedEmail = sanitizeInput(email);
+      
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: sanitizedEmail, 
+        password 
+      });
+      
       if (error) throw error;
     } catch (error: any) {
       console.error('Sign in error:', error);
+      await logSecurityEvent('sign_in_failed', { email, error: error.message });
       toast.error(`Error signing in: ${error.message}`);
       throw error;
     } finally {
@@ -201,18 +193,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       setIsLoading(true);
+      cleanupAuthState();
+      
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeInput(email);
+      const sanitizedFullName = sanitizeInput(fullName);
+      
       const { error } = await supabase.auth.signUp({
-        email,
+        email: sanitizedEmail,
         password,
         options: {
-          data: { full_name: fullName }
+          data: { full_name: sanitizedFullName }
         }
       });
       
       if (error) throw error;
+      await logSecurityEvent('user_signed_up', { email: sanitizedEmail });
       toast.success('Registration successful! Please check your email for verification.');
     } catch (error: any) {
       console.error('Sign up error:', error);
+      await logSecurityEvent('sign_up_failed', { email, error: error.message });
       toast.error(`Error signing up: ${error.message}`);
       throw error;
     } finally {
@@ -223,10 +223,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signOut();
+      cleanupAuthState();
+      
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) throw error;
+      
+      // Force page reload for clean state
+      window.location.href = '/';
     } catch (error: any) {
       console.error('Sign out error:', error);
+      await logSecurityEvent('sign_out_failed', { error: error.message });
       toast.error(`Error signing out: ${error.message}`);
       throw error;
     } finally {
@@ -237,12 +243,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const sanitizedEmail = sanitizeInput(email);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(sanitizedEmail, {
         redirectTo: `${window.location.origin}/auth`,
       });
       if (error) throw error;
+      
+      await logSecurityEvent('password_reset_requested', { email: sanitizedEmail });
     } catch (error: any) {
       console.error('Reset password error:', error);
+      await logSecurityEvent('password_reset_failed', { email, error: error.message });
       toast.error(`Error resetting password: ${error.message}`);
       throw error;
     } finally {
@@ -253,6 +264,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       setIsLoading(true);
+      cleanupAuthState();
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -266,6 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error('Google sign in error:', error);
+      await logSecurityEvent('google_sign_in_failed', { error: error.message });
       toast.error(`Error signing in with Google: ${error.message}`);
       throw error;
     } finally {

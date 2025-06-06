@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { validateImageFile, sanitizeInput, logSecurityEvent } from "@/lib/security";
 
 export async function uploadImage(imageFile: File, userId: string): Promise<string | null> {
   try {
@@ -8,9 +9,16 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
       fileType: imageFile.type
     });
 
+    // Validate file
+    const validation = await validateImageFile(imageFile);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
+    }
+
     const timestamp = new Date().getTime();
     const fileExtension = imageFile.name.split('.').pop() || 'jpg';
-    const imageName = `property_image_${timestamp}.${fileExtension}`;
+    const sanitizedExtension = sanitizeInput(fileExtension);
+    const imageName = `property_image_${timestamp}.${sanitizedExtension}`;
     const imagePath = `${userId}/${imageName}`;
 
     console.log(`Uploading to path: ${imagePath}`);
@@ -24,8 +32,8 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
 
     if (error) {
       console.error("Supabase upload error:", error);
+      await logSecurityEvent('image_upload_failed', { userId, error: error.message });
       
-      // Handle specific error cases
       if (error.message?.includes('Bucket not found')) {
         throw new Error("Storage system not fully configured. Photo uploads will not work until this is fixed.");
       } else if (error.message?.includes('Unauthorized')) {
@@ -44,27 +52,23 @@ export async function uploadImage(imageFile: File, userId: string): Promise<stri
       throw new Error("Upload completed but file path is missing. Please try again.");
     }
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('property_images')
       .getPublicUrl(imagePath);
 
+    await logSecurityEvent('image_uploaded', { userId, imagePath });
     console.log(`Upload successful. Public URL: ${publicUrl}`);
     return publicUrl;
   } catch (error: any) {
-    console.error("Unexpected error uploading image:", {
-      error: error.message,
-      fileName: imageFile.name,
-      userId: userId
-    });
+    console.error("Unexpected error uploading image:", error.message);
+    await logSecurityEvent('image_upload_error', { userId, error: error.message });
     
-    // Return a user-friendly error message
     if (error.message?.startsWith('Upload failed:') || 
         error.message?.startsWith('Storage system') ||
         error.message?.startsWith('You need to be logged in') ||
         error.message?.startsWith('This file type') ||
         error.message?.startsWith('File size')) {
-      throw error; // Re-throw our custom errors as-is
+      throw error;
     }
     
     throw new Error("Storage system is currently unavailable. Photos may not upload correctly.");
@@ -79,8 +83,15 @@ export async function uploadAvatar(avatarFile: File, userId: string): Promise<st
       fileType: avatarFile.type
     });
 
+    // Validate file
+    const validation = await validateImageFile(avatarFile);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
+    }
+
     const fileExtension = avatarFile.name.split('.').pop() || 'jpg';
-    const fileName = `avatar_${userId}_${Date.now()}.${fileExtension}`;
+    const sanitizedExtension = sanitizeInput(fileExtension);
+    const fileName = `${userId}/avatar_${userId}_${Date.now()}.${sanitizedExtension}`;
     
     const { data, error } = await supabase.storage
       .from('avatars')
@@ -91,15 +102,14 @@ export async function uploadAvatar(avatarFile: File, userId: string): Promise<st
 
     if (error) {
       console.error("Error uploading avatar:", error);
+      await logSecurityEvent('avatar_upload_failed', { userId, error: error.message });
       throw new Error(`Avatar upload failed: ${error.message}`);
     }
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
       .getPublicUrl(fileName);
     
-    // Update user profile with new avatar URL
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ avatar_url: publicUrl })
@@ -107,14 +117,15 @@ export async function uploadAvatar(avatarFile: File, userId: string): Promise<st
 
     if (updateError) {
       console.error("Error updating profile:", updateError);
-      // Don't throw here, avatar was uploaded successfully
       console.warn("Avatar uploaded but profile update failed");
     }
 
+    await logSecurityEvent('avatar_uploaded', { userId });
     console.log(`Avatar upload successful. Public URL: ${publicUrl}`);
     return publicUrl;
   } catch (error: any) {
     console.error("Unexpected error uploading avatar:", error.message);
+    await logSecurityEvent('avatar_upload_error', { userId, error: error.message });
     throw error;
   }
 }
