@@ -30,7 +30,7 @@ const Hero = () => {
           <div className="max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto">
             <AspectRatio ratio={1} className="w-full">
               <img 
-                src="/lovable-uploads/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" 
+                src="/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" 
                 alt="Person searching for home" 
                 className="w-full h-full object-contain"
               />
