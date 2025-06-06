@@ -22,7 +22,6 @@ const OwnerAvatar = ({
 }: OwnerAvatarProps) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState(ownerName);
   
   // Size mapping
@@ -49,15 +48,10 @@ const OwnerAvatar = ({
           
         if (error) {
           console.error("Error fetching owner profile:", error);
-          setError(error.message);
         } else if (data) {
           // Set avatar URL if available
           if (data.avatar_url) {
-            // Handle both full URLs and relative paths
-            const fullAvatarUrl = data.avatar_url.startsWith('http') 
-              ? data.avatar_url 
-              : `https://gokrqmykzovxqaoanapu.supabase.co/storage/v1/object/public/avatars/${data.avatar_url}`;
-            setAvatarUrl(fullAvatarUrl);
+            setAvatarUrl(data.avatar_url);
           }
           
           // Set display name if available and not already provided
@@ -67,7 +61,6 @@ const OwnerAvatar = ({
         }
       } catch (error: any) {
         console.error("Unexpected error fetching avatar:", error);
-        setError(error.message);
       } finally {
         setLoading(false);
       }

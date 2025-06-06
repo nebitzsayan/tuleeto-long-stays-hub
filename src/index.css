@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,36 +35,6 @@
 
     --radius: 0.5rem;
   }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 24 96% 53%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 24 96% 53%;
-  }
 }
 
 @layer base {
@@ -72,18 +43,46 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-gray-900;
     font-family: 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     font-weight: 400;
+    background-color: #EDC3A4;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium;
-    color: hsl(var(--foreground));
+    @apply font-medium text-gray-900;
   }
   
   p, span, div, a, button {
-    @apply font-normal;
+    @apply font-normal text-gray-900;
+  }
+  
+  /* Force light mode for all components */
+  .card, [data-theme="dark"] .card, .dark .card {
+    @apply bg-white text-gray-900 border-gray-200 !important;
+  }
+  
+  /* Force light mode for property cards */
+  .property-card, 
+  .property-card *,
+  [data-theme="dark"] .property-card,
+  [data-theme="dark"] .property-card *,
+  .dark .property-card,
+  .dark .property-card * {
+    @apply bg-white text-gray-900 border-gray-200 !important;
+  }
+  
+  /* Force light mode for navigation and menus */
+  nav, 
+  .hamburger-menu,
+  .mobile-menu,
+  [data-theme="dark"] nav,
+  [data-theme="dark"] .hamburger-menu,
+  [data-theme="dark"] .mobile-menu,
+  .dark nav,
+  .dark .hamburger-menu,
+  .dark .mobile-menu {
+    @apply bg-transparent text-gray-900 border-transparent !important;
   }
   
   /* Ensure content is always at least full viewport height minus header */
@@ -101,19 +100,79 @@
     margin-top: 2rem;
   }
   
-  /* Mobile optimizations */
+  /* Mobile optimizations - Clean 2x2 grid layout with proper text wrapping */
   @media (max-width: 640px) {
     [class*="lucide-"] {
       width: 16px;
       height: 16px;
+      flex-shrink: 0;
     }
     
     .card {
-      @apply p-2;
+      @apply p-3 bg-white rounded-lg border border-gray-200;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    
+    .card * {
+      @apply text-gray-900 bg-white;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     
     .button, button {
-      @apply text-sm py-1 px-2;
+      @apply text-sm py-2 px-3;
+    }
+    
+    /* Fix for property cards on mobile - 2x2 grid */
+    .grid {
+      @apply gap-3;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .grid > .card {
+      @apply w-full max-w-full mx-0 mb-3;
+      min-width: 0; /* Allows flexbox items to shrink below content size */
+    }
+    
+    /* Fix text overflow in cards */
+    .card h3, .card p, .card span {
+      @apply text-sm leading-tight;
+      max-width: 100%;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      overflow: hidden;
+    }
+    
+    /* Property card specific fixes */
+    .card .grid {
+      min-width: 0;
+    }
+    
+    .card .grid > div {
+      min-width: 0;
+      overflow: hidden;
+    }
+    
+    /* Container padding fixes */
+    .container {
+      @apply px-3 max-w-full;
+    }
+    
+    /* Review card mobile fixes */
+    .review-card,
+    .review-card * {
+      @apply bg-white text-gray-900;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+      box-sizing: border-box;
     }
   }
 }
@@ -122,55 +181,35 @@
   background: linear-gradient(
     to bottom,
     rgba(255, 255, 255, 0.9),
-    rgba(249, 115, 22, 0.1)
+    rgba(237, 195, 164, 0.3)
   );
 }
 
 /* Property card grid styling - consistent spacing */
-.grid-cols-2, .grid-cols-1, .grid-cols-3, .grid-cols-4 {
-  @apply gap-6;
+.property-grid {
+  display: grid;
+  gap: 1.5rem;
 }
 
+@media (min-width: 640px) {
+  .property-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .property-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile 2x2 grid for property cards */
 @media (max-width: 640px) {
-  .grid {
-    @apply gap-4;
-  }
-  
-  .grid > * {
-    @apply rounded-md shadow-sm;
-  }
-  
-  .container {
-    @apply px-4;
-  }
-  
-  /* Fix for boxy outlines in footer and amenities */
-  footer ul li a,
-  footer ul li span,
-  .amenities-list li,
-  footer button,
-  .mobile-menu a,
-  .mobile-menu button,
-  .amenities-list button {
-    @apply border-0 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 
-    transition-colors hover:bg-transparent active:bg-transparent;
-  }
-  
-  /* Remove border from grid items on mobile */
-  .grid > * {
-    @apply border-0;
-  }
-  
-  /* Additional fixes for mobile footer links */
-  footer a, footer span, footer button {
-    @apply transition-colors duration-200 outline-none ring-0 
-    focus:ring-0 focus:outline-none active:outline-none;
-  }
-  
-  /* Ensure icons have consistent size in mobile view */
-  footer [class*="lucide-"],
-  .amenities-list [class*="lucide-"] {
-    @apply w-4 h-4 flex-shrink-0;
+  .property-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
   }
 }
 
@@ -185,13 +224,7 @@ button svg {
   @apply flex-shrink-0;
 }
 
-@media (max-width: 640px) {
-  [class*="lucide-"] {
-    @apply w-4 h-4;
-  }
-}
-
-/* Property image optimization */
+/* Property image optimization - Fix for profile photo being crushed */
 .aspect-square img, .aspect-video img {
   @apply object-cover h-full w-full;
 }
@@ -210,18 +243,11 @@ button:focus {
   @apply ring-0 outline-none;
 }
 
-/* Additional fix for mobile menu items to avoid boxy outlines */
-.mobile-menu a,
-.mobile-menu button,
-.mobile-menu div {
-  @apply border-0 outline-none ring-0 shadow-none transition-colors;
-}
-
 /* Fix for form elements focus states */
 input:focus,
 select:focus,
 textarea:focus {
-  @apply ring-1 ring-tuleeto-orange outline-none;
+  @apply ring-1 ring-tuleeto-orange outline-none bg-white text-gray-900;
 }
 
 /* Fix for checkboxes and radio buttons */
@@ -234,12 +260,12 @@ input[type="radio"]:focus {
 .image-upload-container {
   @apply border-2 border-dashed border-gray-300 rounded-md p-4
   flex flex-col items-center justify-center cursor-pointer
-  hover:border-tuleeto-orange transition-colors;
+  hover:border-tuleeto-orange transition-colors bg-white;
 }
 
 /* Toast improvements */
 .toast {
-  @apply shadow-lg;
+  @apply shadow-lg bg-white;
 }
 
 /* Avatar button outline fix */
@@ -272,7 +298,7 @@ input[type="radio"]:focus {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-/* Review system styles */
+/* Review system styles with improved text wrapping */
 .star-rating {
   @apply flex items-center;
 }
@@ -287,9 +313,77 @@ input[type="radio"]:focus {
 
 .review-card {
   @apply bg-white rounded-lg shadow-sm p-4 mb-4;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 /* Visibility toggle styles */
 .visibility-toggle {
   @apply flex items-center space-x-2;
+}
+
+/* Force light mode styles for all components */
+*, 
+*::before, 
+*::after,
+[data-theme="dark"] *,
+[data-theme="dark"] *::before,
+[data-theme="dark"] *::after,
+.dark *,
+.dark *::before,
+.dark *::after {
+  color-scheme: light !important;
+}
+
+/* Override any dark mode card styles */
+.card,
+.property-card,
+[data-theme="dark"] .card,
+[data-theme="dark"] .property-card,
+.dark .card,
+.dark .property-card {
+  @apply bg-white text-gray-900 border-gray-200 !important;
+}
+
+/* Override dark mode navigation - Make transparent */
+nav,
+.navbar,
+.mobile-menu,
+[data-theme="dark"] nav,
+[data-theme="dark"] .navbar,
+[data-theme="dark"] .mobile-menu,
+.dark nav,
+.dark .navbar,
+.dark .mobile-menu {
+  @apply bg-transparent text-gray-900 border-transparent shadow-none !important;
+}
+
+/* Text truncation and overflow fixes for all content */
+.truncate-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wrap-text {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* Ensure proper grid item sizing */
+.grid > * {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Dialog improvements for mobile */
+@media (max-width: 640px) {
+  .dialog-content {
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
 }

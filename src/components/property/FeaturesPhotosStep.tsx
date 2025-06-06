@@ -39,12 +39,14 @@ export const FeaturesPhotosStep = ({
     try {
       console.log(`Processing photo: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
       
-      // Validate file size
-      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB to match the backend validation
+      // Validate file size (10MB limit)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
       if (file.size > MAX_FILE_SIZE) {
         const errorMessage = "File size exceeds 10MB limit. Please choose a smaller image.";
         setUploadError(errorMessage);
         toast.error(errorMessage);
+        setUploading(false);
+        fileInput.value = '';
         return;
       }
       
@@ -53,6 +55,8 @@ export const FeaturesPhotosStep = ({
         const errorMessage = "Maximum 5 photos allowed";
         setUploadError(errorMessage);
         toast.warning(errorMessage);
+        setUploading(false);
+        fileInput.value = '';
         return;
       }
       
@@ -62,10 +66,12 @@ export const FeaturesPhotosStep = ({
         const errorMessage = `Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`;
         setUploadError(errorMessage);
         toast.error(errorMessage);
+        setUploading(false);
+        fileInput.value = '';
         return;
       }
       
-      // Create preview of the image
+      // Create preview using FileReader
       const reader = new FileReader();
       
       reader.onload = (e) => {
@@ -74,8 +80,9 @@ export const FeaturesPhotosStep = ({
           setPhotos(prevPhotos => [...prevPhotos, { file, preview }]);
           toast.success(`Photo "${file.name}" added successfully`);
           console.log(`Photo preview generated successfully for ${file.name}`);
-          setUploadError(null); // Clear any previous errors
+          setUploadError(null);
         }
+        setUploading(false);
       };
       
       reader.onerror = () => {
@@ -83,6 +90,7 @@ export const FeaturesPhotosStep = ({
         console.error("FileReader error:", reader.error);
         setUploadError(errorMessage);
         toast.error(errorMessage);
+        setUploading(false);
       };
       
       reader.readAsDataURL(file);
@@ -91,8 +99,8 @@ export const FeaturesPhotosStep = ({
       const errorMessage = `Failed to add photo: ${error.message}`;
       setUploadError(errorMessage);
       toast.error(errorMessage);
-    } finally {
       setUploading(false);
+    } finally {
       fileInput.value = '';
     }
   };
@@ -110,7 +118,7 @@ export const FeaturesPhotosStep = ({
       newPhotos.splice(index, 1);
       setPhotos(newPhotos);
       toast.info("Photo removed");
-      setUploadError(null); // Clear errors when removing photos
+      setUploadError(null);
     } catch (error: any) {
       console.error("Error removing photo:", error);
       const errorMessage = `Error removing photo: ${error.message}`;
@@ -314,7 +322,7 @@ export const FeaturesPhotosStep = ({
               </Button>
               <input
                 type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
+                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleAddPhoto}
                 disabled={photos.length >= 5 || uploading}

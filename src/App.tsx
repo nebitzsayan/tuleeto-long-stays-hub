@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AdminRoute from "@/components/auth/AdminRoute";
 import Index from "./pages/Index";
 import ListingsPage from "./pages/ListingsPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
@@ -15,6 +16,7 @@ import MyPropertiesPage from "./pages/MyPropertiesPage";
 import ProfilePage from "./pages/ProfilePage";
 import OwnerProfilePage from "./pages/OwnerProfilePage";
 import AdminPanel from "./pages/AdminPanel";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,7 @@ const App = () => (
             <Route path="/property/:id" element={<PropertyDetailPage />} />
             <Route path="/owner/:id" element={<OwnerProfilePage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/list-property" element={
               <ProtectedRoute>
                 <ListPropertyPage />
@@ -48,9 +51,9 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminPanel />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
