@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Input sanitization functions
@@ -19,16 +18,16 @@ export const sanitizeHtml = (input: string): string => {
 };
 
 // File validation
-export const validateImageFile = (file: File): { isValid: boolean; error?: string } => {
+export const validateImageFile = (file: File): Promise<{ isValid: boolean; error?: string }> => {
   // Check file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
-    return { isValid: false, error: "File size exceeds 10MB limit" };
+    return Promise.resolve({ isValid: false, error: "File size exceeds 10MB limit" });
   }
 
   // Check file type
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
   if (!allowedTypes.includes(file.type)) {
-    return { isValid: false, error: "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed" };
+    return Promise.resolve({ isValid: false, error: "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed" });
   }
 
   // Check file signature (magic numbers)
@@ -53,7 +52,7 @@ export const validateImageFile = (file: File): { isValid: boolean; error?: strin
       }
     };
     reader.readAsArrayBuffer(file.slice(0, 4));
-  }) as Promise<{ isValid: boolean; error?: string }>;
+  });
 };
 
 // Rate limiting (simple client-side implementation)

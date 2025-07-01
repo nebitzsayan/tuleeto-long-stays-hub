@@ -200,7 +200,7 @@ export async function uploadMultipleFiles(
       const file = files[i];
       const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${Date.now()}_${i}.${fileExtension}`;
-      const filePath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
+      let filePath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
       
       console.log(`Uploading file ${i + 1}/${files.length}:`, {
         fileName: file.name,
