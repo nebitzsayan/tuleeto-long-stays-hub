@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, X, Camera, Upload } from "lucide-react";
+import { Plus, X, Upload } from "lucide-react";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
 
@@ -46,7 +46,6 @@ export const FeaturesPhotosStep = ({
 }: FeaturesPhotosStepProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -67,32 +66,30 @@ export const FeaturesPhotosStep = ({
           lastModified: file.lastModified
         });
 
-        // Enhanced file validation for mobile
+        // File size validation
         if (file.size > 10 * 1024 * 1024) {
           toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`);
           continue;
         }
 
-        // More comprehensive file type checking for mobile
+        // Enhanced file type validation for mobile
         const allowedTypes = [
-          'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
-          'image/heic', 'image/heif', // iOS formats
-          'application/octet-stream' // Some mobile browsers send this
+          'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'
         ];
         
         const fileName = file.name.toLowerCase();
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
         const fileExtension = fileName.split('.').pop() || '';
         
         const hasValidType = allowedTypes.includes(file.type);
         const hasValidExtension = allowedExtensions.includes(fileExtension);
         
         if (!hasValidType && !hasValidExtension) {
-          toast.error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, GIF, or HEIC images.`);
+          toast.error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, or GIF images.`);
           continue;
         }
 
-        // Create preview with error handling
+        // Create preview
         try {
           const preview = await createImagePreview(file);
           newPhotos.push({ file, preview });
@@ -105,6 +102,10 @@ export const FeaturesPhotosStep = ({
       if (newPhotos.length > 0) {
         setPhotos(prev => [...prev, ...newPhotos]);
         toast.success(`Added ${newPhotos.length} photo(s)`);
+      }
+
+      if (files.length > (10 - photos.length)) {
+        toast.warning(`Only ${10 - photos.length} photos could be added. Maximum is 10 photos.`);
       }
 
     } catch (error: any) {
@@ -121,7 +122,6 @@ export const FeaturesPhotosStep = ({
 
   const createImagePreview = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      // Use FileReader for broader compatibility
       const reader = new FileReader();
       
       reader.onload = (e) => {
@@ -159,10 +159,6 @@ export const FeaturesPhotosStep = ({
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
-  };
-
-  const triggerCameraInput = () => {
-    cameraInputRef.current?.click();
   };
 
   return (
@@ -293,38 +289,18 @@ export const FeaturesPhotosStep = ({
           Upload up to 10 photos of your property. The first photo will be used as the main image.
         </p>
         
-        {/* Hidden file inputs with improved mobile support */}
+        {/* Single file input for gallery only */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,.heic,.heif"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
           multiple
           onChange={handlePhotoUpload}
           className="hidden"
         />
         
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handlePhotoUpload}
-          className="hidden"
-        />
-        
-        {/* Upload buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={triggerCameraInput}
-            disabled={isUploading || photos.length >= 10}
-            className="flex items-center gap-2"
-          >
-            <Camera className="h-4 w-4" />
-            Take Photo
-          </Button>
-          
+        {/* Upload button - Gallery only */}
+        <div className="flex justify-center">
           <Button
             type="button"
             variant="outline"
@@ -333,12 +309,12 @@ export const FeaturesPhotosStep = ({
             className="flex items-center gap-2"
           >
             <Upload className="h-4 w-4" />
-            Choose from Gallery
+            Choose Photos from Gallery
           </Button>
         </div>
         
         {isUploading && (
-          <p className="text-sm text-gray-600">Processing photos...</p>
+          <p className="text-sm text-gray-600 text-center">Processing photos...</p>
         )}
         
         {/* Photo Preview Grid */}
@@ -354,7 +330,6 @@ export const FeaturesPhotosStep = ({
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         console.error('Image preview error:', e);
-                        // Fallback to a placeholder or remove the photo
                       }}
                     />
                     <Button
@@ -400,28 +375,17 @@ export const FeaturesPhotosStep = ({
         {photos.length === 0 && (
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  onClick={triggerCameraInput}
-                  disabled={isUploading}
-                  className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Take Photo
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={triggerFileInput}
-                  disabled={isUploading}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Choose Files
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={triggerFileInput}
+                disabled={isUploading}
+                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Choose Photos from Gallery
+              </Button>
               <p className="text-sm text-gray-500">
-                Add photos to showcase your property
+                Add photos to showcase your property (Gallery only)
               </p>
             </div>
           </div>

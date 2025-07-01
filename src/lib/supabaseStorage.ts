@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { validateImageFile, sanitizeInput, logSecurityEvent } from "@/lib/security";
 
@@ -196,7 +195,7 @@ export async function uploadMultipleFiles(
       throw new Error(`Storage bucket ${bucketName} not found. Please contact support.`);
     }
     
-    // Upload each file sequentially to avoid overwhelming mobile devices
+    // Upload each file with enhanced mobile support
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
@@ -210,30 +209,28 @@ export async function uploadMultipleFiles(
         targetPath: filePath
       });
       
-      // Enhanced file validation for mobile compatibility
+      // File size validation
       if (file.size > 10 * 1024 * 1024) {
         console.error(`File ${file.name} is too large (max 10MB)`);
         throw new Error(`File "${file.name}" exceeds the 10MB size limit`);
       }
 
-      // More comprehensive file type validation for mobile uploads
+      // Simplified file type validation for better mobile compatibility
       const allowedTypes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
-        'image/heic', 'image/heif', // iOS formats
-        'application/octet-stream' // Some mobile browsers send this
+        'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'
       ];
       
-      const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
       
       const hasValidType = allowedTypes.includes(file.type);
       const hasValidExtension = allowedExtensions.includes(fileExtension);
       
       if (!hasValidType && !hasValidExtension) {
         console.error(`File ${file.name} has unsupported type: ${file.type} with extension: ${fileExtension}`);
-        throw new Error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, GIF, or HEIC images.`);
+        throw new Error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, or GIF images.`);
       }
       
-      // Add retry logic for mobile network issues
+      // Upload with retry logic
       let uploadAttempts = 0;
       const maxAttempts = 3;
       let uploadSuccess = false;
@@ -244,18 +241,15 @@ export async function uploadMultipleFiles(
           uploadAttempts++;
           console.log(`Upload attempt ${uploadAttempts}/${maxAttempts} for file ${i + 1}`);
           
-          // Determine content type with fallback for mobile compatibility
-          let contentType = file.type;
+          // Determine content type
+          let contentType = file.type || 'image/jpeg';
           if (!contentType || contentType === 'application/octet-stream') {
-            // Fallback based on file extension
             const typeMap: { [key: string]: string } = {
               'jpg': 'image/jpeg',
               'jpeg': 'image/jpeg',
               'png': 'image/png',
               'webp': 'image/webp',
-              'gif': 'image/gif',
-              'heic': 'image/heic',
-              'heif': 'image/heif'
+              'gif': 'image/gif'
             };
             contentType = typeMap[fileExtension] || 'image/jpeg';
           }
@@ -272,7 +266,7 @@ export async function uploadMultipleFiles(
             lastError = error;
             console.error(`Upload attempt ${uploadAttempts} failed for file ${i+1}:`, error);
             
-            // If it's a duplicate file error, try with a different name
+            // Handle duplicate file error
             if (error.message?.includes('already exists') && uploadAttempts < maxAttempts) {
               const timestamp = Date.now() + Math.random() * 1000;
               const newFileName = `${timestamp}_${i}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
@@ -293,7 +287,7 @@ export async function uploadMultipleFiles(
               throw error;
             }
             
-            // Wait before retrying (exponential backoff)
+            // Wait before retrying
             await new Promise(resolve => setTimeout(resolve, uploadAttempts * 1000));
             continue;
           }
@@ -325,7 +319,7 @@ export async function uploadMultipleFiles(
             throw new Error(`Failed to upload "${file.name}" after ${maxAttempts} attempts: ${attemptError.message}`);
           }
           
-          // Wait before retrying (exponential backoff)
+          // Wait before retrying
           await new Promise(resolve => setTimeout(resolve, uploadAttempts * 1000));
         }
       }
@@ -334,9 +328,9 @@ export async function uploadMultipleFiles(
       const progress = Math.round(((i + 1) / files.length) * 100);
       onProgress?.(progress);
       
-      // Small delay between uploads to prevent overwhelming mobile connections
+      // Small delay between uploads for mobile stability
       if (i < files.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
     
@@ -349,7 +343,7 @@ export async function uploadMultipleFiles(
       totalFiles: files.length
     });
     
-    throw error; // Re-throw the error for the UI to handle
+    throw error;
   }
 }
 
