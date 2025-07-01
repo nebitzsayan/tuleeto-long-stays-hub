@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -30,7 +31,10 @@ export const FeaturesPhotosStep = ({
 
   const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
-    if (!fileInput.files || fileInput.files.length === 0) return;
+    if (!fileInput.files || fileInput.files.length === 0) {
+      console.log("No files selected");
+      return;
+    }
     
     const file = fileInput.files[0];
     setUploading(true);
@@ -60,10 +64,30 @@ export const FeaturesPhotosStep = ({
         return;
       }
       
-      // Validate image type
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
-      if (!validTypes.includes(file.type)) {
-        const errorMessage = `Invalid file type: ${file.type}. Please upload a JPEG, PNG, GIF, or WEBP image.`;
+      // Enhanced file type validation for mobile compatibility
+      const validTypes = [
+        'image/jpeg', 
+        'image/jpg', 
+        'image/png', 
+        'image/gif', 
+        'image/webp',
+        'image/heic', // iOS specific
+        'image/heif'  // iOS specific
+      ];
+      
+      console.log(`File type detected: ${file.type}`);
+      
+      // For mobile devices, also check file extension if type is empty or generic
+      let isValidType = validTypes.includes(file.type);
+      if (!isValidType || file.type === '' || file.type === 'application/octet-stream') {
+        const extension = file.name.split('.').pop()?.toLowerCase();
+        const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+        isValidType = extension ? validExtensions.includes(extension) : false;
+        console.log(`Checking extension: ${extension}, valid: ${isValidType}`);
+      }
+      
+      if (!isValidType) {
+        const errorMessage = `Invalid file type. Please upload a JPEG, PNG, GIF, WebP, or HEIC image.`;
         setUploadError(errorMessage);
         toast.error(errorMessage);
         setUploading(false);
@@ -71,47 +95,88 @@ export const FeaturesPhotosStep = ({
         return;
       }
       
-      // Create preview using FileReader
+      // Create preview using FileReader with better error handling
       const reader = new FileReader();
       
       reader.onload = (e) => {
-        if (e.target?.result) {
-          const preview = e.target.result.toString();
-          setPhotos(prevPhotos => [...prevPhotos, { file, preview }]);
-          toast.success(`Photo "${file.name}" added successfully`);
-          console.log(`Photo preview generated successfully for ${file.name}`);
-          setUploadError(null);
+        try {
+          if (e.target?.result) {
+            const preview = e.target.result.toString();
+            console.log(`Preview generated for ${file.name}, preview length: ${preview.length}`);
+            
+            setPhotos(prevPhotos => {
+              const newPhotos = [...prevPhotos, { file, preview }];
+              console.log(`Total photos after adding: ${newPhotos.length}`);
+              return newPhotos;
+            });
+            
+            toast.success(`Photo "${file.name}" added successfully`);
+            setUploadError(null);
+          } else {
+            throw new Error("Failed to read file content");
+          }
+        } catch (err: any) {
+          console.error("Error in reader.onload:", err);
+          const errorMessage = "Failed to process image. Please try another file.";
+          setUploadError(errorMessage);
+          toast.error(errorMessage);
         }
         setUploading(false);
       };
       
-      reader.onerror = () => {
-        const errorMessage = "Failed to preview image. Please try another file.";
-        console.error("FileReader error:", reader.error);
+      reader.onerror = (err) => {
+        console.error("FileReader error:", err, reader.error);
+        const errorMessage = "Failed to read image file. Please try another file.";
         setUploadError(errorMessage);
         toast.error(errorMessage);
         setUploading(false);
       };
       
+      reader.onabort = () => {
+        console.warn("FileReader aborted");
+        const errorMessage = "Image reading was cancelled. Please try again.";
+        setUploadError(errorMessage);
+        toast.error(errorMessage);
+        setUploading(false);
+      };
+      
+      // Add timeout for mobile devices that might be slow
+      const timeoutId = setTimeout(() => {
+        reader.abort();
+        const errorMessage = "Image processing timed out. Please try a smaller image.";
+        setUploadError(errorMessage);
+        toast.error(errorMessage);
+        setUploading(false);
+      }, 30000); // 30 second timeout
+      
+      reader.onloadend = () => {
+        clearTimeout(timeoutId);
+      };
+      
+      console.log("Starting FileReader.readAsDataURL");
       reader.readAsDataURL(file);
+      
     } catch (error: any) {
       console.error("Error adding photo:", error);
-      const errorMessage = `Failed to add photo: ${error.message}`;
+      const errorMessage = `Failed to add photo: ${error.message || 'Unknown error'}`;
       setUploadError(errorMessage);
       toast.error(errorMessage);
       setUploading(false);
     } finally {
-      fileInput.value = '';
+      // Clean up file input
+      if (fileInput.value) {
+        fileInput.value = '';
+      }
     }
   };
   
   const handleRemovePhoto = (index: number) => {
     try {
       const newPhotos = [...photos];
-      console.log(`Removing photo at index ${index}:`, newPhotos[index].file.name);
+      console.log(`Removing photo at index ${index}:`, newPhotos[index]?.file?.name || 'Unknown');
       
       // Clean up object URL to prevent memory leaks
-      if (newPhotos[index].preview.startsWith('blob:')) {
+      if (newPhotos[index]?.preview?.startsWith('blob:')) {
         URL.revokeObjectURL(newPhotos[index].preview);
       }
       
@@ -289,6 +354,11 @@ export const FeaturesPhotosStep = ({
                   src={photo.preview} 
                   alt={`Property photo ${i+1}`}
                   className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                  onError={(e) => {
+                    console.error(`Error loading image preview ${i+1}:`, e);
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
               </div>
               <Button
@@ -312,6 +382,13 @@ export const FeaturesPhotosStep = ({
                 variant="outline" 
                 className="w-24 h-24 flex flex-col items-center justify-center border-dashed border-2 border-gray-300"
                 disabled={uploading}
+                onClick={() => {
+                  // Trigger file input click for better mobile compatibility
+                  const fileInput = document.getElementById('photo-upload-input') as HTMLInputElement;
+                  if (fileInput) {
+                    fileInput.click();
+                  }
+                }}
               >
                 {uploading ? (
                   <Loader2 className="h-6 w-6 animate-spin mb-1" />
@@ -321,11 +398,14 @@ export const FeaturesPhotosStep = ({
                 <span className="text-xs">{uploading ? 'Processing...' : 'Add'}</span>
               </Button>
               <input
+                id="photo-upload-input"
                 type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                accept="image/*"
+                capture="environment"
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleAddPhoto}
                 disabled={photos.length >= 5 || uploading}
+                style={{ zIndex: -1 }}
               />
             </div>
           )}
@@ -333,6 +413,7 @@ export const FeaturesPhotosStep = ({
         <div className="text-xs space-y-1">
           <p className="text-gray-500">Upload up to 5 photos (Max 10MB each)</p>
           <p className="text-amber-600 font-medium">At least one photo is required to list your property.</p>
+          <p className="text-blue-600 text-xs">📱 On mobile: Tap "Add" button to take a photo or select from gallery</p>
           {uploadError && (
             <p className="text-red-600 font-medium">
               Upload issue detected. Please resolve before continuing.

@@ -188,10 +188,17 @@ export async function uploadMultipleFiles(
     // Set initial progress
     onProgress?.(0);
     
-    // Upload each file sequentially
+    // Check if bucket exists first
+    const bucketExists = await checkBucketExists(bucketName);
+    if (!bucketExists) {
+      console.error(`Bucket ${bucketName} does not exist`);
+      throw new Error(`Storage bucket ${bucketName} not found. Please contact support.`);
+    }
+    
+    // Upload each file sequentially to avoid overwhelming mobile devices
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${Date.now()}_${i}.${fileExtension}`;
       const filePath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
       
@@ -202,47 +209,110 @@ export async function uploadMultipleFiles(
         targetPath: filePath
       });
       
-      // Validate file size (max 10MB)
+      // Enhanced file validation for mobile compatibility
       if (file.size > 10 * 1024 * 1024) {
         console.error(`File ${file.name} is too large (max 10MB)`);
         throw new Error(`File "${file.name}" exceeds the 10MB size limit`);
       }
 
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        console.error(`File ${file.name} has unsupported type: ${file.type}`);
-        throw new Error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, or WebP images.`);
+      // More comprehensive file type validation for mobile uploads
+      const allowedTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+        'image/heic', 'image/heif', // iOS formats
+        'application/octet-stream' // Some mobile browsers send this
+      ];
+      
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
+      
+      const hasValidType = allowedTypes.includes(file.type);
+      const hasValidExtension = allowedExtensions.includes(fileExtension);
+      
+      if (!hasValidType && !hasValidExtension) {
+        console.error(`File ${file.name} has unsupported type: ${file.type} with extension: ${fileExtension}`);
+        throw new Error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, GIF, or HEIC images.`);
       }
       
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Add retry logic for mobile network issues
+      let uploadAttempts = 0;
+      const maxAttempts = 3;
+      let uploadSuccess = false;
+      let lastError: any = null;
       
-      if (error) {
-        console.error(`Error uploading file ${i+1}/${files.length}:`, error);
-        throw new Error(`Failed to upload "${file.name}": ${error.message}`);
+      while (uploadAttempts < maxAttempts && !uploadSuccess) {
+        try {
+          uploadAttempts++;
+          console.log(`Upload attempt ${uploadAttempts}/${maxAttempts} for file ${i + 1}`);
+          
+          const { data, error } = await supabase.storage
+            .from(bucketName)
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false,
+              contentType: file.type || 'image/jpeg' // Fallback content type
+            });
+          
+          if (error) {
+            lastError = error;
+            console.error(`Upload attempt ${uploadAttempts} failed for file ${i+1}:`, error);
+            
+            // If it's a duplicate file error, try with a different name
+            if (error.message?.includes('already exists') && uploadAttempts < maxAttempts) {
+              const timestamp = Date.now() + Math.random() * 1000;
+              const newFileName = `${timestamp}_${i}.${fileExtension}`;
+              filePath = pathPrefix ? `${pathPrefix}/${newFileName}` : newFileName;
+              console.log(`Retrying with new filename: ${filePath}`);
+              continue;
+            }
+            
+            // If it's the last attempt, throw the error
+            if (uploadAttempts === maxAttempts) {
+              throw error;
+            }
+            
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, uploadAttempts * 1000));
+            continue;
+          }
+          
+          if (!data?.path) {
+            lastError = new Error("Upload succeeded but no path returned");
+            console.error(`Upload attempt ${uploadAttempts} - no path returned for file ${i+1}`);
+            if (uploadAttempts === maxAttempts) {
+              throw lastError;
+            }
+            continue;
+          }
+          
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
+          
+          uploadedUrls.push(publicUrl);
+          uploadSuccess = true;
+          console.log(`File ${i + 1}/${files.length} uploaded successfully on attempt ${uploadAttempts}:`, publicUrl);
+          
+        } catch (attemptError: any) {
+          lastError = attemptError;
+          console.error(`Upload attempt ${uploadAttempts} failed:`, attemptError);
+          
+          if (uploadAttempts === maxAttempts) {
+            throw new Error(`Failed to upload "${file.name}" after ${maxAttempts} attempts: ${attemptError.message}`);
+          }
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, uploadAttempts * 1000));
+        }
       }
-      
-      if (!data?.path) {
-        console.error(`Upload succeeded but no path returned for file ${i+1}`);
-        throw new Error(`Upload of "${file.name}" completed but file path is missing`);
-      }
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(filePath);
-      
-      uploadedUrls.push(publicUrl);
-      console.log(`File ${i + 1}/${files.length} uploaded successfully:`, publicUrl);
       
       // Update progress
       const progress = Math.round(((i + 1) / files.length) * 100);
       onProgress?.(progress);
+      
+      // Small delay between uploads to prevent overwhelming mobile connections
+      if (i < files.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
     
     console.log(`Batch upload completed. ${uploadedUrls.length}/${files.length} files uploaded successfully.`);
