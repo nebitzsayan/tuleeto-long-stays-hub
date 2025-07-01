@@ -13,6 +13,7 @@ import PropertyDetailPage from "./pages/PropertyDetailPage";
 import ListPropertyPage from "./pages/ListPropertyPage";
 import AuthPage from "./pages/AuthPage";
 import MyPropertiesPage from "./pages/MyPropertiesPage";
+import EditPropertyPage from "./pages/EditPropertyPage";
 import ProfilePage from "./pages/ProfilePage";
 import OwnerProfilePage from "./pages/OwnerProfilePage";
 import AdminPanel from "./pages/AdminPanel";
@@ -43,6 +44,11 @@ const App = () => (
             <Route path="/my-properties" element={
               <ProtectedRoute>
                 <MyPropertiesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/edit-property/:id" element={
+              <ProtectedRoute>
+                <EditPropertyPage />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={

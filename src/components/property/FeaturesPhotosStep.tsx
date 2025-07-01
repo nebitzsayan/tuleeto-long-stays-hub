@@ -66,42 +66,47 @@ export const FeaturesPhotosStep = ({
           lastModified: file.lastModified
         });
 
-        // File size validation
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`);
+        // File size validation - 5MB limit for better mobile compatibility
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`File "${file.name}" is too large. Maximum size is 5MB.`);
           continue;
         }
 
-        // Enhanced file type validation for mobile
+        // Enhanced file type validation with better mobile support
         const allowedTypes = [
-          'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'
+          'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+          'image/heic', 'image/heif', 'application/octet-stream'
         ];
         
         const fileName = file.name.toLowerCase();
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
         const fileExtension = fileName.split('.').pop() || '';
         
         const hasValidType = allowedTypes.includes(file.type);
         const hasValidExtension = allowedExtensions.includes(fileExtension);
         
         if (!hasValidType && !hasValidExtension) {
+          console.error(`Invalid file type: ${file.type}, extension: ${fileExtension}`);
           toast.error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, or GIF images.`);
           continue;
         }
 
-        // Create preview
+        // Create preview with enhanced error handling
         try {
           const preview = await createImagePreview(file);
           newPhotos.push({ file, preview });
+          console.log(`Successfully processed file ${i + 1}/${files.length}: ${file.name}`);
         } catch (error) {
           console.error('Error creating preview for file:', file.name, error);
-          toast.error(`Could not process "${file.name}". Please try again.`);
+          toast.error(`Could not process "${file.name}". Please try with a different image.`);
         }
       }
 
       if (newPhotos.length > 0) {
         setPhotos(prev => [...prev, ...newPhotos]);
-        toast.success(`Added ${newPhotos.length} photo(s)`);
+        toast.success(`Successfully added ${newPhotos.length} photo(s)`);
+      } else {
+        toast.error("No photos could be processed. Please try with different images.");
       }
 
       if (files.length > (10 - photos.length)) {
@@ -110,7 +115,7 @@ export const FeaturesPhotosStep = ({
 
     } catch (error: any) {
       console.error('Error processing photos:', error);
-      toast.error('Failed to process photos. Please try again.');
+      toast.error('Failed to process photos. Please try again with different images.');
     } finally {
       setIsUploading(false);
       // Reset the input
@@ -122,21 +127,41 @@ export const FeaturesPhotosStep = ({
 
   const createImagePreview = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          resolve(e.target.result as string);
-        } else {
-          reject(new Error('Failed to read file'));
-        }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Error reading file'));
-      };
-      
-      reader.readAsDataURL(file);
+      try {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            resolve(e.target.result as string);
+          } else {
+            reject(new Error('Failed to read file - no result'));
+          }
+        };
+        
+        reader.onerror = (error) => {
+          console.error('FileReader error:', error);
+          reject(new Error('Error reading file'));
+        };
+        
+        reader.onabort = () => {
+          reject(new Error('File reading was aborted'));
+        };
+        
+        // Add timeout for mobile devices
+        const timeout = setTimeout(() => {
+          reader.abort();
+          reject(new Error('File reading timed out'));
+        }, 10000); // 10 second timeout
+        
+        reader.onloadend = () => {
+          clearTimeout(timeout);
+        };
+        
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error setting up FileReader:', error);
+        reject(new Error('Failed to set up file reader'));
+      }
     });
   };
 
@@ -144,9 +169,12 @@ export const FeaturesPhotosStep = ({
     setPhotos(prev => {
       const updated = prev.filter((_, i) => i !== index);
       // Revoke the object URL to free memory
-      URL.revokeObjectURL(prev[index].preview);
+      if (prev[index]?.preview?.startsWith('blob:')) {
+        URL.revokeObjectURL(prev[index].preview);
+      }
       return updated;
     });
+    toast.success("Photo removed");
   };
 
   const handleFeatureChange = (feature: string, checked: boolean) => {
@@ -158,7 +186,9 @@ export const FeaturesPhotosStep = ({
   };
 
   const triggerFileInput = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   return (
@@ -286,7 +316,7 @@ export const FeaturesPhotosStep = ({
       <div className="space-y-4">
         <FormLabel>Property Photos (Required)</FormLabel>
         <p className="text-sm text-gray-600">
-          Upload up to 10 photos of your property. The first photo will be used as the main image.
+          Upload up to 10 photos from your gallery. The first photo will be used as the main image.
         </p>
         
         {/* Single file input for gallery only */}
@@ -309,12 +339,12 @@ export const FeaturesPhotosStep = ({
             className="flex items-center gap-2"
           >
             <Upload className="h-4 w-4" />
-            Choose Photos from Gallery
+            {isUploading ? 'Processing...' : 'Choose Photos from Gallery'}
           </Button>
         </div>
         
         {isUploading && (
-          <p className="text-sm text-gray-600 text-center">Processing photos...</p>
+          <p className="text-sm text-blue-600 text-center animate-pulse">Processing photos...</p>
         )}
         
         {/* Photo Preview Grid */}
@@ -329,7 +359,7 @@ export const FeaturesPhotosStep = ({
                       alt={`Property photo ${index + 1}`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        console.error('Image preview error:', e);
+                        console.error('Image preview error for photo', index, e);
                       }}
                     />
                     <Button
@@ -382,7 +412,7 @@ export const FeaturesPhotosStep = ({
                 className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Choose Photos from Gallery
+                {isUploading ? 'Processing...' : 'Choose Photos from Gallery'}
               </Button>
               <p className="text-sm text-gray-500">
                 Add photos to showcase your property (Gallery only)
