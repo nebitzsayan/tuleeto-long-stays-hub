@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { validateImageFile, sanitizeInput, logSecurityEvent } from "@/lib/security";
 
@@ -199,7 +200,7 @@ export async function uploadMultipleFiles(
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${Date.now()}_${i}.${fileExtension}`;
+      const fileName = `${Date.now()}_${i}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
       let filePath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
       
       console.log(`Uploading file ${i + 1}/${files.length}:`, {
@@ -243,12 +244,28 @@ export async function uploadMultipleFiles(
           uploadAttempts++;
           console.log(`Upload attempt ${uploadAttempts}/${maxAttempts} for file ${i + 1}`);
           
+          // Determine content type with fallback for mobile compatibility
+          let contentType = file.type;
+          if (!contentType || contentType === 'application/octet-stream') {
+            // Fallback based on file extension
+            const typeMap: { [key: string]: string } = {
+              'jpg': 'image/jpeg',
+              'jpeg': 'image/jpeg',
+              'png': 'image/png',
+              'webp': 'image/webp',
+              'gif': 'image/gif',
+              'heic': 'image/heic',
+              'heif': 'image/heif'
+            };
+            contentType = typeMap[fileExtension] || 'image/jpeg';
+          }
+          
           const { data, error } = await supabase.storage
             .from(bucketName)
             .upload(filePath, file, {
               cacheControl: '3600',
               upsert: false,
-              contentType: file.type || 'image/jpeg' // Fallback content type
+              contentType
             });
           
           if (error) {
@@ -258,10 +275,17 @@ export async function uploadMultipleFiles(
             // If it's a duplicate file error, try with a different name
             if (error.message?.includes('already exists') && uploadAttempts < maxAttempts) {
               const timestamp = Date.now() + Math.random() * 1000;
-              const newFileName = `${timestamp}_${i}.${fileExtension}`;
+              const newFileName = `${timestamp}_${i}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
               filePath = pathPrefix ? `${pathPrefix}/${newFileName}` : newFileName;
               console.log(`Retrying with new filename: ${filePath}`);
               continue;
+            }
+            
+            // For specific errors, throw immediately
+            if (error.message?.includes('Bucket not found') || 
+                error.message?.includes('Unauthorized') ||
+                error.message?.includes('Invalid file type')) {
+              throw error;
             }
             
             // If it's the last attempt, throw the error
@@ -280,6 +304,7 @@ export async function uploadMultipleFiles(
             if (uploadAttempts === maxAttempts) {
               throw lastError;
             }
+            await new Promise(resolve => setTimeout(resolve, 1000));
             continue;
           }
           
@@ -300,7 +325,7 @@ export async function uploadMultipleFiles(
             throw new Error(`Failed to upload "${file.name}" after ${maxAttempts} attempts: ${attemptError.message}`);
           }
           
-          // Wait before retrying
+          // Wait before retrying (exponential backoff)
           await new Promise(resolve => setTimeout(resolve, uploadAttempts * 1000));
         }
       }
@@ -311,7 +336,7 @@ export async function uploadMultipleFiles(
       
       // Small delay between uploads to prevent overwhelming mobile connections
       if (i < files.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
     

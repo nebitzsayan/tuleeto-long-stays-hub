@@ -1,15 +1,15 @@
 
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, IndianRupee, Wifi, AirVent, Wind, Utensils, Loader2, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, X, Camera, Upload } from "lucide-react";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -19,220 +19,175 @@ interface FeaturesPhotosStepProps {
   setSelectedFeatures: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
+const features = [
+  "Pet friendly",
+  "Air conditioning", 
+  "In-unit laundry",
+  "Parking",
+  "Balcony",
+  "Garden",
+  "Furnished",
+  "WiFi included",
+  "Gym access",
+  "Swimming pool",
+  "24/7 security",
+  "Elevator",
+  "Near public transport",
+  "Shopping nearby",
+  "Quiet neighborhood"
+];
+
 export const FeaturesPhotosStep = ({ 
   form, 
   photos, 
   setPhotos, 
-  selectedFeatures = [], 
+  selectedFeatures, 
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const fileInput = event.target;
-    if (!fileInput.files || fileInput.files.length === 0) {
-      console.log("No files selected");
-      return;
-    }
-    
-    const file = fileInput.files[0];
-    setUploading(true);
-    setUploadError(null);
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
     
     try {
-      console.log(`Processing photo: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
+      const newPhotos: { file: File; preview: string }[] = [];
       
-      // Validate file size (10MB limit)
-      const MAX_FILE_SIZE = 10 * 1024 * 1024;
-      if (file.size > MAX_FILE_SIZE) {
-        const errorMessage = "File size exceeds 10MB limit. Please choose a smaller image.";
-        setUploadError(errorMessage);
-        toast.error(errorMessage);
-        setUploading(false);
-        fileInput.value = '';
-        return;
+      for (let i = 0; i < Math.min(files.length, 10 - photos.length); i++) {
+        const file = files[i];
+        
+        console.log('Processing file:', {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        });
+
+        // Enhanced file validation for mobile
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`);
+          continue;
+        }
+
+        // More comprehensive file type checking for mobile
+        const allowedTypes = [
+          'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+          'image/heic', 'image/heif', // iOS formats
+          'application/octet-stream' // Some mobile browsers send this
+        ];
+        
+        const fileName = file.name.toLowerCase();
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
+        const fileExtension = fileName.split('.').pop() || '';
+        
+        const hasValidType = allowedTypes.includes(file.type);
+        const hasValidExtension = allowedExtensions.includes(fileExtension);
+        
+        if (!hasValidType && !hasValidExtension) {
+          toast.error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, GIF, or HEIC images.`);
+          continue;
+        }
+
+        // Create preview with error handling
+        try {
+          const preview = await createImagePreview(file);
+          newPhotos.push({ file, preview });
+        } catch (error) {
+          console.error('Error creating preview for file:', file.name, error);
+          toast.error(`Could not process "${file.name}". Please try again.`);
+        }
       }
-      
-      // Check photo count limit
-      if (photos.length >= 5) {
-        const errorMessage = "Maximum 5 photos allowed";
-        setUploadError(errorMessage);
-        toast.warning(errorMessage);
-        setUploading(false);
-        fileInput.value = '';
-        return;
+
+      if (newPhotos.length > 0) {
+        setPhotos(prev => [...prev, ...newPhotos]);
+        toast.success(`Added ${newPhotos.length} photo(s)`);
       }
-      
-      // Enhanced file type validation for mobile compatibility
-      const validTypes = [
-        'image/jpeg', 
-        'image/jpg', 
-        'image/png', 
-        'image/gif', 
-        'image/webp',
-        'image/heic', // iOS specific
-        'image/heif'  // iOS specific
-      ];
-      
-      console.log(`File type detected: ${file.type}`);
-      
-      // For mobile devices, also check file extension if type is empty or generic
-      let isValidType = validTypes.includes(file.type);
-      if (!isValidType || file.type === '' || file.type === 'application/octet-stream') {
-        const extension = file.name.split('.').pop()?.toLowerCase();
-        const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
-        isValidType = extension ? validExtensions.includes(extension) : false;
-        console.log(`Checking extension: ${extension}, valid: ${isValidType}`);
+
+    } catch (error: any) {
+      console.error('Error processing photos:', error);
+      toast.error('Failed to process photos. Please try again.');
+    } finally {
+      setIsUploading(false);
+      // Reset the input
+      if (event.target) {
+        event.target.value = '';
       }
-      
-      if (!isValidType) {
-        const errorMessage = `Invalid file type. Please upload a JPEG, PNG, GIF, WebP, or HEIC image.`;
-        setUploadError(errorMessage);
-        toast.error(errorMessage);
-        setUploading(false);
-        fileInput.value = '';
-        return;
-      }
-      
-      // Create preview using FileReader with better error handling
+    }
+  };
+
+  const createImagePreview = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      // Use FileReader for broader compatibility
       const reader = new FileReader();
       
       reader.onload = (e) => {
-        try {
-          if (e.target?.result) {
-            const preview = e.target.result.toString();
-            console.log(`Preview generated for ${file.name}, preview length: ${preview.length}`);
-            
-            setPhotos(prevPhotos => {
-              const newPhotos = [...prevPhotos, { file, preview }];
-              console.log(`Total photos after adding: ${newPhotos.length}`);
-              return newPhotos;
-            });
-            
-            toast.success(`Photo "${file.name}" added successfully`);
-            setUploadError(null);
-          } else {
-            throw new Error("Failed to read file content");
-          }
-        } catch (err: any) {
-          console.error("Error in reader.onload:", err);
-          const errorMessage = "Failed to process image. Please try another file.";
-          setUploadError(errorMessage);
-          toast.error(errorMessage);
+        if (e.target?.result) {
+          resolve(e.target.result as string);
+        } else {
+          reject(new Error('Failed to read file'));
         }
-        setUploading(false);
       };
       
-      reader.onerror = (err) => {
-        console.error("FileReader error:", err, reader.error);
-        const errorMessage = "Failed to read image file. Please try another file.";
-        setUploadError(errorMessage);
-        toast.error(errorMessage);
-        setUploading(false);
+      reader.onerror = () => {
+        reject(new Error('Error reading file'));
       };
       
-      reader.onabort = () => {
-        console.warn("FileReader aborted");
-        const errorMessage = "Image reading was cancelled. Please try again.";
-        setUploadError(errorMessage);
-        toast.error(errorMessage);
-        setUploading(false);
-      };
-      
-      // Add timeout for mobile devices that might be slow
-      const timeoutId = setTimeout(() => {
-        reader.abort();
-        const errorMessage = "Image processing timed out. Please try a smaller image.";
-        setUploadError(errorMessage);
-        toast.error(errorMessage);
-        setUploading(false);
-      }, 30000); // 30 second timeout
-      
-      reader.onloadend = () => {
-        clearTimeout(timeoutId);
-      };
-      
-      console.log("Starting FileReader.readAsDataURL");
       reader.readAsDataURL(file);
-      
-    } catch (error: any) {
-      console.error("Error adding photo:", error);
-      const errorMessage = `Failed to add photo: ${error.message || 'Unknown error'}`;
-      setUploadError(errorMessage);
-      toast.error(errorMessage);
-      setUploading(false);
-    } finally {
-      // Clean up file input
-      if (fileInput.value) {
-        fileInput.value = '';
-      }
-    }
+    });
   };
-  
-  const handleRemovePhoto = (index: number) => {
-    try {
-      const newPhotos = [...photos];
-      console.log(`Removing photo at index ${index}:`, newPhotos[index]?.file?.name || 'Unknown');
-      
-      // Clean up object URL to prevent memory leaks
-      if (newPhotos[index]?.preview?.startsWith('blob:')) {
-        URL.revokeObjectURL(newPhotos[index].preview);
-      }
-      
-      newPhotos.splice(index, 1);
-      setPhotos(newPhotos);
-      toast.info("Photo removed");
-      setUploadError(null);
-    } catch (error: any) {
-      console.error("Error removing photo:", error);
-      const errorMessage = `Error removing photo: ${error.message}`;
-      setUploadError(errorMessage);
-      toast.error(errorMessage);
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      // Revoke the object URL to free memory
+      URL.revokeObjectURL(prev[index].preview);
+      return updated;
+    });
+  };
+
+  const handleFeatureChange = (feature: string, checked: boolean) => {
+    if (checked) {
+      setSelectedFeatures(prev => [...prev, feature]);
+    } else {
+      setSelectedFeatures(prev => prev.filter(f => f !== feature));
     }
   };
 
-  const handleFeatureToggle = (feature: string) => {
-    setSelectedFeatures(prev => 
-      prev.includes(feature)
-        ? prev.filter(f => f !== feature)
-        : [...prev, feature]
-    );
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
-  const availableFeatures = [
-    { id: "pet-friendly", label: "Pet friendly", icon: <Wind className="h-4 w-4 mr-2" /> },
-    { id: "wifi", label: "Wifi", icon: <Wifi className="h-4 w-4 mr-2" /> },
-    { id: "air-conditioning", label: "Air conditioning", icon: <AirVent className="h-4 w-4 mr-2" /> },
-    { id: "in-unit-laundry", label: "In-unit laundry", icon: <Utensils className="h-4 w-4 mr-2" /> }
-  ];
-  
+  const triggerCameraInput = () => {
+    cameraInputRef.current?.click();
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Features & Photos</h2>
+      <h2 className="text-xl font-semibold">Property Details & Photos</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="bedrooms"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Bedrooms</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {[1, 2, 3, 4, 5, "6+"].map((num) => (
-                    <SelectItem key={num.toString()} value={num.toString()}>
-                      {num}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="1">1 Bedroom</SelectItem>
+                  <SelectItem value="2">2 Bedrooms</SelectItem>
+                  <SelectItem value="3">3 Bedrooms</SelectItem>
+                  <SelectItem value="4">4 Bedrooms</SelectItem>
+                  <SelectItem value="5">5+ Bedrooms</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -246,28 +201,29 @@ export const FeaturesPhotosStep = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Bathrooms</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {["1", "1.5", "2", "2.5", "3", "3.5", "4+"].map((num) => (
-                    <SelectItem key={num} value={num}>
-                      {num}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="1">1 Bathroom</SelectItem>
+                  <SelectItem value="1.5">1.5 Bathrooms</SelectItem>
+                  <SelectItem value="2">2 Bathrooms</SelectItem>
+                  <SelectItem value="2.5">2.5 Bathrooms</SelectItem>
+                  <SelectItem value="3">3 Bathrooms</SelectItem>
+                  <SelectItem value="3.5">3.5 Bathrooms</SelectItem>
+                  <SelectItem value="4">4+ Bathrooms</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="area"
@@ -275,30 +231,27 @@ export const FeaturesPhotosStep = ({
             <FormItem>
               <FormLabel>Area (sq ft)</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="e.g. 1000" {...field} />
+                <Input placeholder="e.g. 1200" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Monthly Rent (₹)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. 25000" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
       </div>
-      
-      <FormField
-        control={form.control}
-        name="price"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="flex items-center">
-              Monthly Rent (₹)
-              <IndianRupee className="h-4 w-4 ml-1 text-gray-500" />
-            </FormLabel>
-            <FormControl>
-              <Input type="number" placeholder="e.g. 25000" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
       
       <FormField
         control={form.control}
@@ -313,113 +266,166 @@ export const FeaturesPhotosStep = ({
           </FormItem>
         )}
       />
-
-      <div className="space-y-2">
-        <FormLabel>Amenities</FormLabel>
-        <div className="grid grid-cols-2 gap-2">
-          {availableFeatures.map(feature => (
-            <div key={feature.id} className="flex items-center space-x-2">
-              <Checkbox 
-                id={feature.id}
-                checked={selectedFeatures.includes(feature.label)}
-                onCheckedChange={() => handleFeatureToggle(feature.label)}
+      
+      {/* Features Selection */}
+      <div className="space-y-4">
+        <FormLabel>Property Features</FormLabel>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {features.map((feature) => (
+            <div key={feature} className="flex items-center space-x-2">
+              <Checkbox
+                id={feature}
+                checked={selectedFeatures.includes(feature)}
+                onCheckedChange={(checked) => handleFeatureChange(feature, checked as boolean)}
               />
-              <label 
-                htmlFor={feature.id}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center"
-              >
-                {feature.icon}
-                {feature.label}
+              <label htmlFor={feature} className="text-sm font-medium">
+                {feature}
               </label>
             </div>
           ))}
         </div>
       </div>
       
+      {/* Photo Upload Section */}
       <div className="space-y-4">
         <FormLabel>Property Photos (Required)</FormLabel>
+        <p className="text-sm text-gray-600">
+          Upload up to 10 photos of your property. The first photo will be used as the main image.
+        </p>
         
-        {uploadError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{uploadError}</AlertDescription>
-          </Alert>
+        {/* Hidden file inputs with improved mobile support */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.heic,.heif"
+          multiple
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+        
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+        
+        {/* Upload buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={triggerCameraInput}
+            disabled={isUploading || photos.length >= 10}
+            className="flex items-center gap-2"
+          >
+            <Camera className="h-4 w-4" />
+            Take Photo
+          </Button>
+          
+          <Button
+            type="button"
+            variant="outline"
+            onClick={triggerFileInput}
+            disabled={isUploading || photos.length >= 10}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Choose from Gallery
+          </Button>
+        </div>
+        
+        {isUploading && (
+          <p className="text-sm text-gray-600">Processing photos...</p>
         )}
         
-        <div className="flex flex-wrap gap-3">
-          {photos.map((photo, i) => (
-            <div key={i} className="relative group">
-              <div className="w-24 h-24 overflow-hidden rounded-md border border-gray-300">
-                <img 
-                  src={photo.preview} 
-                  alt={`Property photo ${i+1}`}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                  onError={(e) => {
-                    console.error(`Error loading image preview ${i+1}:`, e);
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
+        {/* Photo Preview Grid */}
+        {photos.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {photos.map((photo, index) => (
+              <Card key={index} className="relative overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="aspect-square relative">
+                    <img
+                      src={photo.preview}
+                      alt={`Property photo ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('Image preview error:', e);
+                        // Fallback to a placeholder or remove the photo
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2 h-6 w-6 p-0"
+                      onClick={() => removePhoto(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                    {index === 0 && (
+                      <div className="absolute bottom-2 left-2 bg-black text-white text-xs px-2 py-1 rounded">
+                        Main
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {photos.length < 10 && (
+              <Card className="border-dashed border-2 border-gray-300">
+                <CardContent className="p-0">
+                  <div className="aspect-square flex items-center justify-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={triggerFileInput}
+                      disabled={isUploading}
+                      className="h-full w-full flex flex-col items-center gap-2"
+                    >
+                      <Plus className="h-8 w-8 text-gray-400" />
+                      <span className="text-sm text-gray-500">Add More</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+        
+        {photos.length === 0 && (
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  onClick={triggerCameraInput}
+                  disabled={isUploading}
+                  className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={triggerFileInput}
+                  disabled={isUploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose Files
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-90"
-                onClick={() => handleRemovePhoto(i)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-              <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 text-center truncate">
-                {(photo.file.size / (1024 * 1024)).toFixed(1)}MB
-              </span>
+              <p className="text-sm text-gray-500">
+                Add photos to showcase your property
+              </p>
             </div>
-          ))}
-          {photos.length < 5 && (
-            <div className="relative">
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-24 h-24 flex flex-col items-center justify-center border-dashed border-2 border-gray-300"
-                disabled={uploading}
-                onClick={() => {
-                  // Trigger file input click for better mobile compatibility
-                  const fileInput = document.getElementById('photo-upload-input') as HTMLInputElement;
-                  if (fileInput) {
-                    fileInput.click();
-                  }
-                }}
-              >
-                {uploading ? (
-                  <Loader2 className="h-6 w-6 animate-spin mb-1" />
-                ) : (
-                  <Upload className="h-6 w-6 mb-1" />
-                )}
-                <span className="text-xs">{uploading ? 'Processing...' : 'Add'}</span>
-              </Button>
-              <input
-                id="photo-upload-input"
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={handleAddPhoto}
-                disabled={photos.length >= 5 || uploading}
-                style={{ zIndex: -1 }}
-              />
-            </div>
-          )}
-        </div>
-        <div className="text-xs space-y-1">
-          <p className="text-gray-500">Upload up to 5 photos (Max 10MB each)</p>
-          <p className="text-amber-600 font-medium">At least one photo is required to list your property.</p>
-          <p className="text-blue-600 text-xs">📱 On mobile: Tap "Add" button to take a photo or select from gallery</p>
-          {uploadError && (
-            <p className="text-red-600 font-medium">
-              Upload issue detected. Please resolve before continuing.
-            </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
