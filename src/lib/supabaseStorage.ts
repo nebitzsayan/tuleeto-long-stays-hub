@@ -175,38 +175,27 @@ export async function uploadFileToStorage(
 }
 
 export async function uploadMultipleFiles(
-  bucketName: string,
   files: File[],
-  pathPrefix: string = '',
+  pathPrefix: string = 'property_images',
   onProgress?: (progress: number) => void
 ): Promise<string[]> {
   const uploadedUrls: string[] = [];
   
   try {
-    console.log(`Starting batch upload of ${files.length} files to ${bucketName}`);
+    console.log(`Starting batch upload of ${files.length} files to ImageKit`);
     
     // Set initial progress
     onProgress?.(0);
-    
-    // Check if bucket exists first
-    const bucketExists = await checkBucketExists(bucketName);
-    if (!bucketExists) {
-      console.error(`Bucket ${bucketName} does not exist`);
-      throw new Error(`Storage bucket ${bucketName} not found. Please contact support.`);
-    }
     
     // Upload each file with enhanced mobile support and improved error handling
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${Date.now()}_${i}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-      let filePath = pathPrefix ? `${pathPrefix}/${fileName}` : fileName;
       
       console.log(`Uploading file ${i + 1}/${files.length}:`, {
         fileName: file.name,
         size: file.size,
-        type: file.type,
-        targetPath: filePath
+        type: file.type
       });
       
       // File size validation - reduced to 5MB for better mobile compatibility
@@ -242,50 +231,31 @@ export async function uploadMultipleFiles(
           uploadAttempts++;
           console.log(`Upload attempt ${uploadAttempts}/${maxAttempts} for file ${i + 1}`);
           
-          // Determine content type with better mobile support
-          let contentType = file.type || 'application/octet-stream';
-          if (!contentType || contentType === 'application/octet-stream') {
-            const typeMap: { [key: string]: string } = {
-              'jpg': 'image/jpeg',
-              'jpeg': 'image/jpeg',
-              'png': 'image/png',
-              'webp': 'image/webp',
-              'gif': 'image/gif',
-              'heic': 'image/heic',
-              'heif': 'image/heif'
-            };
-            contentType = typeMap[fileExtension] || 'image/jpeg';
-          }
+          // Convert file to base64 for ImageKit upload
+          const fileDataBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
           
-          const { data, error } = await supabase.storage
-            .from(bucketName)
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false,
-              contentType,
-              duplex: 'half' // Better for mobile uploads
-            });
+          // Generate unique filename
+          const timestamp = Date.now();
+          const randomString = Math.random().toString(36).substring(2, 15);
+          const fileName = `${timestamp}_${randomString}.${fileExtension}`;
+          
+          // Upload to ImageKit via edge function
+          const { data, error } = await supabase.functions.invoke('upload-to-imagekit', {
+            body: {
+              fileName,
+              fileData: fileDataBase64,
+              folder: pathPrefix
+            }
+          });
           
           if (error) {
             lastError = error;
             console.error(`Upload attempt ${uploadAttempts} failed for file ${i+1}:`, error);
-            
-            // Handle duplicate file error with better naming
-            if (error.message?.includes('already exists') && uploadAttempts < maxAttempts) {
-              const timestamp = Date.now() + Math.random() * 10000;
-              const newFileName = `${timestamp}_${i}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-              filePath = pathPrefix ? `${pathPrefix}/${newFileName}` : newFileName;
-              console.log(`Retrying with new filename: ${filePath}`);
-              continue;
-            }
-            
-            // For specific critical errors, throw immediately
-            if (error.message?.includes('Bucket not found') || 
-                error.message?.includes('Unauthorized') ||
-                error.message?.includes('Invalid file type') ||
-                error.message?.includes('exceeded')) {
-              throw error;
-            }
             
             // If it's the last attempt, throw the error
             if (uploadAttempts === maxAttempts) {
@@ -299,24 +269,19 @@ export async function uploadMultipleFiles(
             continue;
           }
           
-          if (!data?.path) {
-            lastError = new Error("Upload succeeded but no path returned");
-            console.error(`Upload attempt ${uploadAttempts} - no path returned for file ${i+1}`);
+          if (!data?.url) {
+            lastError = new Error("Upload succeeded but no URL returned");
+            console.error(`Upload attempt ${uploadAttempts} - no URL returned for file ${i+1}`);
             if (uploadAttempts === maxAttempts) {
-              throw new Error(`Upload completed but file path is missing for "${file.name}". Please try again.`);
+              throw new Error(`Upload completed but file URL is missing for "${file.name}". Please try again.`);
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
             continue;
           }
           
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(filePath);
-          
-          uploadedUrls.push(publicUrl);
+          uploadedUrls.push(data.url);
           uploadSuccess = true;
-          console.log(`File ${i + 1}/${files.length} uploaded successfully on attempt ${uploadAttempts}:`, publicUrl);
+          console.log(`File ${i + 1}/${files.length} uploaded successfully on attempt ${uploadAttempts}:`, data.url);
           
         } catch (attemptError: any) {
           lastError = attemptError;
@@ -338,7 +303,7 @@ export async function uploadMultipleFiles(
       
       // Small delay between uploads for mobile stability
       if (i < files.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Increased delay for mobile
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
     
@@ -352,12 +317,12 @@ export async function uploadMultipleFiles(
     });
     
     // Provide more specific error messages
-    if (error.message?.includes('exceeded')) {
+    if (error.message?.includes('exceeded') || error.message?.includes('too large')) {
       throw new Error("File size too large. Please use images smaller than 5MB.");
     } else if (error.message?.includes('Unauthorized')) {
       throw new Error("You need to be logged in to upload photos.");
-    } else if (error.message?.includes('Bucket not found')) {
-      throw new Error("Storage system not configured. Please contact support.");
+    } else if (error.message?.includes('configuration')) {
+      throw new Error("Image storage not configured. Please contact support.");
     } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
       throw new Error("Network error. Please check your connection and try again.");
     }

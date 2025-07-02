@@ -115,7 +115,6 @@ const PropertyListingForm = ({
       const pathPrefix = user?.id ? `${user.id}/${Date.now()}` : `anonymous/${Date.now()}`;
       
       const urls = await uploadMultipleFiles(
-        'property_images',
         files,
         pathPrefix,
         (progress) => {

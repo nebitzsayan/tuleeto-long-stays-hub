@@ -1,0 +1,2 @@
+-- Store ImageKit private key as a secret
+-- This will be handled through Supabase secrets interface

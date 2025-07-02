@@ -1,1 +1,4 @@
 project_id = "gokrqmykzovxqaoanapu"
+
+[functions.upload-to-imagekit]
+verify_jwt = true
