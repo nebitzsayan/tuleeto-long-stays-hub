@@ -1,0 +1,4 @@
+-- Add ImageKit private key as secret
+-- This needs to be added through Supabase dashboard secrets interface
+-- Secret name: IMAGEKIT_PRIVATE_KEY
+-- Secret value: private_ioJ5TeMc5HTHrZYET3DboDwmyKw=
