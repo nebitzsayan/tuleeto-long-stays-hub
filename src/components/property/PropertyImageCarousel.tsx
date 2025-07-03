@@ -123,11 +123,12 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
         </Carousel>
       </div>
 
-      {/* Fullscreen Image Dialog - Fixed to show original size */}
+      {/* Fullscreen Image Dialog - Redesigned for original image size */}
       <Dialog open={fullscreenImage !== null} onOpenChange={(open) => !open && closeFullscreen()}>
-        <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 overflow-hidden bg-black/95 border-0">
-          <div className="relative w-full h-full flex items-center justify-center">
-            <div className="absolute top-4 right-4 z-50">
+        <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 m-0 border-0 bg-transparent">
+          <div className="relative w-full h-full bg-black/90 overflow-auto">
+            {/* Close button - fixed position */}
+            <div className="fixed top-4 right-4 z-50">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -138,35 +139,44 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
               </Button>
             </div>
             
+            {/* Navigation buttons - fixed position */}
             {validImages.length > 1 && (
               <>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-black/30 hover:bg-black/50 text-white rounded-full"
-                  onClick={() => navigateFullscreen('prev')}
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
+                <div className="fixed left-4 top-1/2 -translate-y-1/2 z-50">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="bg-black/30 hover:bg-black/50 text-white rounded-full"
+                    onClick={() => navigateFullscreen('prev')}
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                </div>
                 
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-50 bg-black/30 hover:bg-black/50 text-white rounded-full"
-                  onClick={() => navigateFullscreen('next')}
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
+                <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="bg-black/30 hover:bg-black/50 text-white rounded-full"
+                    onClick={() => navigateFullscreen('next')}
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </Button>
+                </div>
               </>
             )}
             
+            {/* Image container - scrollable and centered */}
             {fullscreenImage && (
-              <div className="w-full h-full flex items-center justify-center p-4">
+              <div className="min-h-full flex items-start justify-center p-4">
                 <img 
                   src={fullscreenImage} 
                   alt={title} 
-                  className="max-w-full max-h-full object-contain"
-                  style={{ width: 'auto', height: 'auto' }}
+                  className="block max-w-none h-auto"
+                  style={{ 
+                    minHeight: 'auto',
+                    objectFit: 'none'
+                  }}
                   onError={(e) => {
                     console.error('Fullscreen image failed to load:', fullscreenImage);
                     closeFullscreen();
@@ -176,9 +186,12 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
               </div>
             )}
             
+            {/* Image counter - fixed position */}
             {validImages.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-3 py-1 rounded-full">
-                {fullscreenIndex + 1} / {validImages.length}
+              <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+                <div className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
+                  {fullscreenIndex + 1} / {validImages.length}
+                </div>
               </div>
             )}
           </div>
