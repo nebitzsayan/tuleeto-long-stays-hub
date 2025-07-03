@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -312,7 +311,7 @@ export const FeaturesPhotosStep = ({
         </div>
       </div>
       
-      {/* Photo Upload Section */}
+      {/* Photo Upload Section - Single upload option only */}
       <div className="space-y-4">
         <FormLabel>Property Photos (Required)</FormLabel>
         <p className="text-sm text-gray-600">
@@ -328,24 +327,6 @@ export const FeaturesPhotosStep = ({
           onChange={handlePhotoUpload}
           className="hidden"
         />
-        
-        {/* Upload button - Gallery only */}
-        <div className="flex justify-center">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={triggerFileInput}
-            disabled={isUploading || photos.length >= 10}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            {isUploading ? 'Processing...' : 'Choose Photos from Gallery'}
-          </Button>
-        </div>
-        
-        {isUploading && (
-          <p className="text-sm text-blue-600 text-center animate-pulse">Processing photos...</p>
-        )}
         
         {/* Photo Preview Grid */}
         {photos.length > 0 && (
@@ -402,6 +383,7 @@ export const FeaturesPhotosStep = ({
           </div>
         )}
         
+        {/* Single upload button when no photos */}
         {photos.length === 0 && (
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
             <div className="flex flex-col items-center gap-4">
@@ -415,10 +397,14 @@ export const FeaturesPhotosStep = ({
                 {isUploading ? 'Processing...' : 'Choose Photos from Gallery'}
               </Button>
               <p className="text-sm text-gray-500">
-                Add photos to showcase your property (Gallery only)
+                Add photos to showcase your property
               </p>
             </div>
           </div>
+        )}
+
+        {isUploading && (
+          <p className="text-sm text-blue-600 text-center animate-pulse">Processing photos...</p>
         )}
       </div>
     </div>
