@@ -123,60 +123,56 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
         </Carousel>
       </div>
 
-      {/* Fullscreen Image Dialog - Redesigned for original image size */}
+      {/* Fullscreen Image Dialog - Responsive with no black background */}
       <Dialog open={fullscreenImage !== null} onOpenChange={(open) => !open && closeFullscreen()}>
-        <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 m-0 border-0 bg-transparent">
-          <div className="relative w-full h-full bg-black/90 overflow-auto">
-            {/* Close button - fixed position */}
-            <div className="fixed top-4 right-4 z-50">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-auto h-auto p-0 m-0 border-0 bg-white overflow-hidden">
+          <div className="relative bg-white">
+            {/* Close button */}
+            <div className="absolute top-2 right-2 z-50 md:top-4 md:right-4">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="bg-black/50 hover:bg-black/70 text-white rounded-full"
+                className="bg-white/80 hover:bg-white text-gray-700 rounded-full shadow-md h-8 w-8 md:h-10 md:w-10"
                 onClick={closeFullscreen}
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
             
-            {/* Navigation buttons - fixed position */}
+            {/* Navigation buttons */}
             {validImages.length > 1 && (
               <>
-                <div className="fixed left-4 top-1/2 -translate-y-1/2 z-50">
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 z-50 md:left-4">
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="bg-black/30 hover:bg-black/50 text-white rounded-full"
+                    className="bg-white/80 hover:bg-white text-gray-700 rounded-full shadow-md h-8 w-8 md:h-10 md:w-10"
                     onClick={() => navigateFullscreen('prev')}
                   >
-                    <ChevronLeft className="h-6 w-6" />
+                    <ChevronLeft className="h-4 w-4 md:h-6 md:w-6" />
                   </Button>
                 </div>
                 
-                <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 z-50 md:right-4">
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="bg-black/30 hover:bg-black/50 text-white rounded-full"
+                    className="bg-white/80 hover:bg-white text-gray-700 rounded-full shadow-md h-8 w-8 md:h-10 md:w-10"
                     onClick={() => navigateFullscreen('next')}
                   >
-                    <ChevronRight className="h-6 w-6" />
+                    <ChevronRight className="h-4 w-4 md:h-6 md:w-6" />
                   </Button>
                 </div>
               </>
             )}
             
-            {/* Image container - scrollable and centered */}
+            {/* Image container - responsive sizing */}
             {fullscreenImage && (
-              <div className="min-h-full flex items-start justify-center p-4">
+              <div className="flex items-center justify-center p-2 md:p-4">
                 <img 
                   src={fullscreenImage} 
                   alt={title} 
-                  className="block max-w-none h-auto"
-                  style={{ 
-                    minHeight: 'auto',
-                    objectFit: 'none'
-                  }}
+                  className="max-w-full max-h-[90vh] md:max-h-[85vh] w-auto h-auto object-contain rounded-lg shadow-lg"
                   onError={(e) => {
                     console.error('Fullscreen image failed to load:', fullscreenImage);
                     closeFullscreen();
@@ -186,10 +182,10 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
               </div>
             )}
             
-            {/* Image counter - fixed position */}
+            {/* Image counter */}
             {validImages.length > 1 && (
-              <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
-                <div className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-50 md:bottom-4">
+                <div className="text-gray-700 text-xs md:text-sm bg-white/80 px-2 py-1 md:px-3 rounded-full shadow-md">
                   {fullscreenIndex + 1} / {validImages.length}
                 </div>
               </div>

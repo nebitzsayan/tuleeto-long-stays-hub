@@ -112,7 +112,7 @@ const Navbar = () => {
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropDownMenu>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -208,31 +208,35 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation - Only show when not authenticated */}
+        {/* Mobile Navigation Menu - Full width and improved layout */}
         {isMobileMenuOpen && !user && (
-          <div className="md:hidden border-0 py-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm mt-2">
-            <div className="flex flex-col space-y-4">
-              <Link 
-                to="/listings" 
-                className="text-gray-800 hover:text-tuleeto-orange transition-colors py-2 font-semibold"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Find Properties
-              </Link>
-              <Link 
-                to="/list-property" 
-                className="text-gray-800 hover:text-tuleeto-orange transition-colors py-2 font-semibold"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                List Property
-              </Link>
-              
-              <div className="flex flex-col space-y-2 border-t pt-4">
-                <Button variant="ghost" asChild className="bg-transparent border-0 shadow-none text-gray-800 font-semibold hover:text-tuleeto-orange">
-                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="md:hidden absolute left-0 right-0 top-full bg-white/95 backdrop-blur-sm shadow-lg border-t border-orange-200/40 z-40">
+            <div className="container mx-auto px-4 py-6">
+              <div className="flex flex-col space-y-6">
+                <Link 
+                  to="/listings" 
+                  className="text-gray-800 hover:text-tuleeto-orange transition-colors py-3 text-lg font-semibold border-b border-gray-100"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Find Properties
+                </Link>
+                <Link 
+                  to="/list-property" 
+                  className="text-gray-800 hover:text-tuleeto-orange transition-colors py-3 text-lg font-semibold border-b border-gray-100"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  List Property
+                </Link>
+                
+                <div className="pt-4">
+                  <Link
+                    to="/auth"
+                    className="block w-full text-center bg-tuleeto-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     Sign In
                   </Link>
-                </Button>
+                </div>
               </div>
             </div>
           </div>
