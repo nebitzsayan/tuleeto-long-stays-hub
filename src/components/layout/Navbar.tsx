@@ -207,11 +207,11 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation Menu - With white background */}
+        {/* Mobile Navigation Menu - With proper white background */}
         {isMobileMenuOpen && !user && (
           <div className="md:hidden fixed inset-0 top-16 bg-white z-40 shadow-lg">
-            <div className="h-full flex flex-col">
-              <div className="flex-1 px-6 py-6 space-y-6">
+            <div className="h-full flex flex-col bg-white">
+              <div className="flex-1 px-6 py-6 space-y-6 bg-white">
                 <Link 
                   to="/listings" 
                   className="block text-gray-800 hover:text-tuleeto-orange transition-colors py-4 text-lg font-medium border-b border-gray-100"
@@ -228,7 +228,7 @@ const Navbar = () => {
                 </Link>
               </div>
               
-              {/* Sign In Button - Fixed at bottom with white background */}
+              {/* Sign In Button - Fixed at bottom with solid white background */}
               <div className="p-6 border-t border-gray-100 bg-white">
                 <Link
                   to="/auth"
