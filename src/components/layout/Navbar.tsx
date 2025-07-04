@@ -208,29 +208,29 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation Menu - Full screen overlay */}
+        {/* Mobile Navigation Menu - Fixed layout for non-authenticated users */}
         {isMobileMenuOpen && !user && (
-          <div className="md:hidden fixed inset-0 top-16 bg-white z-40 h-screen">
+          <div className="md:hidden fixed inset-0 top-16 bg-white z-40">
             <div className="h-full flex flex-col">
-              <div className="flex-1 px-6 py-8 space-y-6">
+              <div className="flex-1 px-6 py-6 space-y-4">
                 <Link 
                   to="/listings" 
-                  className="block text-gray-800 hover:text-tuleeto-orange transition-colors py-4 text-xl font-semibold border-b border-gray-100"
+                  className="block text-gray-800 hover:text-tuleeto-orange transition-colors py-3 text-lg font-medium border-b border-gray-100"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Find Properties
                 </Link>
                 <Link 
                   to="/list-property" 
-                  className="block text-gray-800 hover:text-tuleeto-orange transition-colors py-4 text-xl font-semibold border-b border-gray-100"
+                  className="block text-gray-800 hover:text-tuleeto-orange transition-colors py-3 text-lg font-medium border-b border-gray-100"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   List Property
                 </Link>
               </div>
               
-              {/* Sign In Button - Prominently placed at bottom */}
-              <div className="p-6 border-t border-gray-100">
+              {/* Sign In Button - Fixed at bottom */}
+              <div className="p-6 border-t border-gray-100 bg-white">
                 <Link
                   to="/auth"
                   className="block w-full text-center bg-tuleeto-orange text-white py-4 px-6 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-colors"
