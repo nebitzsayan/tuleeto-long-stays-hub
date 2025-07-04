@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Carousel,
@@ -122,61 +123,55 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
         </Carousel>
       </div>
 
-      {/* Fullscreen Image Dialog - Mobile Optimized */}
+      {/* Fullscreen Image Dialog - Gallery Style for Mobile */}
       <Dialog open={fullscreenImage !== null} onOpenChange={(open) => !open && closeFullscreen()}>
-        <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/95 shadow-none">
-          <div className="relative w-full h-full flex items-center justify-center">
-            {/* Close button - Top right, mobile safe */}
-            <div className="absolute top-4 right-4 z-50 md:top-6 md:right-6">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="bg-black/80 hover:bg-black/90 text-white rounded-full shadow-lg h-12 w-12"
-                onClick={closeFullscreen}
-              >
-                <X className="h-6 w-6" />
-              </Button>
-            </div>
+        <DialogContent className="max-w-none w-screen h-screen p-0 border-0 bg-transparent shadow-none overflow-hidden">
+          <div className="relative w-full h-full flex items-center justify-center bg-black/80 backdrop-blur-sm">
+            {/* Close button - Top right, safe area */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute top-6 right-6 z-50 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm h-10 w-10 md:h-12 md:w-12"
+              onClick={closeFullscreen}
+            >
+              <X className="h-5 w-5 md:h-6 md:w-6" />
+            </Button>
             
             {/* Navigation buttons - Only show if multiple images */}
             {validImages.length > 1 && (
               <>
-                {/* Left navigation */}
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 z-50">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="bg-black/80 hover:bg-black/90 text-white rounded-full shadow-lg h-12 w-12"
-                    onClick={() => navigateFullscreen('prev')}
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </Button>
-                </div>
+                {/* Left navigation - Safe from image overlap */}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm h-10 w-10 md:h-12 md:w-12"
+                  onClick={() => navigateFullscreen('prev')}
+                >
+                  <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
+                </Button>
                 
-                {/* Right navigation */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="bg-black/80 hover:bg-black/90 text-white rounded-full shadow-lg h-12 w-12"
-                    onClick={() => navigateFullscreen('next')}
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </Button>
-                </div>
+                {/* Right navigation - Safe from image overlap */}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-50 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm h-10 w-10 md:h-12 md:w-12"
+                  onClick={() => navigateFullscreen('next')}
+                >
+                  <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
+                </Button>
               </>
             )}
             
-            {/* Image container - Mobile optimized sizing */}
+            {/* Image container - Perfect centering with safe margins */}
             {fullscreenImage && (
-              <div className="flex items-center justify-center w-full h-full p-4">
+              <div className="flex items-center justify-center w-full h-full p-6 md:p-8">
                 <img 
                   src={fullscreenImage} 
                   alt={title} 
-                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                   style={{
-                    maxWidth: 'calc(100vw - 2rem)',
-                    maxHeight: 'calc(100vh - 8rem)',
+                    maxWidth: 'calc(100vw - 3rem)',
+                    maxHeight: 'calc(100vh - 6rem)',
                   }}
                   onError={(e) => {
                     console.error('Fullscreen image failed to load:', fullscreenImage);
@@ -187,10 +182,10 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
               </div>
             )}
             
-            {/* Image counter - Bottom center */}
+            {/* Image counter - Bottom center, safe area */}
             {validImages.length > 1 && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-                <div className="text-white text-sm bg-black/80 px-4 py-2 rounded-full shadow-lg backdrop-blur-sm">
+                <div className="text-white text-sm bg-white/20 px-4 py-2 rounded-full backdrop-blur-sm">
                   {fullscreenIndex + 1} / {validImages.length}
                 </div>
               </div>
