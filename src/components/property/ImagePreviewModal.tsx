@@ -48,54 +48,72 @@ const ImagePreviewModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
-        <div className="relative w-full h-full flex items-center justify-center">
+      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 bg-transparent border-none shadow-none overflow-hidden">
+        {/* Transparent backdrop - click to close */}
+        <div 
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          onClick={onClose}
+        />
+        
+        <div className="relative w-full h-full flex items-center justify-center z-10">
           {/* Close button */}
           <DialogClose asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              className="absolute top-4 right-4 z-50 bg-white/90 hover:bg-white text-black rounded-full shadow-lg md:top-6 md:right-6"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5 md:h-6 md:w-6" />
             </Button>
           </DialogClose>
 
-          {/* Image */}
-          <div className="relative w-full h-full flex items-center justify-center p-4">
+          {/* Main image container */}
+          <div 
+            className="relative w-full h-full flex items-center justify-center p-4 md:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={images[currentIndex]}
               alt={`${title} - Image ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              style={{ maxWidth: '95vw', maxHeight: '90vh' }}
             />
           </div>
 
-          {/* Navigation buttons */}
+          {/* Navigation buttons - only show if multiple images */}
           {images.length > 1 && (
             <>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={goToPrevious}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToPrevious();
+                }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black rounded-full shadow-lg md:left-4 z-50"
               >
-                <ChevronLeft className="h-6 w-6" />
+                <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={goToNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToNext();
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black rounded-full shadow-lg md:right-4 z-50"
               >
-                <ChevronRight className="h-6 w-6" />
+                <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
               </Button>
             </>
           )}
 
           {/* Image counter */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
-            {currentIndex + 1} / {images.length}
-          </div>
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 text-black text-sm font-medium px-4 py-2 rounded-full shadow-lg md:bottom-6">
+              {currentIndex + 1} / {images.length}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
