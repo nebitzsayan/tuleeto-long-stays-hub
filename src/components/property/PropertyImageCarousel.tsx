@@ -4,11 +4,10 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
 } from "@/components/ui/carousel";
-import FullscreenImageModal from "./FullscreenImageModal";
-import CarouselControls from "./CarouselControls";
 import { useImageHandling } from "@/hooks/useImageHandling";
-import { useFullscreenImage } from "@/hooks/useFullscreenImage";
 
 interface PropertyImageCarouselProps {
   images: string[];
@@ -21,13 +20,6 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
   const [count, setCount] = useState(0);
 
   const { validImages, imageList, handleImageError, handleImageLoad } = useImageHandling(images);
-  const { 
-    fullscreenImage, 
-    fullscreenIndex, 
-    openFullscreen, 
-    closeFullscreen, 
-    navigateFullscreen 
-  } = useFullscreenImage(validImages);
 
   useEffect(() => {
     if (!api) return;
@@ -41,44 +33,40 @@ const PropertyImageCarousel = ({ images, title }: PropertyImageCarouselProps) =>
   }, [api]);
 
   return (
-    <>
-      <div className="relative overflow-hidden rounded-lg">
-        <Carousel setApi={setApi} className="w-full">
-          <CarouselContent>
-            {imageList.map((image, index) => (
-              <CarouselItem key={index}>
-                <div className="relative h-[400px] w-full group">
-                  <img 
-                    src={image} 
-                    alt={`${title} - Image ${index + 1}`} 
-                    className="w-full h-full object-cover rounded-lg"
-                    onError={() => handleImageError(index)}
-                    onLoad={() => handleImageLoad(index, image)}
-                  />
-                  <CarouselControls
-                    showNavigation={imageList.length > 1}
-                    current={current}
-                    count={count}
-                    onViewFull={() => openFullscreen(image, index)}
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
-      </div>
-
-      <FullscreenImageModal
-        isOpen={fullscreenImage !== null}
-        onClose={closeFullscreen}
-        image={fullscreenImage}
-        title={title}
-        currentIndex={fullscreenIndex}
-        totalImages={validImages.length}
-        onNavigate={navigateFullscreen}
-        showNavigation={validImages.length > 1}
-      />
-    </>
+    <div className="relative overflow-hidden rounded-lg">
+      <Carousel setApi={setApi} className="w-full">
+        <CarouselContent>
+          {imageList.map((image, index) => (
+            <CarouselItem key={index}>
+              <div className="relative h-[400px] w-full">
+                <img 
+                  src={image} 
+                  alt={`${title} - Image ${index + 1}`} 
+                  className="w-full h-full object-cover rounded-lg"
+                  onError={() => handleImageError(index)}
+                  onLoad={() => handleImageLoad(index, image)}
+                />
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        
+        {/* Navigation controls */}
+        {imageList.length > 1 && (
+          <>
+            <CarouselPrevious 
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white"
+            />
+            <CarouselNext 
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white"
+            />
+            <div className="absolute bottom-2 right-2 bg-black/50 text-white text-sm px-2 py-1 rounded">
+              {current} / {count}
+            </div>
+          </>
+        )}
+      </Carousel>
+    </div>
   );
 };
 
