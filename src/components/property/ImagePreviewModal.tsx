@@ -43,7 +43,7 @@ const ImagePreviewModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed inset-0 flex flex-col max-w-none max-h-none w-full h-full p-0 m-0 bg-white/80 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
+      <DialogContent className="fixed inset-0 flex flex-col max-w-none max-h-none w-screen h-screen p-0 m-0 bg-white/80 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
 
         {/* Close button */}
         <DialogClose asChild>
@@ -56,23 +56,22 @@ const ImagePreviewModal = ({
           </Button>
         </DialogClose>
 
-        {/* Image container - fills remaining height */}
-        <div className="flex-1 flex items-center justify-center w-full h-full p-2 sm:p-4">
+        {/* Image container - grows but respects thumbnail height */}
+        <div className="flex-grow min-h-0 flex items-center justify-center w-full p-2 sm:p-4">
           <img
             src={images[currentIndex]}
             alt={`${title} - Image ${currentIndex + 1}`}
             className="object-contain rounded-lg shadow-lg max-w-full max-h-full"
             style={{
               maxWidth: "95%",
-              maxHeight: "100%",
               minHeight: "200px",
             }}
           />
         </div>
 
-        {/* Thumbnail gallery - stays at the bottom in flex flow */}
+        {/* Thumbnail gallery - always at bottom in flex flow */}
         {images.length > 1 && (
-          <div className="w-full bg-white/95 backdrop-blur-sm border-t border-gray-200 p-2 sm:p-4 flex-shrink-0">
+          <div className="w-full flex-shrink-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 p-2 sm:p-4">
             <div className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto pb-2">
               {images.map((image, index) => (
                 <button
@@ -109,4 +108,5 @@ const ImagePreviewModal = ({
 };
 
 export default ImagePreviewModal;
+
 
