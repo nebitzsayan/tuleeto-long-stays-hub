@@ -44,43 +44,44 @@ const ImagePreviewModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 bg-white/70 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
+      <DialogContent className="fixed inset-0 max-w-none max-h-none w-full h-full p-0 m-0 bg-white/80 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
         {/* Close button - always visible and accessible */}
         <DialogClose asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="fixed top-4 right-4 z-50 bg-white/90 hover:bg-white text-gray-900 rounded-full shadow-lg border border-gray-200 h-10 w-10"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 z-50 bg-white/90 hover:bg-white text-gray-900 rounded-full shadow-lg border border-gray-200 h-8 w-8 sm:h-10 sm:w-10"
           >
-            <X className="h-5 w-5 text-gray-900" />
+            <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-900" />
           </Button>
         </DialogClose>
 
-        {/* Main layout container */}
-        <div className="relative w-full h-full flex flex-col">
-          {/* Image container - takes available space above thumbnails */}
-          <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+        {/* Main container */}
+        <div className="flex flex-col h-full w-full">
+          {/* Image container - centered and responsive */}
+          <div className="flex-1 flex items-center justify-center p-2 sm:p-4 relative">
             <img
               src={images[currentIndex]}
               alt={`${title} - Image ${currentIndex + 1}`}
-              className="max-w-[90%] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-lg"
-              style={{ 
-                maxWidth: '90%', 
-                maxHeight: images.length > 1 ? 'calc(90vh - 120px)' : '90vh'
+              className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-lg"
+              style={{
+                maxWidth: '95%',
+                maxHeight: images.length > 1 ? 'calc(100vh - 140px)' : 'calc(100vh - 60px)',
+                minHeight: '200px'
               }}
             />
           </div>
 
-          {/* Thumbnail gallery - pinned to bottom */}
+          {/* Thumbnail gallery - only show if multiple images */}
           {images.length > 1 && (
-            <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 p-3 md:p-4 z-10">
-              <div className="max-w-full mx-auto">
-                <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2">
+            <div className="bg-white/95 backdrop-blur-sm border-t border-gray-200 p-2 sm:p-4 flex-shrink-0">
+              <div className="max-w-full">
+                <div className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto pb-2">
                   {images.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentIndex(index)}
-                      className={`relative flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                      className={`relative flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 transition-all ${
                         index === currentIndex
                           ? 'border-blue-500 ring-2 ring-blue-200'
                           : 'border-gray-300 hover:border-gray-400'
@@ -99,8 +100,8 @@ const ImagePreviewModal = ({
                 </div>
                 
                 {/* Image counter */}
-                <div className="text-center mt-2">
-                  <span className="text-xs md:text-sm text-gray-700 font-medium bg-white/80 px-2 py-1 rounded">
+                <div className="text-center mt-1 sm:mt-2">
+                  <span className="text-xs sm:text-sm text-gray-700 font-medium bg-white/80 px-2 py-1 rounded">
                     {currentIndex + 1} / {images.length}
                   </span>
                 </div>
