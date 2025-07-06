@@ -45,7 +45,7 @@ const ImagePreviewModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 bg-white/70 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
-        {/* Close button - fixed position for mobile/desktop compatibility */}
+        {/* Close button - always visible and accessible */}
         <DialogClose asChild>
           <Button
             variant="ghost"
@@ -56,24 +56,24 @@ const ImagePreviewModal = ({
           </Button>
         </DialogClose>
 
-        {/* Main container - full screen flexbox layout */}
-        <div className="flex flex-col h-full w-full bg-transparent">
-          {/* Main image container - centered with flexbox */}
-          <div className="flex-1 flex items-center justify-center p-4">
+        {/* Main layout container */}
+        <div className="relative w-full h-full flex flex-col">
+          {/* Image container - takes available space above thumbnails */}
+          <div className="flex-1 flex items-center justify-center p-4 min-h-0">
             <img
               src={images[currentIndex]}
               alt={`${title} - Image ${currentIndex + 1}`}
               className="max-w-[90%] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-lg"
               style={{ 
                 maxWidth: '90%', 
-                maxHeight: '90vh'
+                maxHeight: images.length > 1 ? 'calc(90vh - 120px)' : '90vh'
               }}
             />
           </div>
 
-          {/* Thumbnail gallery - only show if multiple images */}
+          {/* Thumbnail gallery - pinned to bottom */}
           {images.length > 1 && (
-            <div className="bg-white/90 backdrop-blur-sm border-t border-gray-200 p-3 md:p-4 mt-auto">
+            <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 p-3 md:p-4 z-10">
               <div className="max-w-full mx-auto">
                 <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2">
                   {images.map((image, index) => (
