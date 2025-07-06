@@ -44,35 +44,37 @@ const ImagePreviewModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 bg-white border-none shadow-none overflow-hidden">
-        {/* Close button */}
+      <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 bg-white/70 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
+        {/* Close button - fixed position for mobile/desktop compatibility */}
         <DialogClose asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-50 bg-white hover:bg-gray-100 text-gray-700 rounded-full shadow-lg border"
+            className="fixed top-4 right-4 z-50 bg-white/90 hover:bg-white text-gray-900 rounded-full shadow-lg border border-gray-200 h-10 w-10"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5 text-gray-900" />
           </Button>
         </DialogClose>
 
-        <div className="flex flex-col h-full bg-white">
-          {/* Main image container - takes most of the space */}
-          <div className="flex-1 flex items-center justify-center p-4 bg-white">
-            <div className="w-full h-full max-w-6xl max-h-full flex items-center justify-center">
-              <img
-                src={images[currentIndex]}
-                alt={`${title} - Image ${currentIndex + 1}`}
-                className="max-w-full max-h-full w-auto h-auto object-contain"
-                style={{ maxHeight: 'calc(100vh - 120px)' }}
-              />
-            </div>
+        {/* Main container - full screen flexbox layout */}
+        <div className="flex flex-col h-full w-full bg-transparent">
+          {/* Main image container - centered with flexbox */}
+          <div className="flex-1 flex items-center justify-center p-4">
+            <img
+              src={images[currentIndex]}
+              alt={`${title} - Image ${currentIndex + 1}`}
+              className="max-w-[90%] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-lg"
+              style={{ 
+                maxWidth: '90%', 
+                maxHeight: '90vh'
+              }}
+            />
           </div>
 
           {/* Thumbnail gallery - only show if multiple images */}
           {images.length > 1 && (
-            <div className="bg-gray-50 border-t p-3 md:p-4">
-              <div className="max-w-6xl mx-auto">
+            <div className="bg-white/90 backdrop-blur-sm border-t border-gray-200 p-3 md:p-4 mt-auto">
+              <div className="max-w-full mx-auto">
                 <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2">
                   {images.map((image, index) => (
                     <button
@@ -81,7 +83,7 @@ const ImagePreviewModal = ({
                       className={`relative flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 transition-all ${
                         index === currentIndex
                           ? 'border-blue-500 ring-2 ring-blue-200'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-gray-300 hover:border-gray-400'
                       }`}
                     >
                       <img
@@ -98,7 +100,7 @@ const ImagePreviewModal = ({
                 
                 {/* Image counter */}
                 <div className="text-center mt-2">
-                  <span className="text-xs md:text-sm text-gray-600 font-medium">
+                  <span className="text-xs md:text-sm text-gray-700 font-medium bg-white/80 px-2 py-1 rounded">
                     {currentIndex + 1} / {images.length}
                   </span>
                 </div>
