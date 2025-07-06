@@ -43,9 +43,9 @@ const ImagePreviewModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed inset-0 flex flex-col justify-center items-center max-w-none max-h-none w-full h-full p-0 m-0 bg-white/80 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
+      <DialogContent className="fixed inset-0 flex flex-col max-w-none max-h-none w-full h-full p-0 m-0 bg-white/80 backdrop-blur-sm border-none shadow-none overflow-hidden animate-fade-in">
 
-        {/* Close button - always visible */}
+        {/* Close button */}
         <DialogClose asChild>
           <Button
             variant="ghost"
@@ -56,23 +56,23 @@ const ImagePreviewModal = ({
           </Button>
         </DialogClose>
 
-        {/* Image - perfectly centered and responsive */}
-        <div className="flex-1 flex items-center justify-center w-full h-full">
+        {/* Image container - fills remaining height */}
+        <div className="flex-1 flex items-center justify-center w-full h-full p-2 sm:p-4">
           <img
             src={images[currentIndex]}
             alt={`${title} - Image ${currentIndex + 1}`}
-            className="object-contain rounded-lg shadow-lg"
+            className="object-contain rounded-lg shadow-lg max-w-full max-h-full"
             style={{
               maxWidth: "95%",
-              maxHeight: images.length > 1 ? "calc(100vh - 120px)" : "95vh",
+              maxHeight: "100%",
               minHeight: "200px",
             }}
           />
         </div>
 
-        {/* Thumbnail gallery - pinned to bottom if multiple images */}
+        {/* Thumbnail gallery - stays at the bottom in flex flow */}
         {images.length > 1 && (
-          <div className="w-full bg-white/95 backdrop-blur-sm border-t border-gray-200 p-2 sm:p-4 flex-shrink-0 absolute bottom-0 left-0 right-0">
+          <div className="w-full bg-white/95 backdrop-blur-sm border-t border-gray-200 p-2 sm:p-4 flex-shrink-0">
             <div className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto pb-2">
               {images.map((image, index) => (
                 <button
@@ -96,7 +96,6 @@ const ImagePreviewModal = ({
               ))}
             </div>
 
-            {/* Image counter */}
             <div className="text-center mt-1 sm:mt-2">
               <span className="text-xs sm:text-sm text-gray-700 font-medium bg-white/80 px-2 py-1 rounded">
                 {currentIndex + 1} / {images.length}
@@ -110,3 +109,4 @@ const ImagePreviewModal = ({
 };
 
 export default ImagePreviewModal;
+
