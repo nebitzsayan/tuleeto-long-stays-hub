@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -15,6 +14,7 @@ import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
 import PropertyReviews from "@/components/property/PropertyReviews";
+import PropertyPosterButton from "@/components/property/PropertyPosterButton";
 
 interface PropertyDetails {
   id: string;
@@ -171,12 +171,31 @@ const PropertyDetailPage = () => {
                   <span>{property?.location}</span>
                 </div>
               </div>
-              <div className="mt-4 md:mt-0">
+              <div className="mt-4 md:mt-0 flex flex-col items-end gap-2">
                 <span className="text-3xl font-bold text-tuleeto-orange flex items-center">
                   <IndianRupee className="h-5 w-5 mr-1" />
                   {property?.price?.toLocaleString('en-IN')}
                 </span>
                 <span className="text-gray-600">/month</span>
+                
+                {property?.owner_id === user?.id && (
+                  <PropertyPosterButton 
+                    property={{
+                      title: property.title,
+                      location: property.location,
+                      price: property.price,
+                      bedrooms: property.bedrooms,
+                      bathrooms: property.bathrooms,
+                      area: property.area,
+                      description: property.description,
+                      features: property.features,
+                      images: property.images,
+                      owner_name: property.owner_name,
+                      contact_phone: property.contact_phone
+                    }}
+                    className="mt-2"
+                  />
+                )}
               </div>
             </div>
           </div>
