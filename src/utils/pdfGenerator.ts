@@ -48,103 +48,123 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 15;
+  const usableWidth = pageWidth - (margin * 2);
   
   // Main title - TO-LET in big orange letters
-  pdf.setFontSize(36);
-  pdf.setTextColor(249, 115, 22); // Orange color
+  pdf.setFontSize(32);
+  pdf.setTextColor(249, 115, 22);
   pdf.setFont('helvetica', 'bold');
   const titleText = 'TO-LET';
   const titleWidth = pdf.getTextWidth(titleText);
-  pdf.text(titleText, (pageWidth - titleWidth) / 2, 30);
+  pdf.text(titleText, (pageWidth - titleWidth) / 2, 25);
   
   // Subtitle - RENT AVAILABLE
-  pdf.setFontSize(18);
+  pdf.setFontSize(14);
   pdf.setTextColor(100, 100, 100);
   pdf.setFont('helvetica', 'normal');
   const subtitleText = 'RENT AVAILABLE';
   const subtitleWidth = pdf.getTextWidth(subtitleText);
-  pdf.text(subtitleText, (pageWidth - subtitleWidth) / 2, 45);
+  pdf.text(subtitleText, (pageWidth - subtitleWidth) / 2, 35);
   
-  let yPosition = 65;
+  let yPosition = 45;
   
-  // Property Title
-  pdf.setFontSize(20);
+  // Property Title - with text wrapping
+  pdf.setFontSize(16);
   pdf.setTextColor(0, 0, 0);
   pdf.setFont('helvetica', 'bold');
-  const lines = pdf.splitTextToSize(property.title, pageWidth - 40);
-  pdf.text(lines, 20, yPosition);
-  yPosition += lines.length * 8 + 10;
+  const titleLines = pdf.splitTextToSize(property.title, usableWidth);
+  pdf.text(titleLines, margin, yPosition);
+  yPosition += (titleLines.length * 6) + 5;
   
   // Location
-  pdf.setFontSize(14);
+  pdf.setFontSize(12);
   pdf.setTextColor(100, 100, 100);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(property.location, 20, yPosition);
-  yPosition += 15;
+  const locationLines = pdf.splitTextToSize(property.location, usableWidth);
+  pdf.text(locationLines, margin, yPosition);
+  yPosition += (locationLines.length * 5) + 8;
   
   // Price
-  pdf.setFontSize(24);
-  pdf.setTextColor(249, 115, 22); // Orange color
+  pdf.setFontSize(20);
+  pdf.setTextColor(249, 115, 22);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`Rs ${property.price.toLocaleString('en-IN')}/month`, 20, yPosition);
-  yPosition += 25;
+  pdf.text(`Rs ${property.price.toLocaleString('en-IN')}/month`, margin, yPosition);
+  yPosition += 15;
   
   // Property Images
   if (property.images && property.images.length > 0) {
     try {
-      const imageUrl = property.images[0]; // Use the first image
+      const imageUrl = property.images[0];
       const base64Image = await loadImageAsBase64(imageUrl);
       
-      const imgWidth = pageWidth - 40;
-      const imgHeight = 80;
+      const imgWidth = usableWidth;
+      const imgHeight = 60;
       
-      pdf.addImage(base64Image, 'JPEG', 20, yPosition, imgWidth, imgHeight);
-      yPosition += imgHeight + 15;
+      pdf.addImage(base64Image, 'JPEG', margin, yPosition, imgWidth, imgHeight);
+      yPosition += imgHeight + 8;
     } catch (error) {
       console.error('Error loading image:', error);
-      // Continue without image if loading fails
     }
   }
   
-  // Property Details Box
-  pdf.setFillColor(255, 237, 213); // Light orange background
-  pdf.rect(20, yPosition, pageWidth - 40, 35, 'F');
+  // Property Details Box - more compact
+  const boxHeight = 28;
+  pdf.setFillColor(255, 237, 213);
+  pdf.rect(margin, yPosition, usableWidth, boxHeight, 'F');
   
-  pdf.setFontSize(14);
+  // Add border
+  pdf.setDrawColor(249, 115, 22);
+  pdf.setLineWidth(0.5);
+  pdf.rect(margin, yPosition, usableWidth, boxHeight, 'S');
+  
+  pdf.setFontSize(11);
   pdf.setTextColor(0, 0, 0);
   pdf.setFont('helvetica', 'bold');
   
-  const detailsY = yPosition + 12;
-  pdf.text(`Bedrooms: ${property.bedrooms}`, 25, detailsY);
-  pdf.text(`Bathrooms: ${property.bathrooms}`, 25, detailsY + 8);
-  pdf.text(`Area: ${property.area} sq ft`, 25, detailsY + 16);
-  pdf.text(`Rooms: ${property.bedrooms + 1}`, 25, detailsY + 24);
+  const detailsStartY = yPosition + 8;
+  const leftColX = margin + 5;
+  const rightColX = margin + (usableWidth / 2) + 5;
   
-  yPosition += 45;
+  // Left column
+  pdf.text(`Bedrooms: ${property.bedrooms}`, leftColX, detailsStartY);
+  pdf.text(`Bathrooms: ${property.bathrooms}`, leftColX, detailsStartY + 7);
   
-  // Contact Information Box
-  if (yPosition > pageHeight - 50) {
-    pdf.addPage();
-    yPosition = 20;
-  }
+  // Right column
+  pdf.text(`Area: ${property.area} sq ft`, rightColX, detailsStartY);
+  pdf.text(`Rooms: ${property.bedrooms + 1}`, rightColX, detailsStartY + 7);
   
-  pdf.setFillColor(249, 115, 22); // Orange background
-  pdf.rect(20, yPosition, pageWidth - 40, 30, 'F');
+  yPosition += boxHeight + 8;
   
-  pdf.setFontSize(16);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Contact Owner', 25, yPosition + 12);
+  // Contact Information Box - more compact
+  const contactBoxHeight = 25;
+  pdf.setFillColor(249, 115, 22);
+  pdf.rect(margin, yPosition, usableWidth, contactBoxHeight, 'F');
   
   pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(`Phone: ${property.contactPhone}`, 25, yPosition + 20);
-  pdf.text(`Name: ${property.ownerName}`, 25, yPosition + 26);
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Contact Owner', margin + 5, yPosition + 10);
   
-  // Footer
-  pdf.setFontSize(10);
+  pdf.setFontSize(11);
+  pdf.setFont('helvetica', 'normal');
+  
+  const contactStartY = yPosition + 16;
+  const ownerNameLines = pdf.splitTextToSize(`Name: ${property.ownerName}`, usableWidth - 10);
+  const phoneLines = pdf.splitTextToSize(`Phone: ${property.contactPhone}`, usableWidth - 10);
+  
+  pdf.text(ownerNameLines, margin + 5, contactStartY);
+  pdf.text(phoneLines, margin + 5, contactStartY + 6);
+  
+  yPosition += contactBoxHeight + 10;
+  
+  // Footer - compact
+  pdf.setFontSize(9);
   pdf.setTextColor(150, 150, 150);
-  pdf.text('Generated via Tuleeto.com - Your trusted rental platform', 20, pageHeight - 10);
+  pdf.setFont('helvetica', 'normal');
+  const footerText = 'Generated via Tuleeto.com - Your trusted rental platform';
+  const footerWidth = pdf.getTextWidth(footerText);
+  pdf.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 8);
   
   // Save the PDF
   const fileName = `${property.title.replace(/[^a-zA-Z0-9]/g, '_')}_rental_poster.pdf`;
