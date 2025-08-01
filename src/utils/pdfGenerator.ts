@@ -17,7 +17,7 @@ interface PropertyPosterData {
   reviewCount?: number;
 }
 
-const loadImageAsBase64 = (url: string): Promise<string> => {
+const loadImageAsBase64 = (url: string): Promise<{dataURL: string, width: number, height: number}> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -33,7 +33,11 @@ const loadImageAsBase64 = (url: string): Promise<string> => {
       
       try {
         const dataURL = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(dataURL);
+        resolve({
+          dataURL,
+          width: img.width,
+          height: img.height
+        });
       } catch (error) {
         reject(error);
       }
@@ -92,35 +96,58 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.text(`Rs ${property.price.toLocaleString('en-IN')}/month`, margin, yPosition);
   yPosition += 12;
   
-  // Property Images - smaller and multiple images support
+  // Property Images - maintain aspect ratio
   if (property.images && property.images.length > 0) {
     try {
       const maxImages = Math.min(property.images.length, 4); // Show up to 4 images
-      const imgWidth = maxImages === 1 ? usableWidth * 0.8 : usableWidth / 2 - 2; // Medium-small size
-      const imgHeight = 35; // Reduced height
+      const maxImgWidth = maxImages === 1 ? usableWidth * 0.6 : usableWidth / 2 - 4; // Smaller max width
+      const maxImgHeight = 30; // Maximum height constraint
       
       let currentX = margin;
       let currentY = yPosition;
+      let maxRowHeight = 0;
       
       for (let i = 0; i < maxImages; i++) {
         const imageUrl = property.images[i];
-        const base64Image = await loadImageAsBase64(imageUrl);
+        const imageData = await loadImageAsBase64(imageUrl);
+        
+        // Calculate aspect ratio and fit within constraints
+        const aspectRatio = imageData.width / imageData.height;
+        let imgWidth = maxImgWidth;
+        let imgHeight = imgWidth / aspectRatio;
+        
+        // If height exceeds max, scale down based on height
+        if (imgHeight > maxImgHeight) {
+          imgHeight = maxImgHeight;
+          imgWidth = imgHeight * aspectRatio;
+        }
         
         // Calculate position for multiple images
         if (maxImages > 1) {
-          currentX = margin + (i % 2) * (imgWidth + 4);
-          if (i >= 2) {
-            currentY = yPosition + imgHeight + 4;
-          }
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          
+          currentX = margin + col * (usableWidth / 2);
+          currentY = yPosition + row * (maxImgHeight + 4);
+          
+          // Center the image in its column
+          const centerOffset = (usableWidth / 2 - imgWidth) / 2;
+          currentX += centerOffset;
+          
+          maxRowHeight = Math.max(maxRowHeight, imgHeight);
         } else {
-          currentX = margin + (usableWidth - imgWidth) / 2; // Center single image
+          // Center single image
+          currentX = margin + (usableWidth - imgWidth) / 2;
+          currentY = yPosition;
+          maxRowHeight = imgHeight;
         }
         
-        pdf.addImage(base64Image, 'JPEG', currentX, currentY, imgWidth, imgHeight);
+        pdf.addImage(imageData.dataURL, 'JPEG', currentX, currentY, imgWidth, imgHeight);
       }
       
-      // Adjust yPosition based on number of images
-      yPosition = maxImages > 2 ? currentY + imgHeight + 8 : yPosition + imgHeight + 8;
+      // Adjust yPosition based on number of images and their heights
+      const numRows = Math.ceil(maxImages / 2);
+      yPosition += (numRows * maxImgHeight) + (numRows - 1) * 4 + 8;
     } catch (error) {
       console.error('Error loading images:', error);
       yPosition += 5; // Small space if no images
