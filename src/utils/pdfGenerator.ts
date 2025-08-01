@@ -17,14 +17,41 @@ interface PropertyPosterData {
   reviewCount?: number;
 }
 
+const loadImageAsBase64 = (url: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      ctx?.drawImage(img, 0, 0);
+      
+      try {
+        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataURL);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = url;
+  });
+};
+
 export const generatePropertyPoster = async (property: PropertyPosterData) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   
-  // Main title - TO-LER in big red letters
+  // Main title - TO-LET in big orange letters
   pdf.setFontSize(36);
-  pdf.setTextColor(220, 38, 127); // Tuleeto orange/red color
+  pdf.setTextColor(249, 115, 22); // Orange color
   pdf.setFont('helvetica', 'bold');
   const titleText = 'TO-LET';
   const titleWidth = pdf.getTextWidth(titleText);
@@ -52,71 +79,48 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.setFontSize(14);
   pdf.setTextColor(100, 100, 100);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(`📍 ${property.location}`, 20, yPosition);
+  pdf.text(property.location, 20, yPosition);
   yPosition += 15;
   
   // Price
   pdf.setFontSize(24);
-  pdf.setTextColor(220, 38, 127);
+  pdf.setTextColor(249, 115, 22); // Orange color
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`₹${property.price.toLocaleString('en-IN')}/month`, 20, yPosition);
-  yPosition += 20;
+  pdf.text(`Rs ${property.price.toLocaleString('en-IN')}/month`, 20, yPosition);
+  yPosition += 25;
+  
+  // Property Images
+  if (property.images && property.images.length > 0) {
+    try {
+      const imageUrl = property.images[0]; // Use the first image
+      const base64Image = await loadImageAsBase64(imageUrl);
+      
+      const imgWidth = pageWidth - 40;
+      const imgHeight = 80;
+      
+      pdf.addImage(base64Image, 'JPEG', 20, yPosition, imgWidth, imgHeight);
+      yPosition += imgHeight + 15;
+    } catch (error) {
+      console.error('Error loading image:', error);
+      // Continue without image if loading fails
+    }
+  }
   
   // Property Details Box
-  pdf.setFillColor(245, 245, 245);
-  pdf.rect(20, yPosition, pageWidth - 40, 25, 'F');
+  pdf.setFillColor(255, 237, 213); // Light orange background
+  pdf.rect(20, yPosition, pageWidth - 40, 35, 'F');
   
-  pdf.setFontSize(12);
+  pdf.setFontSize(14);
   pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'normal');
+  pdf.setFont('helvetica', 'bold');
   
-  const detailsY = yPosition + 8;
-  pdf.text(`🛏️ ${property.bedrooms} Bedrooms`, 25, detailsY);
-  pdf.text(`🚿 ${property.bathrooms} Bathrooms`, 80, detailsY);
-  pdf.text(`📐 ${property.area} sq ft`, 140, detailsY);
+  const detailsY = yPosition + 12;
+  pdf.text(`Bedrooms: ${property.bedrooms}`, 25, detailsY);
+  pdf.text(`Bathrooms: ${property.bathrooms}`, 25, detailsY + 8);
+  pdf.text(`Area: ${property.area} sq ft`, 25, detailsY + 16);
+  pdf.text(`Rooms: ${property.bedrooms + 1}`, 25, detailsY + 24);
   
-  if (property.averageRating && property.reviewCount) {
-    pdf.text(`⭐ ${property.averageRating.toFixed(1)} (${property.reviewCount} reviews)`, 25, detailsY + 12);
-  }
-  
-  yPosition += 35;
-  
-  // Description
-  if (property.description) {
-    pdf.setFontSize(14);
-    pdf.setTextColor(0, 0, 0);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Description:', 20, yPosition);
-    yPosition += 8;
-    
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'normal');
-    const descLines = pdf.splitTextToSize(property.description, pageWidth - 40);
-    pdf.text(descLines, 20, yPosition);
-    yPosition += descLines.length * 5 + 10;
-  }
-  
-  // Features/Amenities
-  if (property.features && property.features.length > 0) {
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Amenities:', 20, yPosition);
-    yPosition += 8;
-    
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'normal');
-    
-    property.features.forEach((feature) => {
-      if (yPosition > pageHeight - 30) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-      pdf.text(`✓ ${feature}`, 25, yPosition);
-      yPosition += 6;
-    });
-    
-    yPosition += 10;
-  }
+  yPosition += 45;
   
   // Contact Information Box
   if (yPosition > pageHeight - 50) {
@@ -124,18 +128,18 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
     yPosition = 20;
   }
   
-  pdf.setFillColor(220, 38, 127);
+  pdf.setFillColor(249, 115, 22); // Orange background
   pdf.rect(20, yPosition, pageWidth - 40, 30, 'F');
   
   pdf.setFontSize(16);
   pdf.setTextColor(255, 255, 255);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Contact Owner', 25, yPosition + 10);
+  pdf.text('Contact Owner', 25, yPosition + 12);
   
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(`📞 ${property.contactPhone}`, 25, yPosition + 20);
-  pdf.text(`👤 ${property.ownerName}`, 25, yPosition + 27);
+  pdf.text(`Phone: ${property.contactPhone}`, 25, yPosition + 20);
+  pdf.text(`Name: ${property.ownerName}`, 25, yPosition + 26);
   
   // Footer
   pdf.setFontSize(10);
