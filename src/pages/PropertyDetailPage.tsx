@@ -35,7 +35,7 @@ interface PropertyDetails {
   owner_name?: string;
   contact_phone?: string;
   is_public?: boolean;
-  coordinates?: { lat: number; lng: number };
+  coordinates?: { lat: number; lng: number } | null;
 }
 
 const PropertyDetailPage = () => {
@@ -353,7 +353,7 @@ const PropertyDetailPage = () => {
             </div>
           </div>
           
-          {property.coordinates && (
+          {property?.coordinates && (
             <div className="mt-8">
               <PropertyMapDisplay 
                 coordinates={property.coordinates}
