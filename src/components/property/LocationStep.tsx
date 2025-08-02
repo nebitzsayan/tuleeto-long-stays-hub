@@ -1,10 +1,10 @@
-
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormValues } from "./PropertyListingForm";
 import { LocationPicker } from "./LocationPicker";
+import { PropertyMapPicker } from "./PropertyMapPicker";
 import { useState } from "react";
 
 interface LocationStepProps {
@@ -13,11 +13,16 @@ interface LocationStepProps {
 
 export const LocationStep = ({ form }: LocationStepProps) => {
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
+  const [mapLocation, setMapLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
 
   const handleLocationChange = (location: { lat: number; lng: number; address: string }) => {
     setSelectedLocation(location);
-    // You can store this in the form or pass it up to the parent component
-    console.log("Location selected:", location);
+    console.log("GPS/Manual location selected:", location);
+  };
+
+  const handleMapLocationSelect = (location: { lat: number; lng: number; address: string }) => {
+    setMapLocation(location);
+    console.log("Map location selected:", location);
   };
 
   return (
@@ -123,8 +128,11 @@ export const LocationStep = ({ form }: LocationStepProps) => {
         )}
       />
       
-      {/* Location Picker Component */}
+      {/* GPS/Manual Location Picker Component */}
       <LocationPicker onLocationChange={handleLocationChange} />
+      
+      {/* Interactive Map Location Picker */}
+      <PropertyMapPicker onLocationSelect={handleMapLocationSelect} />
     </div>
   );
 };

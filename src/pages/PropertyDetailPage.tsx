@@ -15,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
 import PropertyReviews from "@/components/property/PropertyReviews";
 import PropertyPosterButton from "@/components/property/PropertyPosterButton";
+import { PropertyMapDisplay } from "@/components/property/PropertyMapDisplay";
 
 interface PropertyDetails {
   id: string;
@@ -34,6 +35,7 @@ interface PropertyDetails {
   owner_name?: string;
   contact_phone?: string;
   is_public?: boolean;
+  coordinates?: { lat: number; lng: number };
 }
 
 const PropertyDetailPage = () => {
@@ -96,7 +98,8 @@ const PropertyDetailPage = () => {
           ...propertyData,
           owner_email: profileData?.email || "Contact via Tuleeto",
           owner_name: profileData?.full_name || "Property Owner",
-          contact_phone: ownerPhone
+          contact_phone: ownerPhone,
+          coordinates: propertyData.coordinates || null
         });
       } catch (error: any) {
         setError(error.message);
@@ -350,7 +353,16 @@ const PropertyDetailPage = () => {
             </div>
           </div>
           
-          {/* Reviews Section - Moved below contact section */}
+          {property.coordinates && (
+            <div className="mt-8">
+              <PropertyMapDisplay 
+                coordinates={property.coordinates}
+                title={property.title}
+                location={property.location}
+              />
+            </div>
+          )}
+          
           <PropertyReviews propertyId={property.id} ownerId={property.owner_id} className="mt-8" />
         </div>
       </main>
