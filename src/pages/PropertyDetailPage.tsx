@@ -94,12 +94,28 @@ const PropertyDetailPage = () => {
         
         console.log("Phone number from database:", ownerPhone);
         
+        // Parse coordinates if they exist and are valid
+        let parsedCoordinates: { lat: number; lng: number } | null = null;
+        if (propertyData.coordinates) {
+          try {
+            // If coordinates is already an object
+            if (typeof propertyData.coordinates === 'object' && propertyData.coordinates.lat && propertyData.coordinates.lng) {
+              parsedCoordinates = {
+                lat: propertyData.coordinates.lat,
+                lng: propertyData.coordinates.lng
+              };
+            }
+          } catch (error) {
+            console.error("Error parsing coordinates:", error);
+          }
+        }
+        
         setProperty({
           ...propertyData,
           owner_email: profileData?.email || "Contact via Tuleeto",
           owner_name: profileData?.full_name || "Property Owner",
           contact_phone: ownerPhone,
-          coordinates: propertyData.coordinates || null
+          coordinates: parsedCoordinates
         });
       } catch (error: any) {
         setError(error.message);
