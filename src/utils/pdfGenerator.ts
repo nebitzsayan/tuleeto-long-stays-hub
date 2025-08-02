@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
@@ -172,8 +171,8 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
     }
   }
   
-  // Property Details Box - compact
-  const boxHeight = 25;
+  // Property Details Box - expanded for amenities
+  const boxHeight = 35; // Increased height to accommodate amenities
   pdf.setFillColor(255, 237, 213);
   pdf.rect(margin, yPosition, usableWidth, boxHeight, 'F');
   
@@ -197,6 +196,50 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   // Right column
   pdf.text(`Area: ${property.area} sq ft`, rightColX, detailsStartY);
   pdf.text(`Rooms: ${property.bedrooms + 1}`, rightColX, detailsStartY + 6);
+  
+  // Amenities section
+  pdf.setFontSize(9);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Amenities:', leftColX, detailsStartY + 14);
+  
+  pdf.setFont('helvetica', 'normal');
+  const amenities = [];
+  
+  // Check for common amenities in features
+  const featuresList = property.features || [];
+  
+  // Map features to amenity format
+  if (featuresList.includes('Air conditioning') || featuresList.includes('AC')) {
+    amenities.push('AIR CONDITIONING: YES');
+  } else {
+    amenities.push('AIR CONDITIONING: NA');
+  }
+  
+  if (featuresList.includes('WiFi') || featuresList.includes('Internet') || featuresList.includes('Wi-Fi')) {
+    amenities.push('WIFI: YES');
+  } else {
+    amenities.push('WIFI: NA');
+  }
+  
+  if (featuresList.includes('Parking') || featuresList.includes('Car parking')) {
+    amenities.push('PARKING: YES');
+  } else {
+    amenities.push('PARKING: NA');
+  }
+  
+  if (featuresList.includes('Pet friendly')) {
+    amenities.push('PET FRIENDLY: YES');
+  } else {
+    amenities.push('PET FRIENDLY: NA');
+  }
+  
+  // Display amenities in two columns
+  const maxAmenitiesPerLine = 2;
+  for (let i = 0; i < amenities.length; i += maxAmenitiesPerLine) {
+    const lineAmenities = amenities.slice(i, i + maxAmenitiesPerLine);
+    const amenityLine = lineAmenities.join(', ');
+    pdf.text(amenityLine, leftColX, detailsStartY + 20 + (Math.floor(i / maxAmenitiesPerLine) * 4));
+  }
   
   yPosition += boxHeight + 8;
   
