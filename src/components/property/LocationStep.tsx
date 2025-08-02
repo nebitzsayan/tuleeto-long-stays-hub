@@ -4,12 +4,22 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormValues } from "./PropertyListingForm";
+import { LocationPicker } from "./LocationPicker";
+import { useState } from "react";
 
 interface LocationStepProps {
   form: UseFormReturn<FormValues>;
 }
 
 export const LocationStep = ({ form }: LocationStepProps) => {
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
+
+  const handleLocationChange = (location: { lat: number; lng: number; address: string }) => {
+    setSelectedLocation(location);
+    // You can store this in the form or pass it up to the parent component
+    console.log("Location selected:", location);
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Location</h2>
@@ -112,6 +122,9 @@ export const LocationStep = ({ form }: LocationStepProps) => {
           </FormItem>
         )}
       />
+      
+      {/* Location Picker Component */}
+      <LocationPicker onLocationChange={handleLocationChange} />
     </div>
   );
 };
