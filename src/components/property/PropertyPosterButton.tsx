@@ -7,6 +7,7 @@ import { generatePropertyPoster } from "@/utils/pdfGenerator";
 
 interface PropertyPosterButtonProps {
   property: {
+    id?: string;
     title: string;
     location: string;
     price: number;
@@ -49,7 +50,8 @@ const PropertyPosterButton = ({ property, className = "" }: PropertyPosterButton
         contactPhone: property.contact_phone,
         images: property.images || [],
         averageRating: property.average_rating,
-        reviewCount: property.review_count
+        reviewCount: property.review_count,
+        propertyId: property.id
       });
       
       toast.success("Property poster generated successfully!");

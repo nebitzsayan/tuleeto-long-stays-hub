@@ -1,5 +1,6 @@
 
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 
 interface PropertyPosterData {
   title: string;
@@ -15,6 +16,7 @@ interface PropertyPosterData {
   images: string[];
   averageRating?: number;
   reviewCount?: number;
+  propertyId?: string;
 }
 
 const loadImageAsBase64 = (url: string): Promise<{dataURL: string, width: number, height: number}> => {
@@ -46,6 +48,22 @@ const loadImageAsBase64 = (url: string): Promise<{dataURL: string, width: number
     img.onerror = () => reject(new Error('Failed to load image'));
     img.src = url;
   });
+};
+
+const generateQRCode = async (url: string): Promise<string> => {
+  try {
+    return await QRCode.toDataURL(url, {
+      width: 100,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    throw error;
+  }
 };
 
 export const generatePropertyPoster = async (property: PropertyPosterData) => {
@@ -96,12 +114,12 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.text(`Rs ${property.price.toLocaleString('en-IN')}/month`, margin, yPosition);
   yPosition += 12;
   
-  // Property Images - maintain aspect ratio
+  // Property Images - medium size with original aspect ratio
   if (property.images && property.images.length > 0) {
     try {
       const maxImages = Math.min(property.images.length, 4); // Show up to 4 images
-      const maxImgWidth = maxImages === 1 ? usableWidth * 0.6 : usableWidth / 2 - 4; // Smaller max width
-      const maxImgHeight = 30; // Maximum height constraint
+      const maxImgWidth = maxImages === 1 ? usableWidth * 0.8 : usableWidth / 2 - 4; // Medium size
+      const maxImgHeight = 45; // Increased maximum height for medium size
       
       let currentX = margin;
       let currentY = yPosition;
@@ -203,6 +221,32 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.text(phoneLines, margin + 4, contactStartY + 5);
   
   yPosition += contactBoxHeight + 8;
+  
+  // QR Code section
+  if (property.propertyId) {
+    try {
+      const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
+      const qrCodeDataUrl = await generateQRCode(propertyUrl);
+      
+      // QR Code dimensions
+      const qrSize = 25;
+      const qrX = margin + (usableWidth - qrSize) / 2;
+      
+      pdf.addImage(qrCodeDataUrl, 'PNG', qrX, yPosition, qrSize, qrSize);
+      
+      // QR Code label
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFont('helvetica', 'normal');
+      const qrText = 'Scan to view online';
+      const qrTextWidth = pdf.getTextWidth(qrText);
+      pdf.text(qrText, (pageWidth - qrTextWidth) / 2, yPosition + qrSize + 5);
+      
+      yPosition += qrSize + 12;
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
+  }
   
   // Footer - updated to Tuleeto.in
   pdf.setFontSize(8);

@@ -181,6 +181,7 @@ const PropertyDetailPage = () => {
                 {property?.owner_id === user?.id && (
                   <PropertyPosterButton 
                     property={{
+                      id: property.id,
                       title: property.title,
                       location: property.location,
                       price: property.price,
