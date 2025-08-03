@@ -292,7 +292,23 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
     }
   }
   
-  // Logo section removed - will be replaced with new logo when provided
+  // Add Tuleeto Logo
+  try {
+    const logoUrl = '/lovable-uploads/2f743f2f-28e7-4574-8f78-3b4311ec2885.png';
+    const logoData = await loadImageAsBase64(logoUrl);
+    
+    // Logo dimensions - make it medium sized
+    const logoWidth = 20;
+    const logoHeight = 20;
+    const logoX = margin + (usableWidth - logoWidth) / 2;
+    
+    pdf.addImage(logoData.dataURL, 'PNG', logoX, yPosition, logoWidth, logoHeight);
+    
+    yPosition += logoHeight + 8;
+  } catch (error) {
+    console.error('Error loading logo:', error);
+    // Continue without logo if it fails to load
+  }
   
   // Footer - updated to Tuleeto.in and positioned at bottom
   pdf.setFontSize(8);
