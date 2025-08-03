@@ -1,138 +1,71 @@
+
+import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormValues } from "./PropertyListingForm";
-import { LocationPicker } from "./LocationPicker";
+import { Textarea } from "@/components/ui/textarea";
 import { PropertyMapPicker } from "./PropertyMapPicker";
-import { useState } from "react";
 
 interface LocationStepProps {
-  form: UseFormReturn<FormValues>;
+  form: UseFormReturn<any>;
 }
 
-export const LocationStep = ({ form }: LocationStepProps) => {
-  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
-  const [mapLocation, setMapLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
-
-  const handleLocationChange = (location: { lat: number; lng: number; address: string }) => {
-    setSelectedLocation(location);
-    console.log("GPS/Manual location selected:", location);
+const LocationStep = ({ form }: LocationStepProps) => {
+  const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
+    form.setValue("coordinates", { lat: location.lat, lng: location.lng });
+    // Don't auto-fill the location field to allow custom descriptions
   };
 
-  const handleMapLocationSelect = (location: { lat: number; lng: number; address: string }) => {
-    setMapLocation(location);
-    console.log("Map location selected:", location);
-  };
+  const initialLocation = form.getValues("coordinates");
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Location</h2>
-      
-      <FormField
-        control={form.control}
-        name="street"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Street Address</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. 123 Main St" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="city"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>City</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Mumbai" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="state"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>State</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="max-h-[300px] overflow-y-auto">
-                  <SelectItem value="Andhra Pradesh">Andhra Pradesh</SelectItem>
-                  <SelectItem value="Arunachal Pradesh">Arunachal Pradesh</SelectItem>
-                  <SelectItem value="Assam">Assam</SelectItem>
-                  <SelectItem value="Bihar">Bihar</SelectItem>
-                  <SelectItem value="Chhattisgarh">Chhattisgarh</SelectItem>
-                  <SelectItem value="Goa">Goa</SelectItem>
-                  <SelectItem value="Gujarat">Gujarat</SelectItem>
-                  <SelectItem value="Haryana">Haryana</SelectItem>
-                  <SelectItem value="Himachal Pradesh">Himachal Pradesh</SelectItem>
-                  <SelectItem value="Jharkhand">Jharkhand</SelectItem>
-                  <SelectItem value="Karnataka">Karnataka</SelectItem>
-                  <SelectItem value="Kerala">Kerala</SelectItem>
-                  <SelectItem value="Madhya Pradesh">Madhya Pradesh</SelectItem>
-                  <SelectItem value="Maharashtra">Maharashtra</SelectItem>
-                  <SelectItem value="Manipur">Manipur</SelectItem>
-                  <SelectItem value="Meghalaya">Meghalaya</SelectItem>
-                  <SelectItem value="Mizoram">Mizoram</SelectItem>
-                  <SelectItem value="Nagaland">Nagaland</SelectItem>
-                  <SelectItem value="Odisha">Odisha</SelectItem>
-                  <SelectItem value="Punjab">Punjab</SelectItem>
-                  <SelectItem value="Rajasthan">Rajasthan</SelectItem>
-                  <SelectItem value="Sikkim">Sikkim</SelectItem>
-                  <SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem>
-                  <SelectItem value="Telangana">Telangana</SelectItem>
-                  <SelectItem value="Tripura">Tripura</SelectItem>
-                  <SelectItem value="Uttar Pradesh">Uttar Pradesh</SelectItem>
-                  <SelectItem value="Uttarakhand">Uttarakhand</SelectItem>
-                  <SelectItem value="West Bengal">West Bengal</SelectItem>
-                  <SelectItem value="Delhi">Delhi</SelectItem>
-                  <SelectItem value="Jammu and Kashmir">Jammu and Kashmir</SelectItem>
-                  <SelectItem value="Ladakh">Ladakh</SelectItem>
-                  <SelectItem value="Puducherry">Puducherry</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Property Location</h2>
+        <p className="text-gray-600">Tell us where your property is located</p>
       </div>
-      
+
       <FormField
         control={form.control}
-        name="zipCode"
+        name="location"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>PIN Code</FormLabel>
+            <FormLabel>Property Address/Location *</FormLabel>
             <FormControl>
-              <Input placeholder="e.g. 400001" {...field} />
+              <Textarea
+                placeholder="Enter your property address (e.g., 123 Main Street, Near City Center, Siliguri, West Bengal)"
+                {...field}
+                className="min-h-[100px]"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      
-      {/* GPS/Manual Location Picker Component */}
-      <LocationPicker onLocationChange={handleLocationChange} />
-      
-      {/* Interactive Map Location Picker */}
-      <PropertyMapPicker onLocationSelect={handleMapLocationSelect} />
+
+      <FormField
+        control={form.control}
+        name="nearbyLandmarks"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nearby Landmarks (Optional)</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="e.g., Near Metro Station, Shopping Mall, etc."
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <PropertyMapPicker 
+        onLocationSelect={handleLocationSelect}
+        initialLocation={initialLocation}
+      />
     </div>
   );
 };
+
+export default LocationStep;

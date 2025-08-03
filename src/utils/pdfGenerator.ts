@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
@@ -73,13 +72,33 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   const margin = 15;
   const usableWidth = pageWidth - (margin * 2);
   
-  // Main title - TO-LET in big orange letters
+  // Header section with TO-LET title and logo
+  let yPosition = 25;
+  
+  // Add Tuleeto Logo on the right side first
+  try {
+    const logoUrl = '/lovable-uploads/2f743f2f-28e7-4574-8f78-3b4311ec2885.png';
+    const logoData = await loadImageAsBase64(logoUrl);
+    
+    // Logo dimensions - smaller to fit beside title
+    const logoWidth = 18;
+    const logoHeight = 18;
+    const logoX = pageWidth - margin - logoWidth;
+    
+    pdf.addImage(logoData.dataURL, 'PNG', logoX, yPosition - 10, logoWidth, logoHeight);
+  } catch (error) {
+    console.error('Error loading logo:', error);
+  }
+  
+  // Main title - TO-LET in big orange letters (positioned to leave space for logo)
   pdf.setFontSize(32);
   pdf.setTextColor(249, 115, 22);
   pdf.setFont('helvetica', 'bold');
   const titleText = 'TO-LET';
   const titleWidth = pdf.getTextWidth(titleText);
-  pdf.text(titleText, (pageWidth - titleWidth) / 2, 25);
+  // Position title to the left, leaving space for logo
+  const titleX = Math.min((pageWidth - titleWidth) / 2, pageWidth - margin - 25 - titleWidth);
+  pdf.text(titleText, titleX, yPosition);
   
   // Subtitle - RENT AVAILABLE
   pdf.setFontSize(14);
@@ -87,9 +106,9 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.setFont('helvetica', 'normal');
   const subtitleText = 'RENT AVAILABLE';
   const subtitleWidth = pdf.getTextWidth(subtitleText);
-  pdf.text(subtitleText, (pageWidth - subtitleWidth) / 2, 35);
+  pdf.text(subtitleText, (pageWidth - subtitleWidth) / 2, yPosition + 10);
   
-  let yPosition = 45;
+  yPosition = 45;
   
   // Property Title - with text wrapping
   pdf.setFontSize(16);
@@ -290,24 +309,6 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
     } catch (error) {
       console.error('Error generating QR code:', error);
     }
-  }
-  
-  // Add Tuleeto Logo
-  try {
-    const logoUrl = '/lovable-uploads/2f743f2f-28e7-4574-8f78-3b4311ec2885.png';
-    const logoData = await loadImageAsBase64(logoUrl);
-    
-    // Logo dimensions - make it medium sized
-    const logoWidth = 20;
-    const logoHeight = 20;
-    const logoX = margin + (usableWidth - logoWidth) / 2;
-    
-    pdf.addImage(logoData.dataURL, 'PNG', logoX, yPosition, logoWidth, logoHeight);
-    
-    yPosition += logoHeight + 8;
-  } catch (error) {
-    console.error('Error loading logo:', error);
-    // Continue without logo if it fails to load
   }
   
   // Footer - updated to Tuleeto.in and positioned at bottom
