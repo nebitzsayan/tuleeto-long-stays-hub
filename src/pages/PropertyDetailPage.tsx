@@ -396,18 +396,4 @@ const PropertyDetailPage = () => {
   );
 };
 
-const handleContact = () => {
-  if (!user) {
-    toast.error("Please log in to contact property owners");
-    return;
-  }
-  
-  if (isMobile && property?.contact_phone) {
-    window.location.href = `tel:${property.contact_phone.replace(/\s+/g, '')}`;
-    return;
-  }
-  
-  toast.success("Your message has been sent! The owner will contact you soon.");
-};
-
 export default PropertyDetailPage;
