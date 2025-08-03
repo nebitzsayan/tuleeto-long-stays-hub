@@ -7,7 +7,7 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     .from('properties')
     .select(`
       *,
-      profiles:owner_id (
+      profiles!properties_owner_id_fkey (
         full_name,
         email
       )
@@ -17,6 +17,18 @@ export const getPropertyById = async (id: string): Promise<Property> => {
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  // Parse coordinates if they exist
+  let coordinates: { lat: number; lng: number } | undefined;
+  if (data.coordinates && typeof data.coordinates === 'object') {
+    const coords = data.coordinates as any;
+    if (coords.lat && coords.lng) {
+      coordinates = {
+        lat: Number(coords.lat),
+        lng: Number(coords.lng)
+      };
+    }
   }
 
   // Transform the data to match the Property interface
@@ -33,12 +45,12 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     features: data.features || [],
     availableFrom: data.available_from,
     images: data.images || [],
-    coordinates: data.coordinates,
+    coordinates,
     ownerName: data.profiles?.full_name || 'Unknown',
     ownerEmail: data.profiles?.email || '',
     contactPhone: data.contact_phone || '',
     createdAt: data.created_at,
-    updatedAt: data.updated_at
+    updatedAt: data.created_at // Using created_at as fallback since updated_at doesn't exist
   };
 
   return property;
@@ -49,7 +61,7 @@ export const getAllProperties = async (): Promise<Property[]> => {
     .from('properties')
     .select(`
       *,
-      profiles:owner_id (
+      profiles!properties_owner_id_fkey (
         full_name,
         email
       )
@@ -60,24 +72,38 @@ export const getAllProperties = async (): Promise<Property[]> => {
     throw new Error(error.message);
   }
 
-  return data.map(item => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    location: item.location,
-    price: item.price,
-    bedrooms: item.bedrooms,
-    bathrooms: item.bathrooms,
-    area: item.area,
-    propertyType: item.type,
-    features: item.features || [],
-    availableFrom: item.available_from,
-    images: item.images || [],
-    coordinates: item.coordinates,
-    ownerName: item.profiles?.full_name || 'Unknown',
-    ownerEmail: item.profiles?.email || '',
-    contactPhone: item.contact_phone || '',
-    createdAt: item.created_at,
-    updatedAt: item.updated_at
-  }));
+  return data.map(item => {
+    // Parse coordinates if they exist
+    let coordinates: { lat: number; lng: number } | undefined;
+    if (item.coordinates && typeof item.coordinates === 'object') {
+      const coords = item.coordinates as any;
+      if (coords.lat && coords.lng) {
+        coordinates = {
+          lat: Number(coords.lat),
+          lng: Number(coords.lng)
+        };
+      }
+    }
+
+    return {
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      location: item.location,
+      price: item.price,
+      bedrooms: item.bedrooms,
+      bathrooms: item.bathrooms,
+      area: item.area,
+      propertyType: item.type,
+      features: item.features || [],
+      availableFrom: item.available_from,
+      images: item.images || [],
+      coordinates,
+      ownerName: item.profiles?.full_name || 'Unknown',
+      ownerEmail: item.profiles?.email || '',
+      contactPhone: item.contact_phone || '',
+      createdAt: item.created_at,
+      updatedAt: item.created_at // Using created_at as fallback since updated_at doesn't exist
+    };
+  });
 };
