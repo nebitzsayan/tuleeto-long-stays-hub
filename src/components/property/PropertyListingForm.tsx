@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { PropertyDetailsStep } from "@/components/property/PropertyDetailsStep";
-import { LocationStep } from "@/components/property/LocationStep";
+import LocationStep from "@/components/property/LocationStep";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
 import { uploadMultipleFiles } from "@/lib/supabaseStorage";

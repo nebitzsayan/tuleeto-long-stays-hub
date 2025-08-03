@@ -1,0 +1,83 @@
+
+import { supabase } from "@/integrations/supabase/client";
+import { Property } from "@/types";
+
+export const getPropertyById = async (id: string): Promise<Property> => {
+  const { data, error } = await supabase
+    .from('properties')
+    .select(`
+      *,
+      profiles:owner_id (
+        full_name,
+        email
+      )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Transform the data to match the Property interface
+  const property: Property = {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    location: data.location,
+    price: data.price,
+    bedrooms: data.bedrooms,
+    bathrooms: data.bathrooms,
+    area: data.area,
+    propertyType: data.type,
+    features: data.features || [],
+    availableFrom: data.available_from,
+    images: data.images || [],
+    coordinates: data.coordinates,
+    ownerName: data.profiles?.full_name || 'Unknown',
+    ownerEmail: data.profiles?.email || '',
+    contactPhone: data.contact_phone || '',
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+
+  return property;
+};
+
+export const getAllProperties = async (): Promise<Property[]> => {
+  const { data, error } = await supabase
+    .from('properties')
+    .select(`
+      *,
+      profiles:owner_id (
+        full_name,
+        email
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data.map(item => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    location: item.location,
+    price: item.price,
+    bedrooms: item.bedrooms,
+    bathrooms: item.bathrooms,
+    area: item.area,
+    propertyType: item.type,
+    features: item.features || [],
+    availableFrom: item.available_from,
+    images: item.images || [],
+    coordinates: item.coordinates,
+    ownerName: item.profiles?.full_name || 'Unknown',
+    ownerEmail: item.profiles?.email || '',
+    contactPhone: item.contact_phone || '',
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+  }));
+};
