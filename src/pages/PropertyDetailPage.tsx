@@ -98,11 +98,19 @@ const PropertyDetailPage = () => {
         let parsedCoordinates: { lat: number; lng: number } | null = null;
         if (propertyData.coordinates) {
           try {
-            // If coordinates is already an object
-            if (typeof propertyData.coordinates === 'object' && propertyData.coordinates.lat && propertyData.coordinates.lng) {
+            // Type guard to ensure coordinates is an object and has the expected structure
+            if (
+              typeof propertyData.coordinates === 'object' && 
+              !Array.isArray(propertyData.coordinates) &&
+              propertyData.coordinates !== null &&
+              'lat' in propertyData.coordinates &&
+              'lng' in propertyData.coordinates &&
+              typeof (propertyData.coordinates as any).lat === 'number' &&
+              typeof (propertyData.coordinates as any).lng === 'number'
+            ) {
               parsedCoordinates = {
-                lat: propertyData.coordinates.lat,
-                lng: propertyData.coordinates.lng
+                lat: (propertyData.coordinates as any).lat,
+                lng: (propertyData.coordinates as any).lng
               };
             }
           } catch (error) {
@@ -386,6 +394,20 @@ const PropertyDetailPage = () => {
       <Footer />
     </div>
   );
+};
+
+const handleContact = () => {
+  if (!user) {
+    toast.error("Please log in to contact property owners");
+    return;
+  }
+  
+  if (isMobile && property?.contact_phone) {
+    window.location.href = `tel:${property.contact_phone.replace(/\s+/g, '')}`;
+    return;
+  }
+  
+  toast.success("Your message has been sent! The owner will contact you soon.");
 };
 
 export default PropertyDetailPage;
