@@ -26,18 +26,24 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Initialize map centered on Siliguri
+    // Initialize map centered on Siliguri with better precision
+    const defaultCenter: [number, number] = initialLocation 
+      ? [initialLocation.lng, initialLocation.lat] 
+      : [88.4285, 26.7271]; // More precise Siliguri coordinates
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v11',
-      center: initialLocation ? [initialLocation.lng, initialLocation.lat] : [88.4285, 26.7271], // Siliguri coordinates
-      zoom: 13
+      center: defaultCenter,
+      zoom: 15, // Higher zoom for better accuracy
+      pitch: 0,
+      bearing: 0
     });
 
     // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Create a draggable marker
+    // Create a more precise draggable marker
     const markerElement = document.createElement('div');
     markerElement.className = 'custom-marker';
     markerElement.style.backgroundImage = 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDEwQzIxIDEwIDIxIDEwIDIxIDEwQzIxIDguMDEgMTkuOTkgNi4xNiAxOC4zNiA0LjY0QzE2LjczIDMuMTIgMTQuNDcgMiAxMiAyQzkuNTMgMiA3LjI3IDMuMTIgNS42NCA0LjY0QzQuMDEgNi4xNiAzIDguMDEgMyAxMEMzIDEyIDMgMTQgMyAxNkMzIDEzLjggMiAxMS42IDIgMTBDMiA1LjUgNi41IDIgMTIgMkMxNy41IDIgMjIgNS41IDIyIDEwQzIyIDExLjYgMjEgMTMuOCAyMSAxNkMyMSAxNCAyMSAxMiAyMSAxMFoiIGZpbGw9IiNGRjY2MDAiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMCIgcj0iMyIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4K)';
@@ -50,61 +56,54 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       element: markerElement,
       draggable: true 
     })
-      .setLngLat(initialLocation ? [initialLocation.lng, initialLocation.lat] : [88.4285, 26.7271])
+      .setLngLat(defaultCenter)
       .addTo(map.current);
 
-    // Handle marker drag end
-    marker.current.on('dragend', async () => {
-      const lngLat = marker.current!.getLngLat();
-      const coords = { lat: lngLat.lat, lng: lngLat.lng };
+    const updateLocation = async (lngLat: mapboxgl.LngLat) => {
+      // Round coordinates to higher precision for better accuracy
+      const coords = { 
+        lat: Math.round(lngLat.lat * 1000000) / 1000000, 
+        lng: Math.round(lngLat.lng * 1000000) / 1000000 
+      };
+      
       setSelectedCoords(coords);
       
-      // Try to get address from coordinates
+      // Try to get address from coordinates with better error handling
       try {
         const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lngLat.lng},${lngLat.lat}.json?access_token=${mapboxgl.accessToken}`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}&limit=1`
         );
+        
+        if (!response.ok) {
+          throw new Error(`Geocoding failed: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         const address = data.features && data.features.length > 0 
           ? data.features[0].place_name 
-          : `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+          : `${coords.lat}, ${coords.lng}`;
           
         onLocationSelect({ ...coords, address });
         toast.success('Location selected successfully!');
       } catch (error) {
         console.error('Error getting address:', error);
-        const fallbackAddress = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+        const fallbackAddress = `${coords.lat}, ${coords.lng}`;
         onLocationSelect({ ...coords, address: fallbackAddress });
-        toast.success('Location selected successfully!');
+        toast.success('Location selected (using coordinates)!');
       }
+    };
+
+    // Handle marker drag end
+    marker.current.on('dragend', () => {
+      const lngLat = marker.current!.getLngLat();
+      updateLocation(lngLat);
     });
 
-    // Handle map clicks
-    map.current.on('click', async (e) => {
-      const coords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-      setSelectedCoords(coords);
-      marker.current!.setLngLat([coords.lng, coords.lat]);
-      
-      // Try to get address from coordinates
-      try {
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}`
-        );
-        const data = await response.json();
-        
-        const address = data.features && data.features.length > 0 
-          ? data.features[0].place_name 
-          : `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
-          
-        onLocationSelect({ ...coords, address });
-        toast.success('Location selected successfully!');
-      } catch (error) {
-        console.error('Error getting address:', error);
-        const fallbackAddress = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
-        onLocationSelect({ ...coords, address: fallbackAddress });
-        toast.success('Location selected successfully!');
-      }
+    // Handle map clicks with improved precision
+    map.current.on('click', (e) => {
+      marker.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+      updateLocation(e.lngLat);
     });
 
     // Cleanup
@@ -122,25 +121,25 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lat: Math.round(position.coords.latitude * 1000000) / 1000000,
+          lng: Math.round(position.coords.longitude * 1000000) / 1000000
         };
         
         setSelectedCoords(coords);
         marker.current?.setLngLat([coords.lng, coords.lat]);
-        map.current?.flyTo({ center: [coords.lng, coords.lat], zoom: 15 });
+        map.current?.flyTo({ center: [coords.lng, coords.lat], zoom: 16 });
         
         // Get address and notify parent
-        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}`)
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}&limit=1`)
           .then(response => response.json())
           .then(data => {
             const address = data.features && data.features.length > 0 
               ? data.features[0].place_name 
-              : `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+              : `${coords.lat}, ${coords.lng}`;
             onLocationSelect({ ...coords, address });
           })
           .catch(() => {
-            const fallbackAddress = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+            const fallbackAddress = `${coords.lat}, ${coords.lng}`;
             onLocationSelect({ ...coords, address: fallbackAddress });
           });
           
@@ -149,6 +148,11 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       (error) => {
         console.error("Error getting location:", error);
         toast.error("Failed to get current location");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       }
     );
   };
@@ -184,13 +188,13 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       {selectedCoords && (
         <div className="bg-green-50 p-3 rounded-md">
           <p className="text-sm text-green-800">
-            📍 Selected location: {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
+            📍 Selected location: {selectedCoords.lat}, {selectedCoords.lng}
           </p>
         </div>
       )}
       
       <div className="text-xs text-gray-500">
-        💡 Tip: Drag the orange marker or click anywhere on the map to set your property location.
+        💡 Tip: Drag the orange marker or click anywhere on the map to set your property location with high precision.
       </div>
     </div>
   );

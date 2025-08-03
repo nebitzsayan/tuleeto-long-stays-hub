@@ -44,12 +44,6 @@ export const PropertyLocation = ({ location, coordinates }: PropertyLocationProp
       <CardContent className="space-y-4">
         <div>
           <p className="text-gray-700 mb-3">{location}</p>
-          
-          {coordinates && (
-            <div className="text-sm text-gray-500 mb-4">
-              📍 Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
-            </div>
-          )}
         </div>
         
         <div className="flex gap-3 flex-wrap">

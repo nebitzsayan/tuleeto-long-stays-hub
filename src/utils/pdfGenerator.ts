@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
@@ -291,32 +292,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
     }
   }
   
-  // Logo section - add logo before footer
-  try {
-    const logoUrl = '/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png';
-    const logoData = await loadImageAsBase64(logoUrl);
-    
-    // Logo dimensions - keep it small
-    const logoHeight = 8;
-    const logoWidth = (logoData.width / logoData.height) * logoHeight;
-    const logoX = (pageWidth - logoWidth) / 2;
-    
-    // Position logo above footer
-    const logoY = pageHeight - 18;
-    
-    pdf.addImage(logoData.dataURL, 'PNG', logoX, logoY, logoWidth, logoHeight);
-    
-    // Add "Tuleeto" text next to logo
-    pdf.setFontSize(10);
-    pdf.setTextColor(249, 115, 22);
-    pdf.setFont('helvetica', 'bold');
-    const logoText = 'Tuleeto';
-    const logoTextWidth = pdf.getTextWidth(logoText);
-    pdf.text(logoText, logoX + logoWidth + 2, logoY + logoHeight/2 + 1);
-    
-  } catch (error) {
-    console.error('Error loading logo:', error);
-  }
+  // Logo section removed - will be replaced with new logo when provided
   
   // Footer - updated to Tuleeto.in and positioned at bottom
   pdf.setFontSize(8);

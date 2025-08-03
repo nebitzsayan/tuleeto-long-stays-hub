@@ -99,12 +99,6 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
           style={{ minHeight: '192px' }}
         />
         
-        {showMarker && (
-          <div className="text-xs text-gray-500 mb-3">
-            📍 Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
-          </div>
-        )}
-        
         <div className="flex gap-2 flex-wrap">
           <Button
             onClick={handleViewLarger}
