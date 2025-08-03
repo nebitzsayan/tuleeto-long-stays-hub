@@ -104,14 +104,15 @@ const PropertyDetailPage = () => {
               !Array.isArray(propertyData.coordinates) &&
               propertyData.coordinates !== null &&
               'lat' in propertyData.coordinates &&
-              'lng' in propertyData.coordinates &&
-              typeof (propertyData.coordinates as any).lat === 'number' &&
-              typeof (propertyData.coordinates as any).lng === 'number'
+              'lng' in propertyData.coordinates
             ) {
-              parsedCoordinates = {
-                lat: (propertyData.coordinates as any).lat,
-                lng: (propertyData.coordinates as any).lng
-              };
+              const coords = propertyData.coordinates as { [key: string]: any };
+              if (typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+                parsedCoordinates = {
+                  lat: coords.lat,
+                  lng: coords.lng
+                };
+              }
             }
           } catch (error) {
             console.error("Error parsing coordinates:", error);
@@ -182,6 +183,10 @@ const PropertyDetailPage = () => {
       </div>
     );
   }
+
+  // Default coordinates for properties without location data (centered on India)
+  const defaultCoordinates = { lat: 20.5937, lng: 78.9629 };
+  const mapCoordinates = property?.coordinates || defaultCoordinates;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -377,15 +382,15 @@ const PropertyDetailPage = () => {
             </div>
           </div>
           
-          {property?.coordinates && (
-            <div className="mt-8">
-              <PropertyMapDisplay 
-                coordinates={property.coordinates}
-                title={property.title}
-                location={property.location}
-              />
-            </div>
-          )}
+          {/* Map Display - Always show, positioned above reviews */}
+          <div className="mt-8">
+            <PropertyMapDisplay 
+              coordinates={mapCoordinates}
+              title={property.title}
+              location={property.location}
+              showMarker={!!property?.coordinates}
+            />
+          </div>
           
           <PropertyReviews propertyId={property.id} ownerId={property.owner_id} className="mt-8" />
         </div>
