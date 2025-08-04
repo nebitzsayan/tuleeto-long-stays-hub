@@ -19,6 +19,10 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     throw new Error(error.message);
   }
 
+  if (!data) {
+    throw new Error('Property not found');
+  }
+
   // Parse coordinates if they exist
   let coordinates: { lat: number; lng: number } | undefined;
   if (data.coordinates && typeof data.coordinates === 'object') {
@@ -30,6 +34,11 @@ export const getPropertyById = async (id: string): Promise<Property> => {
       };
     }
   }
+
+  // Handle profile data - it could be null or an object
+  const profileData = data.profiles as any;
+  const ownerName = profileData?.full_name || 'Unknown';
+  const ownerEmail = profileData?.email || '';
 
   // Transform the data to match the Property interface
   const property: Property = {
@@ -46,8 +55,8 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     availableFrom: data.available_from,
     images: data.images || [],
     coordinates,
-    ownerName: data.profiles?.full_name || 'Unknown',
-    ownerEmail: data.profiles?.email || '',
+    ownerName,
+    ownerEmail,
     contactPhone: data.contact_phone || '',
     createdAt: data.created_at,
     updatedAt: data.created_at // Using created_at as fallback since updated_at doesn't exist
@@ -72,6 +81,10 @@ export const getAllProperties = async (): Promise<Property[]> => {
     throw new Error(error.message);
   }
 
+  if (!data) {
+    return [];
+  }
+
   return data.map(item => {
     // Parse coordinates if they exist
     let coordinates: { lat: number; lng: number } | undefined;
@@ -84,6 +97,11 @@ export const getAllProperties = async (): Promise<Property[]> => {
         };
       }
     }
+
+    // Handle profile data - it could be null or an object
+    const profileData = item.profiles as any;
+    const ownerName = profileData?.full_name || 'Unknown';
+    const ownerEmail = profileData?.email || '';
 
     return {
       id: item.id,
@@ -99,8 +117,8 @@ export const getAllProperties = async (): Promise<Property[]> => {
       availableFrom: item.available_from,
       images: item.images || [],
       coordinates,
-      ownerName: item.profiles?.full_name || 'Unknown',
-      ownerEmail: item.profiles?.email || '',
+      ownerName,
+      ownerEmail,
       contactPhone: item.contact_phone || '',
       createdAt: item.created_at,
       updatedAt: item.created_at // Using created_at as fallback since updated_at doesn't exist
