@@ -32,10 +32,10 @@ interface Review {
   profiles?: {
     full_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
   replies?: Reply[];
   reactions?: Reaction[];
-  userReaction?: string;
+  userReaction?: string | null;
 }
 
 interface Reply {
@@ -47,7 +47,7 @@ interface Reply {
   profiles?: {
     full_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
   replies?: Reply[];
 }
 
@@ -89,7 +89,9 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
   const fetchReviews = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch reviews with profiles
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('property_reviews')
         .select(`
           id,
@@ -97,67 +99,100 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
           comment,
           created_at,
           user_id,
-          property_id,
-          profiles (
-            full_name,
-            avatar_url
-          )
+          property_id
         `)
         .eq('property_id', propertyId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (reviewsError) throw reviewsError;
 
-      if (data) {
-        // Fetch replies separately
-        const reviewIds = data.map(review => review.id);
-        const { data: repliesData, error: repliesError } = await supabase
-          .from('review_replies')
-          .select(`
-            id,
-            content,
-            created_at,
-            user_id,
-            parent_reply_id,
-            review_id,
-            profiles (
-              full_name,
-              avatar_url
-            )
-          `)
-          .in('review_id', reviewIds)
-          .order('created_at', { ascending: true });
-
-        if (repliesError) throw repliesError;
-
-        // Fetch reactions separately
-        const { data: reactionsData, error: reactionsError } = await supabase
-          .from('review_reactions')
-          .select(`
-            id,
-            reaction_type,
-            user_id,
-            review_id
-          `)
-          .in('review_id', reviewIds);
-
-        if (reactionsError) throw reactionsError;
-
-        const enrichedReviews = data.map(review => {
-          const reviewReplies = repliesData?.filter(reply => reply.review_id === review.id) || [];
-          const reviewReactions = reactionsData?.filter(reaction => reaction.review_id === review.id) || [];
-          const userReaction = reviewReactions.find(reaction => reaction.user_id === user?.id)?.reaction_type || null;
-          
-          return { 
-            ...review, 
-            replies: reviewReplies,
-            reactions: reviewReactions,
-            userReaction 
-          };
-        });
-        
-        setReviews(enrichedReviews as Review[]);
+      if (!reviewsData) {
+        setReviews([]);
+        return;
       }
+
+      // Get unique user IDs from reviews
+      const reviewUserIds = reviewsData.map(review => review.user_id);
+      
+      // Fetch profiles for review users
+      const { data: reviewProfilesData, error: reviewProfilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', reviewUserIds);
+
+      if (reviewProfilesError) throw reviewProfilesError;
+
+      // Fetch replies for all reviews
+      const reviewIds = reviewsData.map(review => review.id);
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('review_replies')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          parent_reply_id,
+          review_id
+        `)
+        .in('review_id', reviewIds)
+        .order('created_at', { ascending: true });
+
+      if (repliesError) throw repliesError;
+
+      // Get unique user IDs from replies
+      const replyUserIds = repliesData?.map(reply => reply.user_id) || [];
+      const allUserIds = [...new Set([...reviewUserIds, ...replyUserIds])];
+      
+      // Fetch profiles for all users (reviews + replies)
+      const { data: allProfilesData, error: allProfilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', allUserIds);
+
+      if (allProfilesError) throw allProfilesError;
+
+      // Fetch reactions
+      const { data: reactionsData, error: reactionsError } = await supabase
+        .from('review_reactions')
+        .select(`
+          id,
+          reaction_type,
+          user_id,
+          review_id
+        `)
+        .in('review_id', reviewIds);
+
+      if (reactionsError) throw reactionsError;
+
+      // Create profile lookup map
+      const profilesMap = new Map();
+      allProfilesData?.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
+
+      // Enrich reviews with profiles, replies, and reactions
+      const enrichedReviews: Review[] = reviewsData.map(review => {
+        const reviewProfile = profilesMap.get(review.user_id);
+        const reviewReplies = repliesData?.filter(reply => reply.review_id === review.id) || [];
+        const reviewReactions = reactionsData?.filter(reaction => reaction.review_id === review.id) || [];
+        const userReaction = reviewReactions.find(reaction => reaction.user_id === user?.id)?.reaction_type || null;
+        
+        // Enrich replies with profiles
+        const enrichedReplies: Reply[] = reviewReplies.map(reply => ({
+          ...reply,
+          profiles: profilesMap.get(reply.user_id) || null
+        }));
+        
+        return { 
+          ...review, 
+          profiles: reviewProfile || null,
+          replies: enrichedReplies,
+          reactions: reviewReactions,
+          userReaction 
+        };
+      });
+      
+      setReviews(enrichedReviews);
     } catch (error) {
       console.error('Error fetching reviews:', error);
       toast.error('Failed to load reviews');
