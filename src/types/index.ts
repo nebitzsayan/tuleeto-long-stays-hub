@@ -16,6 +16,7 @@ export interface Property {
     lat: number;
     lng: number;
   };
+  ownerId: string;
   ownerName: string;
   ownerEmail: string;
   contactPhone: string;
