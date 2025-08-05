@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,10 +59,11 @@ interface Reaction {
 
 interface PropertyReviewSystemProps {
   propertyId: string;
-  ownerId: string;
+  ownerId?: string;
+  className?: string;
 }
 
-const PropertyReviewSystem = ({ propertyId, ownerId }: PropertyReviewSystemProps) => {
+const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReviewSystemProps) => {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rating, setRating] = useState(0);
@@ -99,33 +101,6 @@ const PropertyReviewSystem = ({ propertyId, ownerId }: PropertyReviewSystemProps
           profiles (
             full_name,
             avatar_url
-          ),
-          replies (
-            id,
-            content,
-            created_at,
-            user_id,
-            parent_reply_id,
-            profiles (
-              full_name,
-              avatar_url
-            ),
-            replies (
-              id,
-              content,
-              created_at,
-              user_id,
-              parent_reply_id,
-              profiles (
-                full_name,
-                avatar_url
-              )
-            )
-          ),
-          reactions (
-            id,
-            reaction_type,
-            user_id
           )
         `)
         .eq('property_id', propertyId)
@@ -134,10 +109,53 @@ const PropertyReviewSystem = ({ propertyId, ownerId }: PropertyReviewSystemProps
       if (error) throw error;
 
       if (data) {
+        // Fetch replies separately
+        const reviewIds = data.map(review => review.id);
+        const { data: repliesData, error: repliesError } = await supabase
+          .from('review_replies')
+          .select(`
+            id,
+            content,
+            created_at,
+            user_id,
+            parent_reply_id,
+            review_id,
+            profiles (
+              full_name,
+              avatar_url
+            )
+          `)
+          .in('review_id', reviewIds)
+          .order('created_at', { ascending: true });
+
+        if (repliesError) throw repliesError;
+
+        // Fetch reactions separately
+        const { data: reactionsData, error: reactionsError } = await supabase
+          .from('review_reactions')
+          .select(`
+            id,
+            reaction_type,
+            user_id,
+            review_id
+          `)
+          .in('review_id', reviewIds);
+
+        if (reactionsError) throw reactionsError;
+
         const enrichedReviews = data.map(review => {
-          const userReaction = review.reactions?.find(reaction => reaction.user_id === user?.id)?.reaction_type || null;
-          return { ...review, userReaction };
+          const reviewReplies = repliesData?.filter(reply => reply.review_id === review.id) || [];
+          const reviewReactions = reactionsData?.filter(reaction => reaction.review_id === review.id) || [];
+          const userReaction = reviewReactions.find(reaction => reaction.user_id === user?.id)?.reaction_type || null;
+          
+          return { 
+            ...review, 
+            replies: reviewReplies,
+            reactions: reviewReactions,
+            userReaction 
+          };
         });
+        
         setReviews(enrichedReviews as Review[]);
       }
     } catch (error) {
@@ -321,7 +339,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId }: PropertyReviewSystemProps
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${className || ''}`}>
       <div className="bg-white rounded-lg p-6 border">
         <h3 className="text-xl font-semibold mb-4">Reviews & Ratings</h3>
         

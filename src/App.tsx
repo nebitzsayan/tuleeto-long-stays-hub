@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
@@ -13,15 +14,17 @@ import AdminPanel from './pages/AdminPanel';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import NotFound from './pages/NotFound';
 import { AuthProvider } from './contexts/AuthContext';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { AdminRoute } from './components/auth/AdminRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 import { Toaster } from 'sonner';
-import { QueryClient } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WishlistPage from "./pages/WishlistPage";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
           <div className="App">
@@ -68,7 +71,7 @@ function App() {
           </div>
         </AuthProvider>
       </BrowserRouter>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 

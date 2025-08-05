@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Home, LogOut, Menu, User, Heart } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import Logo from "./Logo";
+import Logo from "@/components/ui/logo";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
