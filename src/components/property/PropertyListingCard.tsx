@@ -2,12 +2,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, BedDouble, Square, IndianRupee, Trash2, ThumbsUp, Eye, EyeOff } from "lucide-react";
+import { MapPin, BedDouble, Square, IndianRupee, Trash2, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
+import WishlistButton from "./WishlistButton";
 
 export interface PropertyType {
   id: string;
@@ -82,6 +83,16 @@ const PropertyListingCard = ({
           {property.type}
         </Badge>
         
+        {/* Wishlist button - only show if not owner controls */}
+        {!showOwnerControls && (
+          <div className="absolute top-2 left-2">
+            <WishlistButton 
+              propertyId={property.id}
+              className="bg-white/80 hover:bg-white"
+            />
+          </div>
+        )}
+        
         {showOwnerControls && (
           <TooltipProvider>
             <Tooltip>
@@ -101,16 +112,6 @@ const PropertyListingCard = ({
             </Tooltip>
           </TooltipProvider>
         )}
-        
-        {property.average_rating !== undefined && property.average_rating > 0 && (
-          <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-md text-xs flex items-center">
-            <ThumbsUp className="h-3 w-3 text-yellow-400 mr-1 fill-yellow-400" />
-            <span className="truncate">{property.average_rating.toFixed(1)}</span>
-            {property.review_count && property.review_count > 0 && (
-              <span className="text-xs ml-1 truncate">({property.review_count})</span>
-            )}
-          </div>
-        )}
       </div>
       
       <CardContent className="p-3 bg-white">
@@ -124,23 +125,17 @@ const PropertyListingCard = ({
           </span>
         </div>
         
-        <div className="grid grid-cols-3 gap-1 md:gap-2 mb-3">
+        <div className="grid grid-cols-2 gap-1 md:gap-2 mb-3">
           <div className="flex items-center text-gray-600 min-w-0">
             <BedDouble className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
             <span className="text-xs md:text-sm font-medium truncate">
-              {property.bedrooms}
+              {property.bedrooms} bed
             </span>
           </div>
           <div className="flex items-center text-gray-600 min-w-0">
             <Square className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
             <span className="text-xs md:text-sm font-medium truncate">
-              {property.area}
-            </span>
-          </div>
-          <div className="flex items-center text-gray-600 min-w-0">
-            <ThumbsUp className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
-            <span className="text-xs md:text-sm font-medium truncate">
-              {property.average_rating ? property.average_rating.toFixed(1) : "N/A"}
+              {property.area} sq ft
             </span>
           </div>
         </div>

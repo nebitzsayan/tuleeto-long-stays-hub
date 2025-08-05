@@ -4,6 +4,7 @@ import { FileText, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { generatePropertyPoster } from "@/utils/pdfGenerator";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PropertyPosterButtonProps {
   property: {
@@ -21,12 +22,19 @@ interface PropertyPosterButtonProps {
     contact_phone?: string;
     average_rating?: number;
     review_count?: number;
+    ownerId?: string;
   };
   className?: string;
 }
 
 const PropertyPosterButton = ({ property, className = "" }: PropertyPosterButtonProps) => {
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Only show the button if the current user is the property owner
+  if (!user || !property.ownerId || user.id !== property.ownerId) {
+    return null;
+  }
 
   const handleGeneratePoster = async () => {
     if (!property.contact_phone) {
