@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
@@ -52,8 +53,8 @@ const loadImageAsBase64 = (url: string): Promise<{dataURL: string, width: number
 const generateQRCode = async (url: string): Promise<string> => {
   try {
     return await QRCode.toDataURL(url, {
-      width: 100,
-      margin: 1,
+      width: 120,
+      margin: 2,
       color: {
         dark: '#000000',
         light: '#FFFFFF'
@@ -283,41 +284,60 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.text(ownerNameLines, margin + 4, contactStartY);
   pdf.text(phoneLines, margin + 4, contactStartY + 5);
   
-  yPosition += contactBoxHeight + 8;
+  yPosition += contactBoxHeight + 12;
   
-  // QR Code section
+  // QR Code section with improved design and messaging
   if (property.propertyId) {
     try {
       const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
       const qrCodeDataUrl = await generateQRCode(propertyUrl);
       
-      // QR Code dimensions
-      const qrSize = 25;
-      const qrX = margin + (usableWidth - qrSize) / 2;
+      // Create a bordered box for QR section
+      const qrBoxHeight = 45;
+      pdf.setFillColor(248, 250, 252); // Light gray background
+      pdf.rect(margin, yPosition, usableWidth, qrBoxHeight, 'F');
       
-      pdf.addImage(qrCodeDataUrl, 'PNG', qrX, yPosition, qrSize, qrSize);
+      // Add border
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.5);
+      pdf.rect(margin, yPosition, usableWidth, qrBoxHeight, 'S');
       
-      // QR Code label
-      pdf.setFontSize(8);
-      pdf.setTextColor(100, 100, 100);
+      // QR Code dimensions - slightly larger
+      const qrSize = 30;
+      const qrX = margin + 8;
+      const qrY = yPosition + 8;
+      
+      pdf.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+      
+      // Text content beside QR code
+      pdf.setFontSize(11);
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFont('helvetica', 'bold');
+      const textX = qrX + qrSize + 8;
+      pdf.text('View More Photos & Details Online', textX, qrY + 8);
+      
+      pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      const qrText = 'Scan to view online';
-      const qrTextWidth = pdf.getTextWidth(qrText);
-      pdf.text(qrText, (pageWidth - qrTextWidth) / 2, yPosition + qrSize + 5);
+      pdf.setTextColor(80, 80, 80);
+      pdf.text('Scan this QR code with your phone camera to:', textX, qrY + 14);
+      pdf.text('• View all property images in full resolution', textX, qrY + 18);
+      pdf.text('• See detailed property information', textX, qrY + 22);
+      pdf.text('• Contact owner directly', textX, qrY + 26);
+      pdf.text('• Get directions to the property', textX, qrY + 30);
       
-      yPosition += qrSize + 12;
+      yPosition += qrBoxHeight + 8;
     } catch (error) {
       console.error('Error generating QR code:', error);
     }
   }
   
-  // Footer - updated to Tuleeto.in and positioned at bottom
+  // Footer - positioned at bottom with improved text
   pdf.setFontSize(8);
-  pdf.setTextColor(150, 150, 150);
-  pdf.setFont('helvetica', 'normal');
-  const footerText = 'Generated via Tuleeto.in - Your trusted rental platform';
+  pdf.setTextColor(120, 120, 120);
+  pdf.setFont('helvetica', 'italic');
+  const footerText = 'Find your perfect home at Tuleeto.in - India\'s trusted rental platform';
   const footerWidth = pdf.getTextWidth(footerText);
-  pdf.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 6);
+  pdf.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 8);
   
   // Save the PDF
   const fileName = `${property.title.replace(/[^a-zA-Z0-9]/g, '_')}_rental_poster.pdf`;

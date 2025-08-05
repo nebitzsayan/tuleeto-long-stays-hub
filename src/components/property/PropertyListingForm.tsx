@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -12,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { PropertyDetailsStep } from "@/components/property/PropertyDetailsStep";
-import LocationStep from "@/components/property/LocationStep";
+import LocationStepFixed from "@/components/property/LocationStepFixed";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
 import { uploadMultipleFiles } from "@/lib/supabaseStorage";
@@ -275,7 +274,7 @@ const PropertyListingForm = ({
           )}
           
           {step === 1 && (
-            <LocationStep form={form} />
+            <LocationStepFixed form={form} />
           )}
           
           {step === 2 && (

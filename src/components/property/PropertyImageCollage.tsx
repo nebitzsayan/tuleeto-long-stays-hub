@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Expand } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
-import { useImagePreview } from "@/hooks/useImagePreview";
-import ImagePreviewModal from "./ImagePreviewModal";
+import ScrollableImagePreview from "./ScrollableImagePreview";
 
 interface PropertyImageCollageProps {
   images: string[];
@@ -13,7 +12,15 @@ interface PropertyImageCollageProps {
 
 const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
   const { validImages, imageList, handleImageError, handleImageLoad } = useImageHandling(images);
-  const { isPreviewOpen, previewIndex, openPreview, closePreview } = useImagePreview();
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const openPreview = () => {
+    setIsPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+  };
 
   return (
     <>
@@ -22,7 +29,7 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
         <div className="block md:hidden">
           <div 
             className="relative h-64 w-full group cursor-pointer"
-            onClick={() => openPreview(0)}
+            onClick={openPreview}
           >
             <img 
               src={imageList[0]} 
@@ -45,6 +52,7 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
                 variant="ghost"
                 size="sm"
                 className="bg-white/90 hover:bg-white text-gray-800 rounded-lg px-3 py-1 text-sm font-medium backdrop-blur-sm"
+                onClick={openPreview}
               >
                 <Expand className="h-4 w-4 mr-1" />
                 View all
@@ -58,7 +66,7 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
           {/* Large main image - spans 2 columns and 2 rows */}
           <div 
             className="col-span-2 row-span-2 relative group cursor-pointer"
-            onClick={() => openPreview(0)}
+            onClick={openPreview}
           >
             <img 
               src={imageList[0]} 
@@ -75,7 +83,7 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
             <div 
               key={index}
               className="relative group cursor-pointer overflow-hidden"
-              onClick={() => openPreview(index)}
+              onClick={openPreview}
             >
               {imageList[index] ? (
                 <>
@@ -94,6 +102,7 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
                       <Button
                         variant="ghost"
                         className="text-white hover:text-white hover:bg-black/20 text-lg font-semibold"
+                        onClick={openPreview}
                       >
                         <Expand className="h-5 w-5 mr-2" />
                         +{validImages.length - 5} more
@@ -113,7 +122,7 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
         {/* View all photos button - only on desktop */}
         <div className="hidden md:block absolute bottom-4 right-4">
           <Button
-            onClick={() => openPreview(0)}
+            onClick={openPreview}
             variant="ghost"
             size="sm"
             className="bg-white/90 hover:bg-white text-gray-800 rounded-lg px-4 py-2 font-medium backdrop-blur-sm shadow-sm border border-gray-200/50"
@@ -124,11 +133,10 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
         </div>
       </div>
 
-      <ImagePreviewModal
+      <ScrollableImagePreview
         isOpen={isPreviewOpen}
         onClose={closePreview}
         images={validImages}
-        initialIndex={previewIndex}
         title={title}
       />
     </>

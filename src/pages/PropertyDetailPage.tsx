@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Shield } from "lucide-react";
+import { MapPin, Shield, User } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { getPropertyById } from "@/api/propertyService";
 import { Property } from "@/types";
@@ -11,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { PropertyMapDisplay } from "@/components/property/PropertyMapDisplay";
 import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 import PropertyAmenitiesDisplay from "@/components/property/PropertyAmenitiesDisplay";
+import PropertyPosterButton from "@/components/property/PropertyPosterButton";
+import OwnerAvatar from "@/components/profile/OwnerAvatar";
 
 const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -64,14 +67,6 @@ const PropertyDetailPage = () => {
       <div className="container max-w-6xl mx-auto px-4">
         {property && (
           <div className="space-y-8">
-            {/* Back Button */}
-            <Button asChild variant="ghost" className="pl-0">
-              <Link to="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Listings
-              </Link>
-            </Button>
-            
             {/* Image Carousel */}
             <PropertyImageCarousel images={property.images} title={property.title} />
 
@@ -130,7 +125,7 @@ const PropertyDetailPage = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Amenities Section - Updated */}
+                {/* Amenities Section */}
                 {property.features && property.features.length > 0 && (
                   <Card>
                     <CardHeader>
@@ -161,7 +156,7 @@ const PropertyDetailPage = () => {
                   />
                 )}
 
-                {/* Reviews Section (Placeholder) */}
+                {/* Reviews Section */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Reviews</CardTitle>
@@ -174,19 +169,55 @@ const PropertyDetailPage = () => {
 
               {/* Sidebar */}
               <div className="lg:col-span-1">
-                <Card>
+                <Card className="mb-6">
                   <CardHeader>
                     <CardTitle>Contact Owner</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <div className="flex items-center gap-3 mb-4">
+                      <OwnerAvatar 
+                        ownerId={property.ownerId} 
+                        ownerName={property.ownerName}
+                        size="md"
+                        withLink={true}
+                      />
+                      <div>
+                        <Link 
+                          to={`/owner/${property.ownerId}`}
+                          className="text-sm font-medium hover:text-tuleeto-orange transition-colors"
+                        >
+                          {property.ownerName}
+                        </Link>
+                        <p className="text-xs text-gray-500">Property Owner</p>
+                      </div>
+                    </div>
+                    
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Owner: {property.ownerName}</p>
                       <p className="text-sm text-gray-600">Email: {property.ownerEmail}</p>
                       <p className="text-sm text-gray-600">Phone: {property.contactPhone}</p>
                     </div>
                     <Button className="w-full">Contact Now</Button>
                   </CardContent>
                 </Card>
+
+                {/* PDF Generation Button */}
+                <PropertyPosterButton 
+                  property={{
+                    id: property.id,
+                    title: property.title,
+                    location: property.location,
+                    price: property.price,
+                    bedrooms: property.bedrooms,
+                    bathrooms: property.bathrooms,
+                    area: property.area,
+                    description: property.description,
+                    features: property.features || [],
+                    images: property.images,
+                    owner_name: property.ownerName,
+                    contact_phone: property.contactPhone
+                  }}
+                  className="w-full"
+                />
               </div>
             </div>
           </div>
