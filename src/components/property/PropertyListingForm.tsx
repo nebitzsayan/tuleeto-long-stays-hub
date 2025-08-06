@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { PropertyDetailsStep } from "@/components/property/PropertyDetailsStep";
-import LocationStepFixed from "@/components/property/LocationStepFixed";
+import LocationStepWithMap from "@/components/property/LocationStepWithMap";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
 import { uploadMultipleFiles } from "@/lib/supabaseStorage";
@@ -24,6 +24,10 @@ export const formSchema = z.object({
   city: z.string().min(1, { message: "City is required" }),
   state: z.string().min(1, { message: "State is required" }),
   zipCode: z.string().min(1, { message: "ZIP code is required" }),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number()
+  }).optional(),
   price: z.string().min(1, { message: "Rent price is required" }),
   bedrooms: z.string().min(1, { message: "Number of bedrooms is required" }),
   bathrooms: z.string().min(1, { message: "Number of bathrooms is required" }),
@@ -78,6 +82,7 @@ const PropertyListingForm = ({
       city: "",
       state: "",
       zipCode: "",
+      coordinates: undefined,
       price: "",
       bedrooms: "",
       bathrooms: "",
@@ -169,7 +174,6 @@ const PropertyListingForm = ({
       if (photos.length > 0) {
         finalPhotoUrls = await uploadPhotos();
         
-        // Double-check we have URLs after upload
         if (finalPhotoUrls.length === 0) {
           setUploadError("Photo upload failed. Please try again.");
           toast.error("Photo upload failed. Please try again.");
@@ -180,11 +184,11 @@ const PropertyListingForm = ({
       
       const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
       
-      // Include contact_phone in the propertyData object
       const propertyData = {
         title: data.title,
         description: data.description,
         location: location,
+        coordinates: data.coordinates ? JSON.stringify(data.coordinates) : null,
         price: parseInt(data.price),
         bedrooms: parseInt(data.bedrooms),
         bathrooms: parseFloat(data.bathrooms),
@@ -235,10 +239,15 @@ const PropertyListingForm = ({
         break;
       case 1:
         fieldsToValidate = ["street", "city", "state", "zipCode"];
+        // Check if location is selected on map
+        const coordinates = form.getValues("coordinates");
+        if (!coordinates) {
+          toast.warning("Please mark your property location on the map");
+          return;
+        }
         break;
       case 2:
         fieldsToValidate = ["bedrooms", "bathrooms", "area", "price", "availableFrom"];
-        // Additionally check if photos are added when on this step
         if (photos.length === 0 && photoUrls.length === 0) {
           toast.warning("Please upload at least one photo before continuing");
           return;
@@ -274,7 +283,7 @@ const PropertyListingForm = ({
           )}
           
           {step === 1 && (
-            <LocationStepFixed form={form} />
+            <LocationStepWithMap form={form} />
           )}
           
           {step === 2 && (
