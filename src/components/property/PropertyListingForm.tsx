@@ -67,10 +67,6 @@ const PropertyListingForm = ({
     "Air conditioning", 
     "In-unit laundry"
   ]);
-  const [coordinates, setCoordinates] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -184,12 +180,11 @@ const PropertyListingForm = ({
       
       const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
       
-      // Include coordinates in the propertyData object
+      // Include contact_phone in the propertyData object
       const propertyData = {
         title: data.title,
         description: data.description,
         location: location,
-        coordinates: coordinates ? { lat: coordinates.lat, lng: coordinates.lng } : null,
         price: parseInt(data.price),
         bedrooms: parseInt(data.bedrooms),
         bathrooms: parseFloat(data.bathrooms),
