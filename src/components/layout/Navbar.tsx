@@ -134,25 +134,15 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Link to="/auth">
-                  <Button 
-                    variant="ghost" 
-                    size={isMobile ? "sm" : "sm"}
-                    className="text-gray-700 hover:text-tuleeto-orange backdrop-blur-sm"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/auth">
-                  <Button 
-                    size={isMobile ? "sm" : "sm"}
-                    className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white backdrop-blur-sm"
-                  >
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/auth">
+                <Button 
+                  variant="ghost" 
+                  size={isMobile ? "sm" : "sm"}
+                  className="text-gray-700 hover:text-tuleeto-orange backdrop-blur-sm"
+                >
+                  Sign In
+                </Button>
+              </Link>
             )}
           </div>
         </div>

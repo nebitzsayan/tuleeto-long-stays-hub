@@ -23,6 +23,8 @@ interface PropertyPosterButtonProps {
     average_rating?: number;
     review_count?: number;
     ownerId?: string;
+    ownerName?: string;
+    contactPhone?: string;
   };
   className?: string;
 }
@@ -37,7 +39,9 @@ const PropertyPosterButton = ({ property, className = "" }: PropertyPosterButton
   }
 
   const handleGeneratePoster = async () => {
-    if (!property.contact_phone) {
+    const contactPhone = property.contact_phone || property.contactPhone;
+    
+    if (!contactPhone) {
       toast.error("Contact phone number is required to generate poster");
       return;
     }
@@ -54,8 +58,8 @@ const PropertyPosterButton = ({ property, className = "" }: PropertyPosterButton
         area: property.area,
         description: property.description,
         features: property.features || [],
-        ownerName: property.owner_name || "Property Owner",
-        contactPhone: property.contact_phone,
+        ownerName: property.owner_name || property.ownerName || "Property Owner",
+        contactPhone: contactPhone,
         images: property.images || [],
         averageRating: property.average_rating,
         reviewCount: property.review_count,
@@ -86,7 +90,7 @@ const PropertyPosterButton = ({ property, className = "" }: PropertyPosterButton
       ) : (
         <>
           <FileText className="h-4 w-4 mr-2" />
-          Create Poster
+          Generate Poster
         </>
       )}
     </Button>

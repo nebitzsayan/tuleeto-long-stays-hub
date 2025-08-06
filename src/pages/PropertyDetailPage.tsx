@@ -13,6 +13,7 @@ import { PropertyMapDisplay } from "@/components/property/PropertyMapDisplay";
 import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 import PropertyAmenitiesDisplay from "@/components/property/PropertyAmenitiesDisplay";
 import PropertyPosterButton from "@/components/property/PropertyPosterButton";
+import PropertyReviewSystem from "@/components/property/PropertyReviewSystem";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
 
 const PropertyDetailPage = () => {
@@ -157,14 +158,10 @@ const PropertyDetailPage = () => {
                 )}
 
                 {/* Reviews Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Reviews</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-500">No reviews yet.</p>
-                  </CardContent>
-                </Card>
+                <PropertyReviewSystem 
+                  propertyId={property.id}
+                  ownerId={property.ownerId}
+                />
               </div>
 
               {/* Sidebar */}
@@ -214,9 +211,12 @@ const PropertyDetailPage = () => {
                     features: property.features || [],
                     images: property.images,
                     owner_name: property.ownerName,
-                    contact_phone: property.contactPhone
+                    contact_phone: property.contactPhone,
+                    ownerId: property.ownerId,
+                    ownerName: property.ownerName,
+                    contactPhone: property.contactPhone
                   }}
-                  className="w-full"
+                  className="w-full mb-4"
                 />
               </div>
             </div>
