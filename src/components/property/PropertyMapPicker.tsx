@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { MapPin } from 'lucide-react';
+import { MapPin, Crosshair } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -26,39 +26,71 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Initialize map with high precision coordinates for better accuracy
+    // Default to Siliguri, India with high precision coordinates
     const defaultCenter: [number, number] = initialLocation 
       ? [initialLocation.lng, initialLocation.lat] 
-      : [88.428421, 26.727066]; // More precise Siliguri coordinates
+      : [88.428421, 26.727066];
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12', // Use satellite view for better accuracy
+      style: 'mapbox://styles/mapbox/streets-v12', // Clean street map style
       center: defaultCenter,
-      zoom: 18, // Very high zoom for maximum precision
+      zoom: 16, // High zoom for accuracy
       pitch: 0,
       bearing: 0,
-      maxZoom: 22 // Allow maximum zoom for street-level accuracy
+      maxZoom: 20
     });
 
     // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.current.addControl(new mapboxgl.NavigationControl({
+      visualizePitch: false
+    }), 'top-right');
     
-    // Add scale control for distance reference
+    // Add geolocate control for accurate positioning
+    const geolocateControl = new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 15000
+      },
+      trackUserLocation: false,
+      showAccuracyCircle: true,
+      showUserHeading: false
+    });
+    
+    map.current.addControl(geolocateControl, 'top-right');
+    
+    // Add scale control
     map.current.addControl(new mapboxgl.ScaleControl({
       maxWidth: 100,
       unit: 'metric'
-    }));
+    }), 'bottom-left');
 
-    // Create a high-precision draggable marker
+    // Create high-precision custom marker
     const markerElement = document.createElement('div');
-    markerElement.className = 'custom-marker';
-    markerElement.style.backgroundImage = 'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1IDNDMTAuMDMgMyA2IDcuMDMgNiAxMkM2IDE4IDEwIDI0IDE1IDI3QzIwIDI0IDI0IDE4IDI0IDEyQzI0IDcuMDMgMTkuOTcgMyAxNSAzWk0xNSAxNi41QzEzLjA3IDE2LjUgMTEuNSAxNC45MyAxMS41IDEzQzExLjUgMTEuMDcgMTMuMDcgOS41IDE1IDkuNUMxNi45MyA5LjUgMTguNSAxMS4wNyAxOC41IDEzQzE4LjUgMTQuOTMgMTYuOTMgMTYuNSAxNSAxNi41WiIgZmlsbD0iI0ZGNjYwMCIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+)';
-    markerElement.style.width = '30px';
-    markerElement.style.height = '30px';
-    markerElement.style.backgroundSize = 'contain';
-    markerElement.style.cursor = 'crosshair';
-    markerElement.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+    markerElement.innerHTML = `
+      <div style="
+        width: 40px;
+        height: 40px;
+        background: #ff6600;
+        border: 3px solid #ffffff;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          width: 16px;
+          height: 16px;
+          background: #ffffff;
+          border-radius: 50%;
+          transform: rotate(45deg);
+        "></div>
+      </div>
+    `;
 
     marker.current = new mapboxgl.Marker({ 
       element: markerElement,
@@ -68,18 +100,18 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       .addTo(map.current);
 
     const updateLocation = async (lngLat: mapboxgl.LngLat) => {
-      // Use maximum precision for coordinates
+      // Ultra-high precision coordinates (8 decimal places for ~1mm accuracy)
       const coords = { 
-        lat: Math.round(lngLat.lat * 10000000) / 10000000, // 7 decimal places for ~1cm accuracy
-        lng: Math.round(lngLat.lng * 10000000) / 10000000 
+        lat: Math.round(lngLat.lat * 100000000) / 100000000,
+        lng: Math.round(lngLat.lng * 100000000) / 100000000
       };
       
       setSelectedCoords(coords);
       
-      // Enhanced geocoding with multiple fallback attempts
+      // Enhanced reverse geocoding
       try {
         const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}&limit=1&types=address,poi&proximity=${coords.lng},${coords.lat}`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}&limit=1&types=address,poi,place&proximity=${coords.lng},${coords.lat}&language=en`
         );
         
         if (!response.ok) {
@@ -91,41 +123,70 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         let address;
         if (data.features && data.features.length > 0) {
           const feature = data.features[0];
-          address = feature.place_name;
-          // If we have a more specific address, use it
-          if (feature.properties?.address) {
-            address = `${feature.properties.address}, ${feature.text}`;
+          address = feature.place_name || feature.text;
+          
+          // Clean up the address for better readability
+          if (address) {
+            address = address.replace(/,\s*,/g, ',').replace(/^\s*,\s*/, '');
           }
         } else {
-          // Fallback to a more readable coordinate format
-          address = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+          address = `${coords.lat.toFixed(7)}°N, ${coords.lng.toFixed(7)}°E`;
         }
           
         onLocationSelect({ ...coords, address });
-        toast.success('📍 High-precision location selected!');
+        toast.success('📍 High-precision location selected!', {
+          description: 'Location marked with maximum accuracy'
+        });
       } catch (error) {
         console.error('Error getting address:', error);
-        const fallbackAddress = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+        const fallbackAddress = `${coords.lat.toFixed(7)}°N, ${coords.lng.toFixed(7)}°E`;
         onLocationSelect({ ...coords, address: fallbackAddress });
-        toast.success('📍 Location selected (coordinates mode)!');
+        toast.success('📍 Location selected!', {
+          description: 'Using coordinate-based addressing'
+        });
       }
     };
 
-    // Handle marker drag end
+    // Handle marker drag
+    marker.current.on('dragstart', () => {
+      markerElement.style.cursor = 'grabbing';
+    });
+
+    marker.current.on('drag', () => {
+      // Visual feedback during drag
+      markerElement.style.transform = 'scale(1.1) rotate(-45deg)';
+    });
+
     marker.current.on('dragend', () => {
+      markerElement.style.cursor = 'grab';
+      markerElement.style.transform = 'scale(1) rotate(-45deg)';
       const lngLat = marker.current!.getLngLat();
       updateLocation(lngLat);
     });
 
-    // Handle map clicks with improved precision
+    // Handle map clicks
     map.current.on('click', (e) => {
       marker.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
       updateLocation(e.lngLat);
     });
 
-    // Add crosshair cursor when hovering over map
+    // Add crosshair cursor
     map.current.on('mouseenter', () => {
       map.current!.getCanvas().style.cursor = 'crosshair';
+    });
+
+    // Handle geolocate events
+    geolocateControl.on('geolocate', (e) => {
+      const coords = {
+        lat: Math.round(e.coords.latitude * 100000000) / 100000000,
+        lng: Math.round(e.coords.longitude * 100000000) / 100000000
+      };
+      
+      setSelectedCoords(coords);
+      marker.current?.setLngLat([coords.lng, coords.lat]);
+      
+      // Get address for GPS location
+      updateLocation(new mapboxgl.LngLat(coords.lng, coords.lat));
     });
 
     // Cleanup
@@ -136,15 +197,21 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by this browser");
+      toast.error("Geolocation not supported", {
+        description: "Your browser doesn't support GPS location"
+      });
       return;
     }
 
+    toast.loading("📡 Getting precise GPS location...", {
+      description: "This may take a few seconds for maximum accuracy"
+    });
+    
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = {
-          lat: Math.round(position.coords.latitude * 10000000) / 10000000,
-          lng: Math.round(position.coords.longitude * 10000000) / 10000000
+          lat: Math.round(position.coords.latitude * 100000000) / 100000000,
+          lng: Math.round(position.coords.longitude * 100000000) / 100000000
         };
         
         setSelectedCoords(coords);
@@ -152,83 +219,114 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         map.current?.flyTo({ 
           center: [coords.lng, coords.lat], 
           zoom: 18,
-          duration: 2000
+          duration: 2000,
+          essential: true
         });
         
         // Get high-accuracy address
-        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}&limit=1&types=address,poi`)
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxgl.accessToken}&limit=1&types=address,poi&language=en`)
           .then(response => response.json())
           .then(data => {
-            let address = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+            let address = `${coords.lat.toFixed(7)}°N, ${coords.lng.toFixed(7)}°E`;
             if (data.features && data.features.length > 0) {
-              address = data.features[0].place_name;
+              address = data.features[0].place_name || data.features[0].text;
             }
             onLocationSelect({ ...coords, address });
-            toast.success("🎯 High-accuracy location detected!");
+            toast.success("🎯 GPS location acquired!", {
+              description: `Accuracy: ±${Math.round(position.coords.accuracy)}m`
+            });
           })
           .catch(() => {
-            const fallbackAddress = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+            const fallbackAddress = `${coords.lat.toFixed(7)}°N, ${coords.lng.toFixed(7)}°E`;
             onLocationSelect({ ...coords, address: fallbackAddress });
-            toast.success("📍 Current location detected!");
+            toast.success("📍 GPS location set!", {
+              description: "Using high-precision coordinates"
+            });
           });
       },
       (error) => {
-        console.error("Error getting location:", error);
-        toast.error("Failed to get current location. Please try clicking on the map.");
+        console.error("GPS Error:", error);
+        let errorMessage = "GPS location failed";
+        let description = "Please try clicking on the map instead";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied";
+            description = "Please allow location access and try again";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "GPS unavailable";
+            description = "Location services not available";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "GPS timeout";
+            description = "Location request took too long";
+            break;
+        }
+        
+        toast.error(errorMessage, { description });
       },
       {
-        enableHighAccuracy: true, // Request GPS accuracy
-        timeout: 15000, // Increased timeout for GPS
-        maximumAge: 0 // Always get fresh location
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
       }
     );
   };
 
   return (
-    <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+    <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-tuleeto-orange" />
-          <Label className="text-sm font-medium">Mark Exact Property Location</Label>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-tuleeto-orange/10 rounded-lg">
+            <MapPin className="h-5 w-5 text-tuleeto-orange" />
+          </div>
+          <div>
+            <Label className="text-sm font-semibold text-gray-900">Property Location Marker</Label>
+            <p className="text-xs text-gray-600">Click or drag to set exact location</p>
+          </div>
         </div>
         <Button
           type="button"
           onClick={getCurrentLocation}
           variant="outline"
           size="sm"
-          className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+          className="text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400"
         >
-          🎯 GPS Location
+          <Crosshair className="h-4 w-4 mr-2" />
+          GPS Locate
         </Button>
       </div>
       
-      <p className="text-sm text-gray-600">
-        Use satellite view for maximum accuracy. Click or drag the marker to pinpoint your exact property location.
-      </p>
-      
       <div 
         ref={mapContainer} 
-        className="w-full h-80 rounded-lg border border-gray-300 shadow-sm"
+        className="w-full h-80 rounded-xl border border-gray-300 shadow-inner"
         style={{ minHeight: '320px' }}
       />
       
       {selectedCoords && (
-        <div className="bg-green-50 p-3 rounded-md border border-green-200">
-          <p className="text-sm text-green-800 font-medium">
-            📍 High-Precision Location Set
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="font-semibold text-green-800">High-Precision Location Set</span>
+          </div>
+          <p className="text-sm text-green-700 font-mono">
+            📍 {selectedCoords.lat.toFixed(7)}, {selectedCoords.lng.toFixed(7)}
           </p>
-          <p className="text-xs text-green-700 mt-1">
-            Coordinates: {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
+          <p className="text-xs text-green-600 mt-1">
+            Precision: ~1 meter accuracy
           </p>
         </div>
       )}
       
-      <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-        💡 <strong>Tips for accuracy:</strong>
-        <br/>• Use the GPS button for automatic high-precision location
-        <br/>• Zoom in as much as possible before placing the marker  
-        <br/>• Use satellite view to identify exact building location
-        <br/>• Drag the marker for fine-tuning position
+      <div className="text-xs text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+        <div className="font-medium text-blue-800 mb-2">💡 Accuracy Tips:</div>
+        <div className="space-y-1 text-blue-700">
+          <div>• Use GPS button for automatic high-precision location</div>
+          <div>• Zoom to maximum level before placing marker</div>
+          <div>• Drag marker for fine position adjustment</div>
+          <div>• Click map to quickly relocate marker</div>
+        </div>
       </div>
     </div>
   );
