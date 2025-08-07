@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { MapPin, Shield, User } from "lucide-react";
+import { MapPin, Shield, User, Phone } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { getPropertyById } from "@/api/propertyService";
 import { Property } from "@/types";
@@ -42,6 +42,10 @@ const PropertyDetailPage = () => {
 
     fetchProperty();
   }, [id]);
+
+  const handlePhoneCall = (phoneNumber: string) => {
+    window.location.href = `tel:${phoneNumber}`;
+  };
 
   if (isLoading) {
     return (
@@ -141,8 +145,8 @@ const PropertyDetailPage = () => {
                   </Card>
                 )}
 
-                {/* Map Section */}
-                {property.coordinates ? (
+                {/* Map Section - Fix coordinate display */}
+                {property.coordinates && property.coordinates.lat && property.coordinates.lng ? (
                   <PropertyMapDisplay
                     coordinates={property.coordinates}
                     title={property.title}
@@ -189,11 +193,27 @@ const PropertyDetailPage = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-1">
+                    <div className="space-y-3">
                       <p className="text-sm text-gray-600">Email: {property.ownerEmail}</p>
-                      <p className="text-sm text-gray-600">Phone: {property.contactPhone}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-600">Phone: {property.contactPhone}</p>
+                        <Button 
+                          onClick={() => handlePhoneCall(property.contactPhone)}
+                          size="sm"
+                          variant="outline"
+                          className="p-1 h-8 w-8"
+                        >
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <Button className="w-full">Contact Now</Button>
+                    <Button 
+                      onClick={() => handlePhoneCall(property.contactPhone)}
+                      className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange/90"
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      Call Now
+                    </Button>
                   </CardContent>
                 </Card>
 
