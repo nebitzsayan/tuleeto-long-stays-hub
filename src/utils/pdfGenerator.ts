@@ -53,7 +53,7 @@ const loadImageAsBase64 = (url: string): Promise<{dataURL: string, width: number
 const generateQRCode = async (url: string): Promise<string> => {
   try {
     return await QRCode.toDataURL(url, {
-      width: 80,
+      width: 100,
       margin: 1,
       color: {
         dark: '#000000',
@@ -66,13 +66,25 @@ const generateQRCode = async (url: string): Promise<string> => {
   }
 };
 
-const encodeText = (text: string): string => {
+// Clean text encoding function to handle special characters
+const cleanText = (text: string): string => {
   return text
-    .replace(/[^\x00-\x7F]/g, '')
-    .replace(/'/g, "'")
-    .replace(/"/g, '"')
-    .replace(/–/g, '-')
-    .replace(/—/g, '-')
+    .replace(/[^\x00-\x7F]/g, (char) => {
+      // Map common special characters
+      const charMap: { [key: string]: string } = {
+        'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
+        'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+        'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+        'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
+        'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
+        'ñ': 'n', 'ç': 'c',
+        ''': "'", ''': "'", '"': '"', '"': '"',
+        '–': '-', '—': '-', '…': '...',
+        '₹': 'Rs.'
+      };
+      return charMap[char] || '';
+    })
+    .replace(/\s+/g, ' ')
     .trim();
 };
 
@@ -80,13 +92,13 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 10;
   const usableWidth = pageWidth - (margin * 2);
   
   let yPosition = 20;
   
   // Header - TO-LET
-  pdf.setFontSize(32);
+  pdf.setFontSize(28);
   pdf.setTextColor(255, 102, 0);
   pdf.setFont('helvetica', 'bold');
   const headerText = 'TO-LET';
@@ -96,172 +108,164 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   yPosition += 15;
   
   // Property Title
-  pdf.setFontSize(18);
-  pdf.setTextColor(33, 37, 41);
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 0, 0);
   pdf.setFont('helvetica', 'bold');
-  const encodedTitle = encodeText(property.title);
-  const titleLines = pdf.splitTextToSize(encodedTitle, usableWidth);
+  const cleanTitle = cleanText(property.title);
+  const titleLines = pdf.splitTextToSize(cleanTitle, usableWidth);
   pdf.text(titleLines, margin, yPosition);
-  yPosition += (titleLines.length * 7) + 8;
+  yPosition += (titleLines.length * 6) + 5;
   
   // Price - Prominent display
-  pdf.setFontSize(22);
+  pdf.setFontSize(20);
   pdf.setTextColor(255, 102, 0);
   pdf.setFont('helvetica', 'bold');
-  const priceText = `₹${property.price.toLocaleString('en-IN')}/month`;
+  const priceText = `Rs. ${property.price.toLocaleString('en-IN')}/month`;
   const priceWidth = pdf.getTextWidth(priceText);
   pdf.text(priceText, (pageWidth - priceWidth) / 2, yPosition);
   yPosition += 12;
   
   // Address
-  pdf.setFontSize(12);
-  pdf.setTextColor(52, 58, 64);
+  pdf.setFontSize(11);
+  pdf.setTextColor(0, 0, 0);
   pdf.setFont('helvetica', 'normal');
-  const encodedLocation = encodeText(property.location);
-  const locationLines = pdf.splitTextToSize(`Address: ${encodedLocation}`, usableWidth);
+  const cleanLocation = cleanText(property.location);
+  const locationText = `Address: ${cleanLocation}`;
+  const locationLines = pdf.splitTextToSize(locationText, usableWidth);
   pdf.text(locationLines, margin, yPosition);
-  yPosition += (locationLines.length * 5) + 8;
+  yPosition += (locationLines.length * 5) + 5;
   
   // Contact Details
-  pdf.setFontSize(12);
-  pdf.setTextColor(52, 58, 64);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Contact Details:', margin, yPosition);
-  yPosition += 6;
-  
-  pdf.setFont('helvetica', 'normal');
-  const encodedOwnerName = encodeText(property.ownerName);
-  pdf.text(`Owner: ${encodedOwnerName}`, margin, yPosition);
-  yPosition += 5;
-  pdf.text(`Phone: ${property.contactPhone}`, margin, yPosition);
-  yPosition += 10;
-  
-  // Property Details in compact format
   pdf.setFontSize(11);
-  pdf.setTextColor(33, 37, 41);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Property Details:', margin, yPosition);
-  yPosition += 6;
+  pdf.text('Contact:', margin, yPosition);
+  yPosition += 5;
   
   pdf.setFont('helvetica', 'normal');
-  const details = [
-    `${property.bedrooms} Bedrooms | ${property.bathrooms} Bathrooms | ${property.area} sq ft`
-  ];
+  const cleanOwnerName = cleanText(property.ownerName);
+  pdf.text(`Owner: ${cleanOwnerName}`, margin, yPosition);
+  yPosition += 4;
+  pdf.text(`Phone: ${property.contactPhone}`, margin, yPosition);
+  yPosition += 8;
   
-  details.forEach(detail => {
-    pdf.text(detail, margin, yPosition);
-    yPosition += 5;
-  });
+  // Property Details
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Details:', margin, yPosition);
   yPosition += 5;
+  
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`${property.bedrooms} BHK | ${property.bathrooms} Bath | ${property.area} sq ft`, margin, yPosition);
+  yPosition += 8;
   
   // Amenities
   if (property.features && property.features.length > 0) {
-    pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Amenities:', margin, yPosition);
-    yPosition += 6;
+    yPosition += 5;
     
     pdf.setFont('helvetica', 'normal');
-    // Check for specific amenities
     const hasWifi = property.features.some(f => f.toLowerCase().includes('wifi') || f.toLowerCase().includes('internet'));
     const hasAC = property.features.some(f => f.toLowerCase().includes('ac') || f.toLowerCase().includes('air condition'));
     const petsAllowed = property.features.some(f => f.toLowerCase().includes('pet'));
     
-    const amenityList = [
-      `Wi-Fi: ${hasWifi ? 'Yes' : 'No'}`,
-      `AC: ${hasAC ? 'Yes' : 'No'}`,
-      `Pets Allowed: ${petsAllowed ? 'Yes' : 'No'}`
-    ];
-    
-    amenityList.forEach(amenity => {
-      pdf.text(`• ${amenity}`, margin, yPosition);
-      yPosition += 4;
-    });
-    yPosition += 8;
+    pdf.text(`Wi-Fi: ${hasWifi ? 'Yes' : 'No'} | AC: ${hasAC ? 'Yes' : 'No'} | Pets: ${petsAllowed ? 'Yes' : 'No'}`, margin, yPosition);
+    yPosition += 10;
   }
   
-  // Property Image - maintain aspect ratio
+  // Images and QR Code Section - Side by side layout
   if (property.images && property.images.length > 0) {
     try {
-      const imageUrl = property.images[0];
-      const imageData = await loadImageAsBase64(imageUrl);
+      // Calculate dimensions for side-by-side layout
+      const imageWidth = usableWidth * 0.65; // 65% for images
+      const qrWidth = usableWidth * 0.3; // 30% for QR code
+      const maxImgHeight = 60;
       
-      const maxImgWidth = usableWidth;
-      const maxImgHeight = 80;
+      // Load and display first two images
+      const imagesToShow = property.images.slice(0, 2);
+      const imageHeight = maxImgHeight / imagesToShow.length;
       
-      const aspectRatio = imageData.width / imageData.height;
-      let imgWidth = maxImgWidth;
-      let imgHeight = imgWidth / aspectRatio;
-      
-      if (imgHeight > maxImgHeight) {
-        imgHeight = maxImgHeight;
-        imgWidth = imgHeight * aspectRatio;
+      for (let i = 0; i < imagesToShow.length; i++) {
+        try {
+          const imageData = await loadImageAsBase64(imagesToShow[i]);
+          
+          const aspectRatio = imageData.width / imageData.height;
+          let imgWidth = imageWidth;
+          let imgHeight = imgWidth / aspectRatio;
+          
+          if (imgHeight > imageHeight) {
+            imgHeight = imageHeight;
+            imgWidth = imgHeight * aspectRatio;
+          }
+          
+          const imgY = yPosition + (i * imageHeight);
+          
+          // Border for images
+          pdf.setDrawColor(200, 200, 200);
+          pdf.setLineWidth(0.5);
+          pdf.rect(margin, imgY, imgWidth, imgHeight, 'S');
+          
+          pdf.addImage(imageData.dataURL, 'JPEG', margin, imgY, imgWidth, imgHeight);
+        } catch (error) {
+          console.error(`Error loading image ${i + 1}:`, error);
+        }
       }
       
-      const imgX = (pageWidth - imgWidth) / 2;
+      // QR Code on the right side
+      if (property.propertyId) {
+        try {
+          const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
+          const qrCodeDataUrl = await generateQRCode(propertyUrl);
+          
+          const qrSize = 50;
+          const qrX = margin + imageWidth + 10;
+          const qrY = yPosition + (maxImgHeight - qrSize) / 2;
+          
+          // QR Code text above
+          pdf.setFontSize(9);
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFont('helvetica', 'bold');
+          const qrText = 'Scan for full details';
+          const qrTextWidth = pdf.getTextWidth(qrText);
+          pdf.text(qrText, qrX + (qrSize - qrTextWidth) / 2, qrY - 5);
+          
+          // QR Code
+          pdf.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+          
+        } catch (error) {
+          console.error('Error generating QR code:', error);
+        }
+      }
       
-      // Clean border
-      pdf.setDrawColor(200, 200, 200);
-      pdf.setLineWidth(0.5);
-      pdf.rect(imgX, yPosition, imgWidth, imgHeight, 'S');
-      
-      pdf.addImage(imageData.dataURL, 'JPEG', imgX, yPosition, imgWidth, imgHeight);
-      yPosition += imgHeight + 15;
+      yPosition += maxImgHeight + 15;
     } catch (error) {
-      console.error('Error loading image:', error);
+      console.error('Error in image section:', error);
+      yPosition += 10;
     }
   }
   
-  // QR Code Section
-  if (property.propertyId) {
-    try {
-      const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
-      const qrCodeDataUrl = await generateQRCode(propertyUrl);
-      
-      // QR Code text
-      pdf.setFontSize(11);
-      pdf.setTextColor(33, 37, 41);
-      pdf.setFont('helvetica', 'bold');
-      const qrText = 'Scan below to get full details of the property';
-      const qrTextWidth = pdf.getTextWidth(qrText);
-      pdf.text(qrText, (pageWidth - qrTextWidth) / 2, yPosition);
-      yPosition += 8;
-      
-      // QR Code
-      const qrSize = 40;
-      const qrX = (pageWidth - qrSize) / 2;
-      pdf.addImage(qrCodeDataUrl, 'PNG', qrX, yPosition, qrSize, qrSize);
-      yPosition += qrSize + 15;
-      
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-    }
-  }
-  
-  // Footer with logo - centered at bottom
+  // Footer with logo
   try {
     const logoUrl = '/lovable-uploads/2f743f2f-28e7-4574-8f78-3b4311ec2885.png';
     const logoData = await loadImageAsBase64(logoUrl);
     
-    const logoWidth = 25;
-    const logoHeight = 25;
-    const logoX = (pageWidth - logoWidth) / 2;
-    const logoY = pageHeight - 35;
+    const logoSize = 20;
+    const logoX = (pageWidth - logoSize) / 2;
+    const logoY = pageHeight - 30;
     
-    pdf.addImage(logoData.dataURL, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    pdf.addImage(logoData.dataURL, 'PNG', logoX, logoY, logoSize, logoSize);
     
     // Company text
-    pdf.setFontSize(12);
+    pdf.setFontSize(10);
     pdf.setTextColor(255, 102, 0);
     pdf.setFont('helvetica', 'bold');
     const logoText = 'Tuleeto.in';
     const logoTextWidth = pdf.getTextWidth(logoText);
-    pdf.text(logoText, (pageWidth - logoTextWidth) / 2, logoY + logoHeight + 8);
+    pdf.text(logoText, (pageWidth - logoTextWidth) / 2, logoY + logoSize + 5);
     
   } catch (error) {
     console.error('Error loading logo:', error);
     // Fallback text footer
-    pdf.setFontSize(12);
+    pdf.setFontSize(10);
     pdf.setTextColor(255, 102, 0);
     pdf.setFont('helvetica', 'bold');
     const footerText = 'Tuleeto.in';
@@ -270,7 +274,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   }
   
   // Save PDF
-  const cleanTitle = encodeText(property.title).replace(/[^a-zA-Z0-9]/g, '_');
-  const fileName = `${cleanTitle}_TO_LET.pdf`;
+  const cleanTitleForFile = cleanText(property.title).replace(/[^a-zA-Z0-9]/g, '_');
+  const fileName = `${cleanTitleForFile}_TO_LET.pdf`;
   pdf.save(fileName);
 };

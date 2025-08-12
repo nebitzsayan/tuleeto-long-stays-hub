@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, X, Upload } from "lucide-react";
+import { Plus, X, Upload, Camera } from "lucide-react";
 import { FormValues } from "./PropertyListingForm";
 import { toast } from "sonner";
 
@@ -45,6 +46,7 @@ export const FeaturesPhotosStep = ({
 }: FeaturesPhotosStepProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -65,32 +67,35 @@ export const FeaturesPhotosStep = ({
           lastModified: file.lastModified
         });
 
-        // File size validation - 5MB limit for better mobile compatibility
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`File "${file.name}" is too large. Maximum size is 5MB.`);
+        // File size validation - 10MB limit for mobile compatibility
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`);
           continue;
         }
 
-        // Enhanced file type validation with better mobile support
+        // Enhanced mobile-friendly file type validation
         const allowedTypes = [
           'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
-          'image/heic', 'image/heif', 'application/octet-stream'
+          'image/heic', 'image/heif', 'image/bmp', 'image/tiff',
+          'application/octet-stream', // For mobile uploads that don't set proper MIME
+          '' // Some mobile browsers don't set MIME type
         ];
         
         const fileName = file.name.toLowerCase();
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'bmp', 'tiff'];
         const fileExtension = fileName.split('.').pop() || '';
         
-        const hasValidType = allowedTypes.includes(file.type);
+        const hasValidType = allowedTypes.includes(file.type) || file.type === '';
         const hasValidExtension = allowedExtensions.includes(fileExtension);
         
-        if (!hasValidType && !hasValidExtension) {
+        // More lenient validation for mobile uploads
+        if (!hasValidType && !hasValidExtension && file.type !== '') {
           console.error(`Invalid file type: ${file.type}, extension: ${fileExtension}`);
-          toast.error(`File "${file.name}" has unsupported format. Please use JPEG, PNG, WebP, or GIF images.`);
+          toast.error(`File "${file.name}" format not supported. Please use common image formats.`);
           continue;
         }
 
-        // Create preview with enhanced error handling
+        // Create preview with mobile-optimized error handling
         try {
           const preview = await createImagePreview(file);
           newPhotos.push({ file, preview });
@@ -114,7 +119,7 @@ export const FeaturesPhotosStep = ({
 
     } catch (error: any) {
       console.error('Error processing photos:', error);
-      toast.error('Failed to process photos. Please try again with different images.');
+      toast.error('Failed to process photos. Please try again.');
     } finally {
       setIsUploading(false);
       // Reset the input
@@ -127,6 +132,17 @@ export const FeaturesPhotosStep = ({
   const createImagePreview = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       try {
+        // For mobile compatibility, use URL.createObjectURL when possible
+        if (URL && URL.createObjectURL) {
+          try {
+            const objectUrl = URL.createObjectURL(file);
+            resolve(objectUrl);
+            return;
+          } catch (error) {
+            console.log('URL.createObjectURL failed, falling back to FileReader');
+          }
+        }
+
         const reader = new FileReader();
         
         reader.onload = (e) => {
@@ -146,11 +162,11 @@ export const FeaturesPhotosStep = ({
           reject(new Error('File reading was aborted'));
         };
         
-        // Add timeout for mobile devices
+        // Extended timeout for mobile devices
         const timeout = setTimeout(() => {
           reader.abort();
           reject(new Error('File reading timed out'));
-        }, 10000); // 10 second timeout
+        }, 15000); // 15 second timeout for mobile
         
         reader.onloadend = () => {
           clearTimeout(timeout);
@@ -187,6 +203,12 @@ export const FeaturesPhotosStep = ({
   const triggerFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+
+  const triggerCameraInput = () => {
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
     }
   };
 
@@ -311,18 +333,28 @@ export const FeaturesPhotosStep = ({
         </div>
       </div>
       
-      {/* Photo Upload Section - Single upload option only */}
+      {/* Photo Upload Section - Mobile optimized */}
       <div className="space-y-4">
         <FormLabel>Property Photos (Required)</FormLabel>
         <p className="text-sm text-gray-600">
-          Upload up to 10 photos from your gallery. The first photo will be used as the main image.
+          Upload up to 10 photos. Use gallery or camera on mobile devices.
         </p>
         
-        {/* Single file input for gallery only */}
+        {/* Mobile-friendly file inputs */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+          accept="image/*"
+          multiple
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+        
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
           multiple
           onChange={handlePhotoUpload}
           className="hidden"
@@ -383,19 +415,32 @@ export const FeaturesPhotosStep = ({
           </div>
         )}
         
-        {/* Single upload button when no photos */}
+        {/* Upload buttons when no photos - Mobile optimized */}
         {photos.length === 0 && (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
             <div className="flex flex-col items-center gap-4">
-              <Button
-                type="button"
-                onClick={triggerFileInput}
-                disabled={isUploading}
-                className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {isUploading ? 'Processing...' : 'Choose Photos from Gallery'}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+                <Button
+                  type="button"
+                  onClick={triggerFileInput}
+                  disabled={isUploading}
+                  className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white flex-1"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? 'Processing...' : 'Gallery'}
+                </Button>
+                
+                <Button
+                  type="button"
+                  onClick={triggerCameraInput}
+                  disabled={isUploading}
+                  variant="outline"
+                  className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white flex-1"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Camera
+                </Button>
+              </div>
               <p className="text-sm text-gray-500">
                 Add photos to showcase your property
               </p>
