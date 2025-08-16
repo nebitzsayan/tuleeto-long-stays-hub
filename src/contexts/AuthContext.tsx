@@ -28,20 +28,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Clean up auth state utility
-const cleanupAuthState = () => {
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      localStorage.removeItem(key);
-    }
-  });
-  Object.keys(sessionStorage || {}).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      sessionStorage.removeItem(key);
-    }
-  });
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -52,7 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Fetching profile for user:', userId);
       
-      // Fetch user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -64,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Check if user has admin role
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
@@ -163,23 +147,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      cleanupAuthState();
       
-      // Sanitize input
       const sanitizedEmail = sanitizeInput(email);
       
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-      
-      const { error } = await supabase.auth.signInWithPassword({ 
+      const { data, error } = await supabase.auth.signInWithPassword({ 
         email: sanitizedEmail, 
         password 
       });
       
       if (error) throw error;
+      console.log('Sign in successful:', data);
     } catch (error: any) {
       console.error('Sign in error:', error);
       await logSecurityEvent('sign_in_failed', { email, error: error.message });
@@ -193,9 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       setIsLoading(true);
-      cleanupAuthState();
       
-      // Sanitize inputs
       const sanitizedEmail = sanitizeInput(email);
       const sanitizedFullName = sanitizeInput(fullName);
       
@@ -203,7 +178,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: sanitizedEmail,
         password,
         options: {
-          data: { full_name: sanitizedFullName }
+          data: { full_name: sanitizedFullName },
+          emailRedirectTo: `${window.location.origin}/auth`
         }
       });
       
@@ -223,12 +199,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setIsLoading(true);
-      cleanupAuthState();
       
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Force page reload for clean state
       window.location.href = '/';
     } catch (error: any) {
       console.error('Sign out error:', error);
@@ -264,7 +238,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       setIsLoading(true);
-      cleanupAuthState();
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
