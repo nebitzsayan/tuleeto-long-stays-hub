@@ -65,7 +65,7 @@ const AuthPage = () => {
     setIsLoading(true);
     
     try {
-      const { data } = await performCleanSignUp(
+      const data = await performCleanSignUp(
         signupForm.email, 
         signupForm.password, 
         signupForm.fullName
