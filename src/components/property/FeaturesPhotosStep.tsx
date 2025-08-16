@@ -19,6 +19,7 @@ interface FeaturesPhotosStepProps {
 }
 
 const features = [
+  "PG (Paying Guest)",
   "Pet friendly",
   "Air conditioning", 
   "In-unit laundry",

@@ -15,7 +15,8 @@ import {
   Sofa,
   Tv,
   Refrigerator,
-  Microwave
+  Microwave,
+  Home
 } from 'lucide-react';
 
 interface PropertyAmenitiesDisplayProps {
@@ -25,6 +26,9 @@ interface PropertyAmenitiesDisplayProps {
 const getFeatureIcon = (feature: string) => {
   const lowerFeature = feature.toLowerCase();
   
+  if (lowerFeature.includes('pg') || lowerFeature.includes('paying guest')) {
+    return <Home className="h-5 w-5 text-tuleeto-orange flex-shrink-0" />;
+  }
   if (lowerFeature.includes('wifi') || lowerFeature.includes('internet')) {
     return <Wifi className="h-5 w-5 text-tuleeto-orange flex-shrink-0" />;
   }
