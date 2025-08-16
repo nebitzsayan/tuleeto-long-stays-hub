@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import {
 import { Home, LogOut, User, Heart } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Logo from "@/components/ui/logo";
-import { performCleanSignOut } from "@/utils/authUtils";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -22,11 +22,9 @@ const Navbar = () => {
 
   const handleSignOut = async () => {
     try {
-      await performCleanSignOut();
+      await signOut();
     } catch (error) {
-      console.error("Sign out error:", error);
-      // Force navigation even if signout fails
-      window.location.href = '/auth';
+      console.error("Error signing out:", error);
     }
   };
 
@@ -129,8 +127,9 @@ const Navbar = () => {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    Sign Out
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
