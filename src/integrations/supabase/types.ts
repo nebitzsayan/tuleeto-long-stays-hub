@@ -146,6 +146,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "property_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_public_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       review_reactions: {
@@ -270,10 +277,92 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "wishlists_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_public_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
+      property_public_view: {
+        Row: {
+          area: number | null
+          available_from: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          contact_phone: string | null
+          coordinates: Json | null
+          created_at: string | null
+          description: string | null
+          features: string[] | null
+          id: string | null
+          images: string[] | null
+          is_public: boolean | null
+          location: string | null
+          owner_id: string | null
+          price: number | null
+          title: string | null
+          type: string | null
+        }
+        Insert: {
+          area?: number | null
+          available_from?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          contact_phone?: never
+          coordinates?: Json | null
+          created_at?: string | null
+          description?: string | null
+          features?: string[] | null
+          id?: string | null
+          images?: string[] | null
+          is_public?: boolean | null
+          location?: string | null
+          owner_id?: string | null
+          price?: number | null
+          title?: string | null
+          type?: string | null
+        }
+        Update: {
+          area?: number | null
+          available_from?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          contact_phone?: never
+          coordinates?: Json | null
+          created_at?: string | null
+          description?: string | null
+          features?: string[] | null
+          id?: string | null
+          images?: string[] | null
+          is_public?: boolean | null
+          location?: string | null
+          owner_id?: string | null
+          price?: number | null
+          title?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -297,6 +386,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_view_contact_details: {
+        Args: { _property_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

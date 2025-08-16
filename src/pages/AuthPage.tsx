@@ -71,7 +71,7 @@ const AuthPage = () => {
         signupForm.fullName
       );
       
-      if (data.user && !data.user.email_confirmed_at) {
+      if (data && data.user && !data.user.email_confirmed_at) {
         toast.success("Please check your email to confirm your account");
       } else {
         toast.success("Account created successfully!");

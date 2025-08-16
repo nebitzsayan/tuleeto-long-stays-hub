@@ -15,8 +15,8 @@ import { PropertyType } from "@/components/property/PropertyListingCard";
 interface OwnerProfile {
   id: string;
   full_name: string;
-  email: string;
   avatar_url: string | null;
+  created_at: string;
 }
 
 const OwnerProfilePage = () => {
@@ -35,7 +35,7 @@ const OwnerProfilePage = () => {
         
         // Fetch owner profile
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('*')
           .eq('id', id)
           .single();
@@ -119,13 +119,6 @@ const OwnerProfilePage = () => {
                       <Separator className="my-4" />
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {user && (
-                          <div className="flex items-center text-gray-600">
-                            <Mail className="h-4 w-4 mr-2 text-tuleeto-orange" />
-                            <span>{owner.email}</span>
-                          </div>
-                        )}
-                        
                         {/* Property count */}
                         <div className="flex items-center text-gray-600">
                           <MapPin className="h-4 w-4 mr-2 text-tuleeto-orange" />
