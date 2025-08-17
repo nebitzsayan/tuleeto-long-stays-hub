@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { MapPin, Navigation, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,117 +13,24 @@ interface PropertyMapDisplayProps {
 }
 
 export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = true }: PropertyMapDisplayProps) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!mapContainer.current) return;
-
-    // Create map using Ola Maps tile service
-    const initializeMap = () => {
-      // Load Mapbox GL JS for tile rendering (free for tile display)
-      const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-      script.onload = () => {
-        const link = document.createElement('link');
-        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-        link.rel = 'stylesheet';
-        document.head.appendChild(link);
-
-        // @ts-ignore
-        const mapboxgl = window.mapboxgl;
-        
-        // Initialize with Ola Maps tiles
-        const map = new mapboxgl.Map({
-          container: mapContainer.current!,
-          style: {
-            version: 8,
-            sources: {
-              'ola-tiles': {
-                type: 'raster',
-                tiles: [
-                  `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/{z}/{x}/{y}.png?api_key=${OLA_MAPS_CONFIG.apiKey}`
-                ],
-                tileSize: 256
-              }
-            },
-            layers: [{
-              id: 'ola-tiles',
-              type: 'raster',
-              source: 'ola-tiles'
-            }]
-          },
-          center: [coordinates.lng, coordinates.lat],
-          zoom: showMarker ? 16 : 10,
-          attributionControl: false
-        });
-
-        // Add navigation controls
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-        // Add custom marker if coordinates are available
-        if (showMarker) {
-          // Create custom marker element
-          const markerElement = document.createElement('div');
-          markerElement.innerHTML = `
-            <div style="
-              position: relative;
-              width: 50px;
-              height: 50px;
-            ">
-              <div style="
-                width: 40px;
-                height: 40px;
-                background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
-                border: 4px solid #ffffff;
-                border-radius: 50% 50% 50% 0;
-                transform: rotate(-45deg);
-                box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              ">
-                <div style="
-                  width: 16px;
-                  height: 16px;
-                  background: #ffffff;
-                  border-radius: 50%;
-                  transform: rotate(45deg);
-                "></div>
-              </div>
-            </div>
-          `;
-
-          // Add marker to map
-          new mapboxgl.Marker({ element: markerElement })
-            .setLngLat([coordinates.lng, coordinates.lat])
-            .addTo(map);
-
-          // Create popup
-          const popup = new mapboxgl.Popup({ offset: 25 })
-            .setHTML(`
-              <div style="padding: 8px; text-align: center;">
-                <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${title}</div>
-                <div style="font-size: 12px; color: #666;">${location}</div>
-              </div>
-            `);
-
-          // Show popup on marker click
-          markerElement.addEventListener('click', () => {
-            popup.setLngLat([coordinates.lng, coordinates.lat]).addTo(map);
-          });
-        }
-
-        // Cleanup function
-        return () => {
-          map.remove();
-        };
-      };
-
-      document.head.appendChild(script);
-    };
-
-    initializeMap();
-  }, [coordinates, title, location, showMarker]);
+  // Generate Ola Maps static map URL
+  const generateStaticMapUrl = () => {
+    const zoom = showMarker ? 16 : 10;
+    const width = 800;
+    const height = 400;
+    
+    let url = `https://api.olamaps.io/places/v1/staticmap?`;
+    url += `center=${coordinates.lat},${coordinates.lng}`;
+    url += `&zoom=${zoom}`;
+    url += `&size=${width}x${height}`;
+    url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
+    
+    if (showMarker) {
+      url += `&markers=color:red|${coordinates.lat},${coordinates.lng}`;
+    }
+    
+    return url;
+  };
 
   const handleDirections = () => {
     if (showMarker) {
@@ -174,11 +81,21 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
           )}
         </div>
         
-        <div 
-          ref={mapContainer} 
-          className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden"
-          style={{ minHeight: '256px' }}
-        />
+        <div className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative">
+          <img
+            src={generateStaticMapUrl()}
+            alt={`Map showing ${title}`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Fallback to a basic map tile if Ola Maps fails
+              const target = e.target as HTMLImageElement;
+              target.src = `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/15/${Math.floor((coordinates.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(coordinates.lat * Math.PI / 180) + 1 / Math.cos(coordinates.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png?api_key=${OLA_MAPS_CONFIG.apiKey}`;
+            }}
+          />
+          <div className="absolute bottom-2 right-2 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
+            Powered by Ola Maps
+          </div>
+        </div>
         
         <div className="flex gap-3 flex-wrap">
           <Button

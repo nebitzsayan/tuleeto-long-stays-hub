@@ -12,169 +12,105 @@ interface PropertyMapPickerProps {
 }
 
 export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: PropertyMapPickerProps) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(
     initialLocation || null
   );
+  const [mapCenter, setMapCenter] = useState(
+    initialLocation || OLA_MAPS_CONFIG.defaultCenter
+  );
+  const [zoom, setZoom] = useState(OLA_MAPS_CONFIG.precision.zoom.picker);
+  const [markerPosition, setMarkerPosition] = useState<{ x: number; y: number } | null>(
+    initialLocation ? { x: 400, y: 200 } : null
+  );
 
-  useEffect(() => {
-    if (!mapContainer.current) return;
+  // Generate Ola Maps static map URL
+  const generateMapUrl = () => {
+    const width = 800;
+    const height = 400;
+    
+    let url = `https://api.olamaps.io/places/vector/v1/staticmap?`;
+    url += `center=${mapCenter.lat},${mapCenter.lng}`;
+    url += `&zoom=${zoom}`;
+    url += `&size=${width}x${height}`;
+    url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
+    
+    return url;
+  };
 
-    const defaultCenter: [number, number] = initialLocation 
-      ? [initialLocation.lng, initialLocation.lat] 
-      : [OLA_MAPS_CONFIG.defaultCenter.lng, OLA_MAPS_CONFIG.defaultCenter.lat];
+  // Convert pixel coordinates to lat/lng
+  const pixelToLatLng = (x: number, y: number) => {
+    const mapWidth = 800;
+    const mapHeight = 400;
+    
+    // Calculate the bounds of the current map view
+    const latRange = 360 / Math.pow(2, zoom);
+    const lngRange = 360 / Math.pow(2, zoom);
+    
+    const lat = mapCenter.lat + (latRange / 2) - (y / mapHeight) * latRange;
+    const lng = mapCenter.lng - (lngRange / 2) + (x / mapWidth) * lngRange;
+    
+    return { lat, lng };
+  };
 
-    // Load Mapbox GL JS for map rendering
-    const script = document.createElement('script');
-    script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-    script.onload = () => {
-      const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-
-      // @ts-ignore
-      const mapboxgl = window.mapboxgl;
-      
-      // Initialize map with Ola Maps tiles
-      mapRef.current = new mapboxgl.Map({
-        container: mapContainer.current!,
-        style: {
-          version: 8,
-          sources: {
-            'ola-tiles': {
-              type: 'raster',
-              tiles: [
-                `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/{z}/{x}/{y}.png?api_key=${OLA_MAPS_CONFIG.apiKey}`
-              ],
-              tileSize: 256
-            }
-          },
-          layers: [{
-            id: 'ola-tiles',
-            type: 'raster',
-            source: 'ola-tiles'
-          }]
-        },
-        center: defaultCenter,
-        zoom: OLA_MAPS_CONFIG.precision.zoom.picker,
-        attributionControl: false
-      });
-
-      // Add navigation controls
-      mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-      // Create draggable marker
-      const markerElement = document.createElement('div');
-      markerElement.innerHTML = `
-        <div style="
-          width: 40px;
-          height: 40px;
-          background: #ff6600;
-          border: 3px solid #ffffff;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-          cursor: grab;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        ">
-          <div style="
-            width: 16px;
-            height: 16px;
-            background: #ffffff;
-            border-radius: 50%;
-            transform: rotate(45deg);
-          "></div>
-        </div>
-      `;
-
-      markerRef.current = new mapboxgl.Marker({ 
-        element: markerElement,
-        draggable: true 
-      })
-        .setLngLat(defaultCenter)
-        .addTo(mapRef.current);
-
-      // Function to update location with Ola Maps reverse geocoding
-      const updateLocation = async (lngLat: { lat: number; lng: number }) => {
-        const coords = getPrecisionCoordinates(lngLat.lat, lngLat.lng, OLA_MAPS_CONFIG.precision.coordinates);
-        setSelectedCoords(coords);
-        
-        try {
-          const response = await fetch(
-            `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
-            {
-              headers: {
-                'X-Request-Id': Math.random().toString(36).substring(7)
-              }
-            }
-          );
-          
-          if (!response.ok) {
-            throw new Error(`Geocoding failed: ${response.status}`);
+  // Update location with Ola Maps reverse geocoding
+  const updateLocation = async (coords: { lat: number; lng: number }) => {
+    const preciseCoords = getPrecisionCoordinates(coords.lat, coords.lng, OLA_MAPS_CONFIG.precision.coordinates);
+    setSelectedCoords(preciseCoords);
+    
+    try {
+      const response = await fetch(
+        `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${preciseCoords.lat},${preciseCoords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
+        {
+          headers: {
+            'X-Request-Id': Math.random().toString(36).substring(7)
           }
-          
-          const data = await response.json();
-          
-          let address;
-          if (data.results && data.results.length > 0) {
-            const result = data.results[0];
-            address = result.formatted_address || result.name;
-            
-            if (address) {
-              address = address.replace(/,\s*,/g, ',').replace(/^\s*,\s*/, '');
-            }
-          } else {
-            address = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
-          }
-            
-          onLocationSelect({ ...coords, address });
-          toast.success('📍 Ultra-high-precision location selected!', {
-            description: 'Location marked with sub-meter accuracy using Ola Maps'
-          });
-        } catch (error) {
-          console.error('Error getting address:', error);
-          const fallbackAddress = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
-          onLocationSelect({ ...coords, address: fallbackAddress });
-          toast.success('📍 Precise location selected!', {
-            description: 'Using ultra-high precision coordinate-based addressing'
-          });
         }
-      };
-
-      // Handle marker drag events
-      markerRef.current.on('dragend', () => {
-        const lngLat = markerRef.current!.getLngLat();
-        updateLocation({ lat: lngLat.lat, lng: lngLat.lng });
-      });
-
-      // Handle map clicks
-      mapRef.current.on('click', (e: any) => {
-        const clickCoords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-        markerRef.current!.setLngLat(clickCoords);
-        updateLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
-      });
-
-      // Set crosshair cursor
-      mapRef.current.on('mouseenter', () => {
-        mapRef.current!.getCanvas().style.cursor = 'crosshair';
-      });
-    };
-
-    document.head.appendChild(script);
-
-    // Cleanup
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Geocoding failed: ${response.status}`);
       }
-    };
-  }, [initialLocation, onLocationSelect]);
+      
+      const data = await response.json();
+      
+      let address;
+      if (data.results && data.results.length > 0) {
+        const result = data.results[0];
+        address = result.formatted_address || result.name;
+        
+        if (address) {
+          address = address.replace(/,\s*,/g, ',').replace(/^\s*,\s*/, '');
+        }
+      } else {
+        address = `${preciseCoords.lat.toFixed(8)}°N, ${preciseCoords.lng.toFixed(8)}°E`;
+      }
+        
+      onLocationSelect({ ...preciseCoords, address });
+      toast.success('📍 Ultra-high-precision location selected!', {
+        description: 'Location marked with sub-meter accuracy using Ola Maps'
+      });
+    } catch (error) {
+      console.error('Error getting address:', error);
+      const fallbackAddress = `${preciseCoords.lat.toFixed(8)}°N, ${preciseCoords.lng.toFixed(8)}°E`;
+      onLocationSelect({ ...preciseCoords, address: fallbackAddress });
+      toast.success('📍 Precise location selected!', {
+        description: 'Using ultra-high precision coordinate-based addressing'
+      });
+    }
+  };
 
+  // Handle map click
+  const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const coords = pixelToLatLng(x, y);
+    setMarkerPosition({ x, y });
+    updateLocation(coords);
+  };
+
+  // Get current location
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported", {
@@ -196,13 +132,9 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         );
         
         setSelectedCoords(coords);
-        const gpsCoords: [number, number] = [coords.lng, coords.lat];
-        markerRef.current?.setLngLat(gpsCoords);
-        mapRef.current?.flyTo({ 
-          center: gpsCoords, 
-          zoom: OLA_MAPS_CONFIG.precision.zoom.maximum,
-          duration: 2000
-        });
+        setMapCenter(coords);
+        setMarkerPosition({ x: 400, y: 200 }); // Center of map
+        setZoom(OLA_MAPS_CONFIG.precision.zoom.maximum);
         
         // Get address using Ola Maps
         try {
@@ -264,6 +196,19 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     );
   };
 
+  // Zoom controls
+  const handleZoomIn = () => {
+    if (zoom < OLA_MAPS_CONFIG.precision.zoom.maximum) {
+      setZoom(zoom + 1);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (zoom > 1) {
+      setZoom(zoom - 1);
+    }
+  };
+
   return (
     <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
       <div className="flex items-center justify-between">
@@ -273,7 +218,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           </div>
           <div>
             <Label className="text-sm font-semibold text-gray-900">Ultra-Precise Property Location</Label>
-            <p className="text-xs text-gray-600">Click or drag to set exact location with Ola Maps precision</p>
+            <p className="text-xs text-gray-600">Click on the map to set exact location with Ola Maps precision</p>
           </div>
         </div>
         <Button
@@ -288,11 +233,64 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         </Button>
       </div>
       
-      <div 
-        ref={mapContainer} 
-        className="w-full h-80 rounded-xl border border-gray-300 shadow-inner"
-        style={{ minHeight: '320px' }}
-      />
+      <div className="relative w-full h-80 rounded-xl border border-gray-300 shadow-inner overflow-hidden">
+        <div
+          className="w-full h-full cursor-crosshair relative"
+          onClick={handleMapClick}
+        >
+          <img
+            src={generateMapUrl()}
+            alt="Interactive Ola Map"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Map failed to load');
+            }}
+          />
+          
+          {/* Custom marker */}
+          {markerPosition && (
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: markerPosition.x - 20,
+                top: markerPosition.y - 40,
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <div className="w-10 h-10 bg-tuleeto-orange border-4 border-white rounded-full shadow-lg flex items-center justify-center">
+                <MapPin className="h-5 w-5 text-white" />
+              </div>
+            </div>
+          )}
+          
+          {/* Zoom controls */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2">
+            <Button
+              type="button"
+              onClick={handleZoomIn}
+              size="sm"
+              variant="outline"
+              className="bg-white/90 hover:bg-white"
+            >
+              +
+            </Button>
+            <Button
+              type="button"
+              onClick={handleZoomOut}
+              size="sm"
+              variant="outline"
+              className="bg-white/90 hover:bg-white"
+            >
+              -
+            </Button>
+          </div>
+          
+          {/* Attribution */}
+          <div className="absolute bottom-2 right-2 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
+            Powered by Ola Maps
+          </div>
+        </div>
+      </div>
       
       {selectedCoords && (
         <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
@@ -313,9 +311,9 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         <div className="font-medium text-blue-800 mb-2">💡 Ultra-Accuracy Tips:</div>
         <div className="space-y-1 text-blue-700">
           <div>• Use GPS button for automatic ultra-high-precision location</div>
-          <div>• Zoom to maximum level before placing marker</div>
-          <div>• Drag marker for fine position adjustment with sub-meter precision</div>
-          <div>• Click map to quickly relocate marker with pinpoint accuracy</div>
+          <div>• Zoom to maximum level before clicking on map</div>
+          <div>• Click anywhere on map to set marker with pinpoint accuracy</div>
+          <div>• Use zoom controls for better precision</div>
           <div>• Powered by Ola Maps for India-specific precision</div>
         </div>
       </div>
