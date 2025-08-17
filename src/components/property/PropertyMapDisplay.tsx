@@ -3,7 +3,7 @@ import React from 'react';
 import { MapPin, Navigation, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { OLA_MAPS_CONFIG } from '@/lib/olaMapsConfig';
+import { generateStaticMapUrl, OLA_MAPS_CONFIG } from '@/lib/olaMapsConfig';
 
 interface PropertyMapDisplayProps {
   coordinates: { lat: number; lng: number };
@@ -13,23 +13,12 @@ interface PropertyMapDisplayProps {
 }
 
 export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = true }: PropertyMapDisplayProps) => {
-  // Generate Ola Maps static map URL
-  const generateStaticMapUrl = () => {
+  // Generate Ola Maps static map URL using the helper function
+  const getMapImageUrl = () => {
     const zoom = showMarker ? 16 : 10;
-    const width = 800;
-    const height = 400;
+    const markers = showMarker ? [{ lat: coordinates.lat, lng: coordinates.lng, color: 'red' }] : undefined;
     
-    let url = `https://api.olamaps.io/places/v1/staticmap?`;
-    url += `center=${coordinates.lat},${coordinates.lng}`;
-    url += `&zoom=${zoom}`;
-    url += `&size=${width}x${height}`;
-    url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
-    
-    if (showMarker) {
-      url += `&markers=color:red|${coordinates.lat},${coordinates.lng}`;
-    }
-    
-    return url;
+    return generateStaticMapUrl(coordinates, zoom, 800, 400, markers);
   };
 
   const handleDirections = () => {
@@ -76,20 +65,31 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
           {location}
           {showMarker && (
             <div className="text-xs text-gray-500 mt-2">
-              Coordinates: {coordinates.lat.toFixed(8)}, {coordinates.lng.toFixed(8)}
+              Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
             </div>
           )}
         </div>
         
         <div className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative">
           <img
-            src={generateStaticMapUrl()}
+            src={getMapImageUrl()}
             alt={`Map showing ${title}`}
             className="w-full h-full object-cover"
             onError={(e) => {
-              // Fallback to a basic map tile if Ola Maps fails
+              console.error('Ola Maps static image failed to load');
+              // Fallback to a simple placeholder
               const target = e.target as HTMLImageElement;
-              target.src = `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/15/${Math.floor((coordinates.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(coordinates.lat * Math.PI / 180) + 1 / Math.cos(coordinates.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png?api_key=${OLA_MAPS_CONFIG.apiKey}`;
+              target.src = `data:image/svg+xml,${encodeURIComponent(`
+                <svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="100%" height="100%" fill="#f3f4f6"/>
+                  <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="16" fill="#6b7280">
+                    Map unavailable
+                  </text>
+                </svg>
+              `)}`;
+            }}
+            onLoad={() => {
+              console.log('Ola Maps static image loaded successfully');
             }}
           />
           <div className="absolute bottom-2 right-2 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
@@ -129,7 +129,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
         {showMarker && (
           <div className="text-xs text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
             <div className="font-medium mb-1">✅ Precise Location</div>
-            This property has been mapped with ultra-high precision coordinates using Ola Maps.
+            This property has been mapped with high precision coordinates using Ola Maps.
           </div>
         )}
       </CardContent>

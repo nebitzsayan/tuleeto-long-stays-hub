@@ -13,11 +13,12 @@ export const OLA_MAPS_CONFIG = {
     dark: 'https://api.olamaps.io/tiles/vector/v1/styles/default-dark-standard/style.json'
   },
   
-  // API endpoints
+  // API endpoints - Updated with correct Ola Maps endpoints
   endpoints: {
     reverseGeocode: 'https://api.olamaps.io/places/v1/reverse-geocode',
     search: 'https://api.olamaps.io/places/v1/textsearch',
-    directions: 'https://api.olamaps.io/routing/v1/directions'
+    directions: 'https://api.olamaps.io/routing/v1/directions',
+    staticMap: 'https://api.olamaps.io/places/v1/staticmap'
   },
   
   // Default coordinates for Siliguri, India (ultra-precise)
@@ -28,17 +29,17 @@ export const OLA_MAPS_CONFIG = {
   
   // Precision settings
   precision: {
-    coordinates: 10, // 10 decimal places for sub-millimeter accuracy
+    coordinates: 6, // 6 decimal places for meter-level accuracy
     zoom: {
       default: 16,
-      picker: 18,
-      maximum: 22
+      picker: 15,
+      maximum: 20
     }
   }
 };
 
 // Helper function to get precision coordinates
-export const getPrecisionCoordinates = (lat: number, lng: number, precision: number = 10) => {
+export const getPrecisionCoordinates = (lat: number, lng: number, precision: number = 6) => {
   const factor = Math.pow(10, precision);
   return {
     lat: Math.round(lat * factor) / factor,
@@ -47,6 +48,31 @@ export const getPrecisionCoordinates = (lat: number, lng: number, precision: num
 };
 
 // Helper function to format coordinates for display
-export const formatCoordinates = (lat: number, lng: number, precision: number = 8) => {
+export const formatCoordinates = (lat: number, lng: number, precision: number = 6) => {
   return `${lat.toFixed(precision)}°N, ${lng.toFixed(precision)}°E`;
+};
+
+// Helper function to generate static map URL
+export const generateStaticMapUrl = (
+  center: { lat: number; lng: number },
+  zoom: number = 15,
+  width: number = 800,
+  height: number = 400,
+  markers?: Array<{ lat: number; lng: number; color?: string }>
+) => {
+  let url = `${OLA_MAPS_CONFIG.endpoints.staticMap}`;
+  url += `?center=${center.lat},${center.lng}`;
+  url += `&zoom=${zoom}`;
+  url += `&size=${width}x${height}`;
+  
+  if (markers && markers.length > 0) {
+    markers.forEach(marker => {
+      const color = marker.color || 'red';
+      url += `&markers=color:${color}|${marker.lat},${marker.lng}`;
+    });
+  }
+  
+  url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
+  
+  return url;
 };

@@ -22,29 +22,33 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
   const [markerPosition, setMarkerPosition] = useState<{ x: number; y: number } | null>(
     initialLocation ? { x: 400, y: 200 } : null
   );
+  const [mapError, setMapError] = useState(false);
 
-  // Generate Ola Maps static map URL
+  // Generate correct Ola Maps static map URL
   const generateMapUrl = () => {
     const width = 800;
     const height = 400;
     
-    let url = `https://api.olamaps.io/places/vector/v1/staticmap?`;
-    url += `center=${mapCenter.lat},${mapCenter.lng}`;
+    // Use the correct Ola Maps static map endpoint
+    let url = `https://api.olamaps.io/places/v1/staticmap`;
+    url += `?center=${mapCenter.lat},${mapCenter.lng}`;
     url += `&zoom=${zoom}`;
     url += `&size=${width}x${height}`;
     url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
     
+    console.log('Generated Ola Maps URL:', url);
     return url;
   };
 
-  // Convert pixel coordinates to lat/lng
+  // Convert pixel coordinates to lat/lng (simplified calculation)
   const pixelToLatLng = (x: number, y: number) => {
     const mapWidth = 800;
     const mapHeight = 400;
     
-    // Calculate the bounds of the current map view
-    const latRange = 360 / Math.pow(2, zoom);
-    const lngRange = 360 / Math.pow(2, zoom);
+    // Approximate conversion based on zoom level
+    const degreesPerPixel = 360 / Math.pow(2, zoom);
+    const latRange = degreesPerPixel * (mapHeight / mapWidth);
+    const lngRange = degreesPerPixel;
     
     const lat = mapCenter.lat + (latRange / 2) - (y / mapHeight) * latRange;
     const lng = mapCenter.lng - (lngRange / 2) + (x / mapWidth) * lngRange;
@@ -58,49 +62,62 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     setSelectedCoords(preciseCoords);
     
     try {
+      console.log('Making reverse geocoding request to Ola Maps...');
       const response = await fetch(
         `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${preciseCoords.lat},${preciseCoords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
         {
+          method: 'GET',
           headers: {
+            'Content-Type': 'application/json',
             'X-Request-Id': Math.random().toString(36).substring(7)
           }
         }
       );
       
+      console.log('Reverse geocoding response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`Geocoding failed: ${response.status}`);
+        throw new Error(`Geocoding failed: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log('Reverse geocoding response:', data);
       
       let address;
       if (data.results && data.results.length > 0) {
         const result = data.results[0];
-        address = result.formatted_address || result.name;
+        address = result.formatted_address || result.display_name || result.name;
         
         if (address) {
           address = address.replace(/,\s*,/g, ',').replace(/^\s*,\s*/, '');
         }
-      } else {
-        address = `${preciseCoords.lat.toFixed(8)}°N, ${preciseCoords.lng.toFixed(8)}°E`;
+      }
+      
+      if (!address) {
+        address = `${preciseCoords.lat.toFixed(6)}°N, ${preciseCoords.lng.toFixed(6)}°E`;
       }
         
       onLocationSelect({ ...preciseCoords, address });
-      toast.success('📍 Ultra-high-precision location selected!', {
-        description: 'Location marked with sub-meter accuracy using Ola Maps'
+      toast.success('📍 Location selected successfully!', {
+        description: 'Location marked with Ola Maps precision'
       });
     } catch (error) {
-      console.error('Error getting address:', error);
-      const fallbackAddress = `${preciseCoords.lat.toFixed(8)}°N, ${preciseCoords.lng.toFixed(8)}°E`;
+      console.error('Error getting address from Ola Maps:', error);
+      const fallbackAddress = `${preciseCoords.lat.toFixed(6)}°N, ${preciseCoords.lng.toFixed(6)}°E`;
       onLocationSelect({ ...preciseCoords, address: fallbackAddress });
-      toast.success('📍 Precise location selected!', {
-        description: 'Using ultra-high precision coordinate-based addressing'
+      toast.success('📍 Location selected!', {
+        description: 'Using coordinate-based addressing'
       });
     }
   };
 
   // Handle map click
   const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (mapError) {
+      toast.error("Map failed to load. Please try using GPS location instead.");
+      return;
+    }
+    
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -119,8 +136,8 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       return;
     }
 
-    toast.loading("📡 Getting ultra-precise GPS location...", {
-      description: "This may take a few seconds for maximum accuracy"
+    toast.loading("🔍 Getting your location...", {
+      description: "This may take a few seconds"
     });
     
     navigator.geolocation.getCurrentPosition(
@@ -141,28 +158,35 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           const response = await fetch(
             `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
             {
+              method: 'GET',
               headers: {
+                'Content-Type': 'application/json',
                 'X-Request-Id': Math.random().toString(36).substring(7)
               }
             }
           );
           
-          const data = await response.json();
-          let address = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
-          
-          if (data.results && data.results.length > 0) {
-            address = data.results[0].formatted_address || data.results[0].name;
+          if (response.ok) {
+            const data = await response.json();
+            let address = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+            
+            if (data.results && data.results.length > 0) {
+              address = data.results[0].formatted_address || data.results[0].display_name || address;
+            }
+            
+            onLocationSelect({ ...coords, address });
+            toast.success("🎯 GPS location found!", {
+              description: `Accuracy: ±${Math.round(position.coords.accuracy)}m`
+            });
+          } else {
+            throw new Error('Geocoding failed');
           }
-          
-          onLocationSelect({ ...coords, address });
-          toast.success("🎯 Ultra-precise GPS location acquired!", {
-            description: `Accuracy: ±${Math.round(position.coords.accuracy)}m using Ola Maps`
-          });
         } catch (error) {
-          const fallbackAddress = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
+          console.error('GPS geocoding error:', error);
+          const fallbackAddress = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
           onLocationSelect({ ...coords, address: fallbackAddress });
-          toast.success("📍 GPS location set with ultra-precision!", {
-            description: "Using high-precision coordinates with Ola Maps"
+          toast.success("📍 GPS location set!", {
+            description: "Using high-precision coordinates"
           });
         }
       },
@@ -217,8 +241,8 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
             <MapPin className="h-5 w-5 text-tuleeto-orange" />
           </div>
           <div>
-            <Label className="text-sm font-semibold text-gray-900">Ultra-Precise Property Location</Label>
-            <p className="text-xs text-gray-600">Click on the map to set exact location with Ola Maps precision</p>
+            <Label className="text-sm font-semibold text-gray-900">Property Location</Label>
+            <p className="text-xs text-gray-600">Click on the map to set exact location</p>
           </div>
         </div>
         <Button
@@ -229,7 +253,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           className="text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400"
         >
           <Crosshair className="h-4 w-4 mr-2" />
-          GPS Locate
+          Use GPS
         </Button>
       </div>
       
@@ -238,17 +262,32 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           className="w-full h-full cursor-crosshair relative"
           onClick={handleMapClick}
         >
-          <img
-            src={generateMapUrl()}
-            alt="Interactive Ola Map"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error('Map failed to load');
-            }}
-          />
+          {!mapError ? (
+            <img
+              src={generateMapUrl()}
+              alt="Interactive Ola Map"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('Ola Maps image failed to load');
+                setMapError(true);
+              }}
+              onLoad={() => {
+                console.log('Ola Maps image loaded successfully');
+                setMapError(false);
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+              <div className="text-center p-4">
+                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-600 text-sm">Map could not load</p>
+                <p className="text-gray-500 text-xs">Please use GPS location button</p>
+              </div>
+            </div>
+          )}
           
           {/* Custom marker */}
-          {markerPosition && (
+          {markerPosition && !mapError && (
             <div
               className="absolute pointer-events-none"
               style={{
@@ -264,31 +303,35 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           )}
           
           {/* Zoom controls */}
-          <div className="absolute top-4 right-4 flex flex-col gap-2">
-            <Button
-              type="button"
-              onClick={handleZoomIn}
-              size="sm"
-              variant="outline"
-              className="bg-white/90 hover:bg-white"
-            >
-              +
-            </Button>
-            <Button
-              type="button"
-              onClick={handleZoomOut}
-              size="sm"
-              variant="outline"
-              className="bg-white/90 hover:bg-white"
-            >
-              -
-            </Button>
-          </div>
+          {!mapError && (
+            <div className="absolute top-4 right-4 flex flex-col gap-2">
+              <Button
+                type="button"
+                onClick={handleZoomIn}
+                size="sm"
+                variant="outline"
+                className="bg-white/90 hover:bg-white"
+              >
+                +
+              </Button>
+              <Button
+                type="button"
+                onClick={handleZoomOut}
+                size="sm"
+                variant="outline"
+                className="bg-white/90 hover:bg-white"
+              >
+                -
+              </Button>
+            </div>
+          )}
           
           {/* Attribution */}
-          <div className="absolute bottom-2 right-2 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
-            Powered by Ola Maps
-          </div>
+          {!mapError && (
+            <div className="absolute bottom-2 right-2 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
+              Powered by Ola Maps
+            </div>
+          )}
         </div>
       </div>
       
@@ -296,25 +339,24 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="font-semibold text-green-800">Ultra-High-Precision Location Set</span>
+            <span className="font-semibold text-green-800">Location Selected</span>
           </div>
           <p className="text-sm text-green-700 font-mono">
-            📍 {selectedCoords.lat.toFixed(8)}, {selectedCoords.lng.toFixed(8)}
+            📍 {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
           </p>
           <p className="text-xs text-green-600 mt-1">
-            Precision: Sub-meter accuracy with Ola Maps technology
+            Precision: Sub-meter accuracy with Ola Maps
           </p>
         </div>
       )}
       
       <div className="text-xs text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-        <div className="font-medium text-blue-800 mb-2">💡 Ultra-Accuracy Tips:</div>
+        <div className="font-medium text-blue-800 mb-2">💡 How to use:</div>
         <div className="space-y-1 text-blue-700">
-          <div>• Use GPS button for automatic ultra-high-precision location</div>
-          <div>• Zoom to maximum level before clicking on map</div>
-          <div>• Click anywhere on map to set marker with pinpoint accuracy</div>
+          <div>• Use GPS button for automatic location detection</div>
+          <div>• Click anywhere on map to set marker</div>
           <div>• Use zoom controls for better precision</div>
-          <div>• Powered by Ola Maps for India-specific precision</div>
+          <div>• Powered by Ola Maps for India coverage</div>
         </div>
       </div>
     </div>
