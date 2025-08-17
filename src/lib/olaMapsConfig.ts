@@ -13,7 +13,7 @@ export const OLA_MAPS_CONFIG = {
     dark: 'https://api.olamaps.io/tiles/vector/v1/styles/default-dark-standard/style.json'
   },
   
-  // API endpoints - Updated with correct Ola Maps endpoints
+  // API endpoints - Corrected Ola Maps endpoints
   endpoints: {
     reverseGeocode: 'https://api.olamaps.io/places/v1/reverse-geocode',
     search: 'https://api.olamaps.io/places/v1/textsearch',
@@ -29,17 +29,17 @@ export const OLA_MAPS_CONFIG = {
   
   // Precision settings
   precision: {
-    coordinates: 6, // 6 decimal places for meter-level accuracy
+    coordinates: 8, // Increased to 8 decimal places for better accuracy
     zoom: {
       default: 16,
       picker: 15,
-      maximum: 20
+      maximum: 18 // Reduced max zoom for better static map support
     }
   }
 };
 
 // Helper function to get precision coordinates
-export const getPrecisionCoordinates = (lat: number, lng: number, precision: number = 6) => {
+export const getPrecisionCoordinates = (lat: number, lng: number, precision: number = 8) => {
   const factor = Math.pow(10, precision);
   return {
     lat: Math.round(lat * factor) / factor,
@@ -52,7 +52,7 @@ export const formatCoordinates = (lat: number, lng: number, precision: number = 
   return `${lat.toFixed(precision)}°N, ${lng.toFixed(precision)}°E`;
 };
 
-// Helper function to generate static map URL
+// Helper function to generate static map URL with better error handling
 export const generateStaticMapUrl = (
   center: { lat: number; lng: number },
   zoom: number = 15,
@@ -60,19 +60,26 @@ export const generateStaticMapUrl = (
   height: number = 400,
   markers?: Array<{ lat: number; lng: number; color?: string }>
 ) => {
-  let url = `${OLA_MAPS_CONFIG.endpoints.staticMap}`;
-  url += `?center=${center.lat},${center.lng}`;
-  url += `&zoom=${zoom}`;
-  url += `&size=${width}x${height}`;
-  
-  if (markers && markers.length > 0) {
-    markers.forEach(marker => {
-      const color = marker.color || 'red';
-      url += `&markers=color:${color}|${marker.lat},${marker.lng}`;
-    });
+  try {
+    let url = `${OLA_MAPS_CONFIG.endpoints.staticMap}`;
+    url += `?center=${center.lat},${center.lng}`;
+    url += `&zoom=${Math.min(zoom, 18)}`; // Ensure zoom doesn't exceed max
+    url += `&size=${width}x${height}`;
+    url += `&format=png`;
+    
+    if (markers && markers.length > 0) {
+      markers.forEach(marker => {
+        const color = marker.color || 'red';
+        url += `&markers=color:${color}|${marker.lat},${marker.lng}`;
+      });
+    }
+    
+    url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
+    
+    console.log('Generated static map URL:', url);
+    return url;
+  } catch (error) {
+    console.error('Error generating static map URL:', error);
+    return '';
   }
-  
-  url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
-  
-  return url;
 };

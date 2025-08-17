@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Crosshair } from 'lucide-react';
+import { MapPin, Crosshair, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -23,37 +23,59 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     initialLocation ? { x: 400, y: 200 } : null
   );
   const [mapError, setMapError] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Generate correct Ola Maps static map URL
+  // Generate Ola Maps static map URL with proper error handling
   const generateMapUrl = () => {
     const width = 800;
     const height = 400;
     
-    // Use the correct Ola Maps static map endpoint
-    let url = `https://api.olamaps.io/places/v1/staticmap`;
-    url += `?center=${mapCenter.lat},${mapCenter.lng}`;
-    url += `&zoom=${zoom}`;
-    url += `&size=${width}x${height}`;
-    url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
-    
-    console.log('Generated Ola Maps URL:', url);
-    return url;
+    try {
+      let url = `https://api.olamaps.io/places/v1/staticmap`;
+      url += `?center=${mapCenter.lat},${mapCenter.lng}`;
+      url += `&zoom=${zoom}`;
+      url += `&size=${width}x${height}`;
+      url += `&format=png`;
+      url += `&api_key=${OLA_MAPS_CONFIG.apiKey}`;
+      
+      // Add marker if coordinates are selected
+      if (selectedCoords) {
+        url += `&markers=color:red|${selectedCoords.lat},${selectedCoords.lng}`;
+      }
+      
+      console.log('Generated Ola Maps URL:', url);
+      return url;
+    } catch (error) {
+      console.error('Error generating map URL:', error);
+      setMapError(true);
+      return '';
+    }
   };
 
-  // Convert pixel coordinates to lat/lng (simplified calculation)
+  // Convert pixel coordinates to lat/lng
   const pixelToLatLng = (x: number, y: number) => {
     const mapWidth = 800;
     const mapHeight = 400;
     
-    // Approximate conversion based on zoom level
-    const degreesPerPixel = 360 / Math.pow(2, zoom);
-    const latRange = degreesPerPixel * (mapHeight / mapWidth);
-    const lngRange = degreesPerPixel;
+    // More accurate conversion based on Web Mercator projection
+    const scale = Math.pow(2, zoom);
+    const worldSize = 256 * scale;
     
-    const lat = mapCenter.lat + (latRange / 2) - (y / mapHeight) * latRange;
-    const lng = mapCenter.lng - (lngRange / 2) + (x / mapWidth) * lngRange;
+    // Convert pixel position to world coordinates
+    const worldX = (x / mapWidth) * worldSize;
+    const worldY = (y / mapHeight) * worldSize;
     
-    return { lat, lng };
+    // Convert world coordinates to lat/lng
+    const lng = (worldX / worldSize) * 360 - 180;
+    const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * worldY / worldSize)));
+    const lat = latRad * 180 / Math.PI;
+    
+    // Adjust based on map center
+    const adjustedLat = mapCenter.lat + (lat / scale);
+    const adjustedLng = mapCenter.lng + (lng / scale);
+    
+    return { lat: adjustedLat, lng: adjustedLng };
   };
 
   // Update location with Ola Maps reverse geocoding
@@ -113,8 +135,8 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
 
   // Handle map click
   const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (mapError) {
-      toast.error("Map failed to load. Please try using GPS location instead.");
+    if (mapError || !mapLoaded) {
+      toast.error("Map is not ready. Please try using GPS location instead.");
       return;
     }
     
@@ -127,7 +149,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     updateLocation(coords);
   };
 
-  // Get current location
+  // Get current location with improved error handling
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported", {
@@ -136,62 +158,76 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       return;
     }
 
+    setIsGettingLocation(true);
     toast.loading("🔍 Getting your location...", {
       description: "This may take a few seconds"
     });
     
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const coords = getPrecisionCoordinates(
-          position.coords.latitude, 
-          position.coords.longitude, 
-          OLA_MAPS_CONFIG.precision.coordinates
-        );
-        
-        setSelectedCoords(coords);
-        setMapCenter(coords);
-        setMarkerPosition({ x: 400, y: 200 }); // Center of map
-        setZoom(OLA_MAPS_CONFIG.precision.zoom.maximum);
-        
-        // Get address using Ola Maps
         try {
-          const response = await fetch(
-            `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
-            {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Request-Id': Math.random().toString(36).substring(7)
-              }
-            }
+          const coords = getPrecisionCoordinates(
+            position.coords.latitude, 
+            position.coords.longitude, 
+            OLA_MAPS_CONFIG.precision.coordinates
           );
           
-          if (response.ok) {
-            const data = await response.json();
-            let address = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+          console.log('GPS coordinates obtained:', coords);
+          
+          setSelectedCoords(coords);
+          setMapCenter(coords);
+          setMarkerPosition({ x: 400, y: 200 }); // Center of map
+          setZoom(OLA_MAPS_CONFIG.precision.zoom.maximum);
+          
+          // Get address using Ola Maps
+          try {
+            const response = await fetch(
+              `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
+              {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Request-Id': Math.random().toString(36).substring(7)
+                }
+              }
+            );
             
-            if (data.results && data.results.length > 0) {
-              address = data.results[0].formatted_address || data.results[0].display_name || address;
+            if (response.ok) {
+              const data = await response.json();
+              let address = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+              
+              if (data.results && data.results.length > 0) {
+                address = data.results[0].formatted_address || data.results[0].display_name || address;
+              }
+              
+              onLocationSelect({ ...coords, address });
+              toast.success("🎯 GPS location found!", {
+                description: `Accuracy: ±${Math.round(position.coords.accuracy)}m`
+              });
+            } else {
+              throw new Error('Geocoding failed');
             }
-            
-            onLocationSelect({ ...coords, address });
-            toast.success("🎯 GPS location found!", {
-              description: `Accuracy: ±${Math.round(position.coords.accuracy)}m`
+          } catch (error) {
+            console.error('GPS geocoding error:', error);
+            const fallbackAddress = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
+            onLocationSelect({ ...coords, address: fallbackAddress });
+            toast.success("📍 GPS location set!", {
+              description: "Using high-precision coordinates"
             });
-          } else {
-            throw new Error('Geocoding failed');
           }
         } catch (error) {
-          console.error('GPS geocoding error:', error);
-          const fallbackAddress = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
-          onLocationSelect({ ...coords, address: fallbackAddress });
-          toast.success("📍 GPS location set!", {
-            description: "Using high-precision coordinates"
+          console.error('Error processing GPS location:', error);
+          toast.error("Error processing location", {
+            description: "Please try again or click on the map"
           });
+        } finally {
+          setIsGettingLocation(false);
         }
       },
       (error) => {
         console.error("GPS Error:", error);
+        setIsGettingLocation(false);
+        
         let errorMessage = "GPS location failed";
         let description = "Please try clicking on the map instead";
         
@@ -214,7 +250,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       },
       {
         enableHighAccuracy: true,
-        timeout: 25000,
+        timeout: 30000,
         maximumAge: 0
       }
     );
@@ -248,12 +284,17 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         <Button
           type="button"
           onClick={getCurrentLocation}
+          disabled={isGettingLocation}
           variant="outline"
           size="sm"
-          className="text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400"
+          className="text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 disabled:opacity-50"
         >
-          <Crosshair className="h-4 w-4 mr-2" />
-          Use GPS
+          {isGettingLocation ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Crosshair className="h-4 w-4 mr-2" />
+          )}
+          {isGettingLocation ? "Getting GPS..." : "Use GPS"}
         </Button>
       </div>
       
@@ -263,54 +304,78 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           onClick={handleMapClick}
         >
           {!mapError ? (
-            <img
-              src={generateMapUrl()}
-              alt="Interactive Ola Map"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error('Ola Maps image failed to load');
-                setMapError(true);
-              }}
-              onLoad={() => {
-                console.log('Ola Maps image loaded successfully');
-                setMapError(false);
-              }}
-            />
+            <>
+              {!mapLoaded && (
+                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+                  <div className="text-center p-4">
+                    <Loader2 className="h-8 w-8 text-gray-400 mx-auto mb-2 animate-spin" />
+                    <p className="text-gray-600 text-sm">Loading map...</p>
+                  </div>
+                </div>
+              )}
+              <img
+                src={generateMapUrl()}
+                alt="Interactive Ola Map"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Ola Maps image failed to load');
+                  setMapError(true);
+                  setMapLoaded(false);
+                }}
+                onLoad={() => {
+                  console.log('Ola Maps image loaded successfully');
+                  setMapError(false);
+                  setMapLoaded(true);
+                }}
+              />
+            </>
           ) : (
             <div className="w-full h-full bg-gray-100 flex items-center justify-center">
               <div className="text-center p-4">
                 <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-600 text-sm">Map could not load</p>
                 <p className="text-gray-500 text-xs">Please use GPS location button</p>
+                <Button
+                  onClick={() => {
+                    setMapError(false);
+                    setMapLoaded(false);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  Retry Map
+                </Button>
               </div>
             </div>
           )}
           
           {/* Custom marker */}
-          {markerPosition && !mapError && (
+          {markerPosition && !mapError && mapLoaded && (
             <div
-              className="absolute pointer-events-none"
+              className="absolute pointer-events-none z-20"
               style={{
                 left: markerPosition.x - 20,
                 top: markerPosition.y - 40,
                 transform: 'translate(-50%, -50%)'
               }}
             >
-              <div className="w-10 h-10 bg-tuleeto-orange border-4 border-white rounded-full shadow-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-500 border-4 border-white rounded-full shadow-lg flex items-center justify-center animate-bounce">
                 <MapPin className="h-5 w-5 text-white" />
               </div>
             </div>
           )}
           
           {/* Zoom controls */}
-          {!mapError && (
-            <div className="absolute top-4 right-4 flex flex-col gap-2">
+          {!mapError && mapLoaded && (
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
               <Button
                 type="button"
                 onClick={handleZoomIn}
                 size="sm"
                 variant="outline"
                 className="bg-white/90 hover:bg-white"
+                disabled={zoom >= OLA_MAPS_CONFIG.precision.zoom.maximum}
               >
                 +
               </Button>
@@ -320,6 +385,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
                 size="sm"
                 variant="outline"
                 className="bg-white/90 hover:bg-white"
+                disabled={zoom <= 1}
               >
                 -
               </Button>
@@ -327,7 +393,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           )}
           
           {/* Attribution */}
-          {!mapError && (
+          {!mapError && mapLoaded && (
             <div className="absolute bottom-2 right-2 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
               Powered by Ola Maps
             </div>
