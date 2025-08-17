@@ -13,7 +13,7 @@ export const OLA_MAPS_CONFIG = {
     dark: 'https://api.olamaps.io/tiles/vector/v1/styles/default-dark-standard/style.json'
   },
   
-  // API endpoints - Corrected Ola Maps endpoints
+  // API endpoints
   endpoints: {
     reverseGeocode: 'https://api.olamaps.io/places/v1/reverse-geocode',
     search: 'https://api.olamaps.io/places/v1/textsearch',
@@ -21,7 +21,7 @@ export const OLA_MAPS_CONFIG = {
     staticMap: 'https://api.olamaps.io/places/v1/staticmap'
   },
   
-  // Default coordinates for Siliguri, India (ultra-precise)
+  // Default coordinates for Siliguri, India
   defaultCenter: {
     lat: 26.7270661,
     lng: 88.4284210
@@ -29,11 +29,11 @@ export const OLA_MAPS_CONFIG = {
   
   // Precision settings
   precision: {
-    coordinates: 8, // Increased to 8 decimal places for better accuracy
+    coordinates: 8,
     zoom: {
       default: 16,
       picker: 15,
-      maximum: 18 // Reduced max zoom for better static map support
+      maximum: 18
     }
   }
 };
@@ -63,14 +63,13 @@ export const generateStaticMapUrl = (
   try {
     let url = `${OLA_MAPS_CONFIG.endpoints.staticMap}`;
     url += `?center=${center.lat},${center.lng}`;
-    url += `&zoom=${Math.min(zoom, 18)}`; // Ensure zoom doesn't exceed max
+    url += `&zoom=${Math.min(zoom, 18)}`;
     url += `&size=${width}x${height}`;
-    url += `&format=png`;
     
     if (markers && markers.length > 0) {
+      // Simplified marker format for Ola Maps
       markers.forEach(marker => {
-        const color = marker.color || 'red';
-        url += `&markers=color:${color}|${marker.lat},${marker.lng}`;
+        url += `&markers=${marker.lat},${marker.lng}`;
       });
     }
     
