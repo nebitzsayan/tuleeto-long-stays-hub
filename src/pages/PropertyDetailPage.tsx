@@ -28,6 +28,7 @@ const PropertyDetailPage = () => {
       try {
         if (id) {
           const fetchedProperty = await getPropertyById(id);
+          console.log('Fetched property with coordinates:', fetchedProperty.coordinates);
           setProperty(fetchedProperty);
         } else {
           setError("Invalid property ID");
@@ -144,27 +145,13 @@ const PropertyDetailPage = () => {
                   </Card>
                 )}
 
-                {/* Map Section - Fixed coordinate handling */}
-                {property.coordinates && 
-                 typeof property.coordinates === 'object' && 
-                 property.coordinates.lat && 
-                 property.coordinates.lng && 
-                 property.coordinates.lat !== 0 && 
-                 property.coordinates.lng !== 0 ? (
-                  <PropertyMapDisplay
-                    coordinates={property.coordinates}
-                    title={property.title}
-                    location={property.location}
-                    showMarker={true}
-                  />
-                ) : (
-                  <PropertyMapDisplay
-                    coordinates={{ lat: 26.727066, lng: 88.428421 }} // Default to Siliguri
-                    title={property.title}
-                    location={property.location}
-                    showMarker={false}
-                  />
-                )}
+                {/* Map Section - Simplified Logic */}
+                <PropertyMapDisplay
+                  coordinates={property.coordinates || { lat: 26.727066, lng: 88.428421 }}
+                  title={property.title}
+                  location={property.location}
+                  showMarker={!!property.coordinates}
+                />
 
                 {/* Reviews Section */}
                 <PropertyReviewSystem 

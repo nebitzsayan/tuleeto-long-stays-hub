@@ -23,15 +23,37 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     throw new Error('Property not found');
   }
 
-  // Parse coordinates if they exist
+  // Enhanced coordinate parsing with better validation
   let coordinates: { lat: number; lng: number } | undefined;
-  if (data.coordinates && typeof data.coordinates === 'object') {
-    const coords = data.coordinates as any;
-    if (coords.lat && coords.lng) {
-      coordinates = {
-        lat: Number(coords.lat),
-        lng: Number(coords.lng)
-      };
+  
+  console.log('Raw coordinates from database:', data.coordinates);
+  
+  if (data.coordinates) {
+    try {
+      let coords: any;
+      
+      // Handle different coordinate formats
+      if (typeof data.coordinates === 'string') {
+        coords = JSON.parse(data.coordinates);
+      } else if (typeof data.coordinates === 'object') {
+        coords = data.coordinates;
+      }
+      
+      // Validate and convert coordinates
+      if (coords && typeof coords === 'object') {
+        const lat = Number(coords.lat);
+        const lng = Number(coords.lng);
+        
+        // Check if coordinates are valid numbers and not zero
+        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+          coordinates = { lat, lng };
+          console.log('Parsed coordinates successfully:', coordinates);
+        } else {
+          console.log('Invalid coordinates detected:', { lat, lng });
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing coordinates:', parseError);
     }
   }
 
@@ -60,9 +82,10 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     ownerEmail,
     contactPhone: data.contact_phone || '',
     createdAt: data.created_at,
-    updatedAt: data.created_at // Using created_at as fallback since updated_at doesn't exist
+    updatedAt: data.created_at
   };
 
+  console.log('Final property object coordinates:', property.coordinates);
   return property;
 };
 
@@ -87,15 +110,29 @@ export const getAllProperties = async (): Promise<Property[]> => {
   }
 
   return data.map(item => {
-    // Parse coordinates if they exist
+    // Enhanced coordinate parsing for listing view
     let coordinates: { lat: number; lng: number } | undefined;
-    if (item.coordinates && typeof item.coordinates === 'object') {
-      const coords = item.coordinates as any;
-      if (coords.lat && coords.lng) {
-        coordinates = {
-          lat: Number(coords.lat),
-          lng: Number(coords.lng)
-        };
+    
+    if (item.coordinates) {
+      try {
+        let coords: any;
+        
+        if (typeof item.coordinates === 'string') {
+          coords = JSON.parse(item.coordinates);
+        } else if (typeof item.coordinates === 'object') {
+          coords = item.coordinates;
+        }
+        
+        if (coords && typeof coords === 'object') {
+          const lat = Number(coords.lat);
+          const lng = Number(coords.lng);
+          
+          if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+            coordinates = { lat, lng };
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing coordinates for property', item.id, parseError);
       }
     }
 
@@ -123,7 +160,7 @@ export const getAllProperties = async (): Promise<Property[]> => {
       ownerEmail,
       contactPhone: item.contact_phone || '',
       createdAt: item.created_at,
-      updatedAt: item.created_at // Using created_at as fallback since updated_at doesn't exist
+      updatedAt: item.created_at
     };
   });
 };

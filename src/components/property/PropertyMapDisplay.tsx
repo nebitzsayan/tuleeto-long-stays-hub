@@ -19,6 +19,9 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
   const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
+    console.log('PropertyMapDisplay - Received coordinates:', coordinates);
+    console.log('PropertyMapDisplay - Show marker:', showMarker);
+    
     if (!mapContainer.current) return;
 
     mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
@@ -27,7 +30,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
       container: mapContainer.current,
       style: MAPBOX_CONFIG.styles.streets,
       center: [coordinates.lng, coordinates.lat],
-      zoom: showMarker ? 16 : 10,
+      zoom: showMarker ? 16 : 12,
       interactive: true,
       pitch: 0,
       bearing: 0
@@ -40,8 +43,9 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
       visualizePitch: false
     }), 'top-right');
 
-    // Add marker if coordinates are available
-    if (showMarker) {
+    // Add marker if coordinates are available and showMarker is true
+    if (showMarker && coordinates.lat && coordinates.lng) {
+      console.log('Adding marker at coordinates:', coordinates);
       new mapboxgl.Marker({ color: '#ef4444' })
         .setLngLat([coordinates.lng, coordinates.lat])
         .addTo(map.current);
@@ -53,7 +57,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
   }, [coordinates, showMarker]);
 
   const handleDirections = () => {
-    if (showMarker) {
+    if (showMarker && coordinates.lat && coordinates.lng) {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}&travelmode=driving`;
       window.open(url, '_blank');
     } else {
@@ -63,7 +67,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
   };
 
   const handleViewLarger = () => {
-    if (showMarker) {
+    if (showMarker && coordinates.lat && coordinates.lng) {
       const url = `https://www.google.com/maps/@${coordinates.lat},${coordinates.lng},17z`;
       window.open(url, '_blank');
     } else {
@@ -94,9 +98,9 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
         <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border">
           <div className="font-medium text-gray-900 mb-1">📍 Address</div>
           {location}
-          {showMarker && (
+          {showMarker && coordinates.lat && coordinates.lng && (
             <div className="text-xs text-gray-500 mt-2">
-              Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+              Precise coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
             </div>
           )}
         </div>
@@ -135,10 +139,10 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
           </div>
         )}
         
-        {showMarker && (
+        {showMarker && coordinates.lat && coordinates.lng && (
           <div className="text-xs text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
             <div className="font-medium mb-1">✅ Precise Location</div>
-            This property has been mapped with high precision coordinates using Mapbox.
+            This property has been mapped with high precision coordinates. The red marker shows the exact location selected by the owner.
           </div>
         )}
       </CardContent>
