@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { PropertyMapDisplay } from "@/components/property/PropertyMapDisplay";
 import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 import PropertyAmenitiesDisplay from "@/components/property/PropertyAmenitiesDisplay";
-import PropertyPosterButton from "@/components/property/PropertyPosterButton";
 import PropertyReviewSystem from "@/components/property/PropertyReviewSystem";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
 
@@ -222,28 +221,6 @@ const PropertyDetailPage = () => {
                     </Button>
                   </CardContent>
                 </Card>
-
-                {/* PDF Generation Button */}
-                <PropertyPosterButton 
-                  property={{
-                    id: property.id,
-                    title: property.title,
-                    location: property.location,
-                    price: property.price,
-                    bedrooms: property.bedrooms,
-                    bathrooms: property.bathrooms,
-                    area: property.area,
-                    description: property.description,
-                    features: property.features || [],
-                    images: property.images,
-                    owner_name: property.ownerName,
-                    contact_phone: property.contactPhone,
-                    ownerId: property.ownerId,
-                    ownerName: property.ownerName,
-                    contactPhone: property.contactPhone
-                  }}
-                  className="w-full mb-4"
-                />
               </div>
             </div>
           </div>
