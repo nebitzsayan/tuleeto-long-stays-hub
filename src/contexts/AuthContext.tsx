@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { sanitizeInput, logSecurityEvent } from '@/lib/security';
+import { sanitizeInput, logSecurityEvent, validatePasswordStrength, checkRateLimit } from '@/lib/security';
 import { secureLog, sanitizeErrorMessage } from '@/lib/secureLogging';
 
 type UserProfile = {
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       secureLog.error('Error in fetchUserProfile', error);
-      await logSecurityEvent('profile_fetch_error', { userId, error });
+      await logSecurityEvent('profile_fetch_error', { userId, error }, 'medium');
     }
   };
 
@@ -109,10 +109,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (event === 'SIGNED_IN') {
-          await logSecurityEvent('user_signed_in', { userId: currentSession?.user?.id });
+          await logSecurityEvent('user_signed_in', { userId: currentSession?.user?.id }, 'low');
           toast.success('Successfully signed in!');
         } else if (event === 'SIGNED_OUT') {
-          await logSecurityEvent('user_signed_out', {});
+          await logSecurityEvent('user_signed_out', {}, 'low');
           toast.info('You have been signed out');
         }
       }
@@ -150,16 +150,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const sanitizedEmail = sanitizeInput(email);
       
+      // Rate limiting for sign-in attempts
+      const rateLimitKey = `signin_${sanitizedEmail}`;
+      if (!checkRateLimit(rateLimitKey, 5, 300000)) { // 5 attempts per 5 minutes
+        await logSecurityEvent('signin_rate_limit_exceeded', { email: sanitizedEmail }, 'high');
+        throw new Error('Too many sign-in attempts. Please try again later.');
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: sanitizedEmail, 
         password 
       });
       
-      if (error) throw error;
+      if (error) {
+        await logSecurityEvent('sign_in_failed', { email: sanitizedEmail, error: error.message }, 'medium');
+        throw error;
+      }
+      
       secureLog.info('Sign in successful');
+      await logSecurityEvent('sign_in_success', { email: sanitizedEmail }, 'low');
     } catch (error: any) {
       secureLog.error('Sign in error', error);
-      await logSecurityEvent('sign_in_failed', { email, error: error.message });
       toast.error(`Error signing in: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
@@ -174,6 +185,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const sanitizedEmail = sanitizeInput(email);
       const sanitizedFullName = sanitizeInput(fullName);
       
+      // Validate password strength
+      const passwordValidation = validatePasswordStrength(password);
+      if (!passwordValidation.isValid) {
+        toast.error(`Password requirements: ${passwordValidation.errors.join(', ')}`);
+        return;
+      }
+      
+      // Rate limiting for sign-up attempts
+      const rateLimitKey = `signup_${sanitizedEmail}`;
+      if (!checkRateLimit(rateLimitKey, 3, 600000)) { // 3 attempts per 10 minutes
+        await logSecurityEvent('signup_rate_limit_exceeded', { email: sanitizedEmail }, 'high');
+        throw new Error('Too many sign-up attempts. Please try again later.');
+      }
+      
       const { error } = await supabase.auth.signUp({
         email: sanitizedEmail,
         password,
@@ -183,12 +208,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       
-      if (error) throw error;
-      await logSecurityEvent('user_signed_up', { email: sanitizedEmail });
+      if (error) {
+        await logSecurityEvent('sign_up_failed', { email: sanitizedEmail, error: error.message }, 'medium');
+        throw error;
+      }
+      
+      await logSecurityEvent('user_signed_up', { email: sanitizedEmail }, 'low');
       toast.success('Registration successful! Please check your email for verification.');
     } catch (error: any) {
       secureLog.error('Sign up error', error);
-      await logSecurityEvent('sign_up_failed', { email, error: error.message });
       toast.error(`Error signing up: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
@@ -203,10 +231,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      // Clear all local state
+      setSession(null);
+      setUser(null);
+      setUserProfile(null);
+      
       window.location.href = '/';
     } catch (error: any) {
       secureLog.error('Sign out error', error);
-      await logSecurityEvent('sign_out_failed', { error: error.message });
+      await logSecurityEvent('sign_out_failed', { error: error.message }, 'medium');
       toast.error(`Error signing out: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
@@ -219,15 +252,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       const sanitizedEmail = sanitizeInput(email);
       
+      // Rate limiting for password reset
+      const rateLimitKey = `reset_${sanitizedEmail}`;
+      if (!checkRateLimit(rateLimitKey, 3, 300000)) { // 3 attempts per 5 minutes
+        await logSecurityEvent('password_reset_rate_limit_exceeded', { email: sanitizedEmail }, 'high');
+        throw new Error('Too many password reset attempts. Please try again later.');
+      }
+      
       const { error } = await supabase.auth.resetPasswordForEmail(sanitizedEmail, {
         redirectTo: `${window.location.origin}/auth`,
       });
       if (error) throw error;
       
-      await logSecurityEvent('password_reset_requested', { email: sanitizedEmail });
+      await logSecurityEvent('password_reset_requested', { email: sanitizedEmail }, 'low');
+      toast.success('Password reset email sent. Please check your inbox.');
     } catch (error: any) {
       secureLog.error('Reset password error', error);
-      await logSecurityEvent('password_reset_failed', { email, error: error.message });
+      await logSecurityEvent('password_reset_failed', { email, error: error.message }, 'medium');
       toast.error(`Error resetting password: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
@@ -252,7 +293,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       secureLog.error('Google sign in error', error);
-      await logSecurityEvent('google_sign_in_failed', { error: error.message });
+      await logSecurityEvent('google_sign_in_failed', { error: error.message }, 'medium');
       toast.error(`Error signing in with Google: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {

@@ -1,5 +1,4 @@
-
-// Secure logging utility to prevent information leakage in production
+// Enhanced secure logging utility with security event logging
 const isDevelopment = import.meta.env.DEV;
 
 export const secureLog = {
@@ -32,6 +31,49 @@ export const secureLog = {
   }
 };
 
+// Enhanced security event logging
+export const logSecurityEvent = async (
+  eventType: string, 
+  details: Record<string, any> = {}
+) => {
+  try {
+    // Only import supabase when needed to avoid circular dependencies
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Get user agent and other client info safely
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+    
+    // Sanitize details to prevent sensitive data logging
+    const sanitizedDetails = {
+      ...details,
+      // Remove any potentially sensitive fields
+      password: undefined,
+      token: undefined,
+      email: details.email ? '[REDACTED]' : undefined,
+      // Keep only safe data
+      timestamp: new Date().toISOString(),
+      userAgent: userAgent.slice(0, 200) // Limit length
+    };
+
+    const { error } = await supabase
+      .from('security_logs')
+      .insert({
+        event_type: eventType,
+        details: sanitizedDetails,
+        user_agent: userAgent.slice(0, 200)
+      });
+
+    if (error && isDevelopment) {
+      console.error('Failed to log security event:', error);
+    }
+  } catch (error) {
+    // Fail silently in production to avoid blocking user operations
+    if (isDevelopment) {
+      console.error('Security logging error:', error);
+    }
+  }
+};
+
 // Sanitize error messages for production
 export const sanitizeErrorMessage = (error: any): string => {
   if (isDevelopment) {
@@ -44,8 +86,22 @@ export const sanitizeErrorMessage = (error: any): string => {
     'User not found': 'Invalid login credentials',
     'Email not confirmed': 'Please check your email and confirm your account',
     'Password too weak': 'Password does not meet requirements',
+    'Too many requests': 'Too many requests. Please try again later.',
   };
   
   const errorMessage = error?.message || '';
   return genericMessages[errorMessage] || 'An error occurred. Please try again.';
+};
+
+// Input sanitization utility
+export const sanitizeInput = (input: string): string => {
+  if (typeof input !== 'string') return '';
+  
+  // Remove potentially dangerous characters
+  return input
+    .trim()
+    .replace(/[<>]/g, '') // Remove angle brackets
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .slice(0, 1000); // Limit length
 };
