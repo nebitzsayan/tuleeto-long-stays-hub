@@ -86,7 +86,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   let yPosition = 20;
   
   // Header - TO-LET
-  pdf.setFillColor(255, 102, 0); // Orange background
+  pdf.setFillColor(255, 102, 0);
   pdf.rect(0, yPosition, pageWidth, 35, 'F');
   
   pdf.setFontSize(32);
@@ -96,7 +96,6 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   const headerWidth = pdf.getTextWidth(headerText);
   pdf.text(headerText, (pageWidth - headerWidth) / 2, yPosition + 22);
   
-  // Subtitle
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'normal');
   const subtitleText = 'RENT AVAILABLE';
@@ -105,25 +104,17 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   
   yPosition += 50;
   
-  // Property Title
-  pdf.setFontSize(18);
+  // Location (Address only - no title)
+  pdf.setFontSize(14);
   pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'bold');
-  const titleLines = pdf.splitTextToSize(encodeText(property.title), usableWidth);
-  titleLines.forEach((line: string) => {
+  pdf.setFont('helvetica', 'normal');
+  const locationLines = pdf.splitTextToSize(encodeText(property.location), usableWidth);
+  locationLines.forEach((line: string) => {
     pdf.text(line, margin, yPosition);
-    yPosition += 8;
+    yPosition += 7;
   });
   
-  yPosition += 5;
-  
-  // Location
-  pdf.setFontSize(12);
-  pdf.setTextColor(80, 80, 80);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(encodeText(property.location), margin, yPosition);
-  
-  yPosition += 15;
+  yPosition += 10;
   
   // Price
   pdf.setFontSize(24);
@@ -134,91 +125,74 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   
   yPosition += 25;
   
-  // Property Images
+  // Property Images with proper aspect ratio
   if (property.images && property.images.length > 0) {
     try {
-      const imagesToShow = property.images.slice(0, 3);
-      const imageWidth = (usableWidth - 20) / 3;
-      const imageHeight = 45;
+      const imagesToShow = property.images.slice(0, 2); // Max 2 images
+      const maxImageWidth = 65; // Medium size
+      const imageSpacing = 10;
       
-      let imageX = margin;
-      
-      for (let i = 0; i < 3; i++) {
-        if (i < imagesToShow.length) {
+      if (imagesToShow.length === 1) {
+        // Single image - centered
+        try {
+          const imageData = await loadImageAsBase64(imagesToShow[0]);
+          const aspectRatio = imageData.height / imageData.width;
+          const imageWidth = maxImageWidth;
+          const imageHeight = imageWidth * aspectRatio;
+          const imageX = (pageWidth - imageWidth) / 2;
+          
+          pdf.addImage(imageData.dataURL, 'JPEG', imageX, yPosition, imageWidth, imageHeight);
+          yPosition += imageHeight + 15;
+        } catch (error) {
+          // Single placeholder
+          const imageHeight = 45;
+          const imageX = (pageWidth - maxImageWidth) / 2;
+          pdf.setFillColor(240, 240, 240);
+          pdf.rect(imageX, yPosition, maxImageWidth, imageHeight, 'F');
+          pdf.setTextColor(120, 120, 120);
+          pdf.setFontSize(8);
+          pdf.text('No Image', imageX + maxImageWidth/2 - 10, yPosition + imageHeight/2);
+          yPosition += imageHeight + 15;
+        }
+      } else if (imagesToShow.length >= 2) {
+        // Two images side by side
+        const imageWidth = (usableWidth - imageSpacing) / 2;
+        let maxImageHeight = 0;
+        
+        for (let i = 0; i < 2; i++) {
+          const imageX = margin + i * (imageWidth + imageSpacing);
+          
           try {
             const imageData = await loadImageAsBase64(imagesToShow[i]);
-            pdf.addImage(imageData.dataURL, 'JPEG', imageX, yPosition, imageWidth, imageHeight);
+            const aspectRatio = imageData.height / imageData.width;
+            const adjustedImageWidth = Math.min(imageWidth, maxImageWidth);
+            const imageHeight = adjustedImageWidth * aspectRatio;
+            maxImageHeight = Math.max(maxImageHeight, imageHeight);
+            
+            pdf.addImage(imageData.dataURL, 'JPEG', imageX, yPosition, adjustedImageWidth, imageHeight);
           } catch (error) {
-            // Draw placeholder if image fails to load
+            // Placeholder for failed image
+            const imageHeight = 45;
+            maxImageHeight = Math.max(maxImageHeight, imageHeight);
             pdf.setFillColor(240, 240, 240);
             pdf.rect(imageX, yPosition, imageWidth, imageHeight, 'F');
             pdf.setTextColor(120, 120, 120);
             pdf.setFontSize(8);
-            pdf.text('Image', imageX + imageWidth/2 - 5, yPosition + imageHeight/2);
+            pdf.text('No Image', imageX + imageWidth/2 - 10, yPosition + imageHeight/2);
           }
-        } else {
-          // Draw placeholder for missing images
-          pdf.setFillColor(240, 240, 240);
-          pdf.rect(imageX, yPosition, imageWidth, imageHeight, 'F');
-          pdf.setTextColor(120, 120, 120);
-          pdf.setFontSize(8);
-          pdf.text('No Image', imageX + imageWidth/2 - 8, yPosition + imageHeight/2);
         }
         
-        imageX += imageWidth + 10;
+        yPosition += maxImageHeight + 15;
       }
-      
-      yPosition += imageHeight + 20;
     } catch (error) {
       console.error('Error processing images:', error);
     }
   }
   
-  // Property Specifications Table
-  pdf.setDrawColor(255, 102, 0);
-  pdf.setLineWidth(1);
-  
-  const tableStartY = yPosition;
+  // Amenities Section (removed property specifications)
   const tableWidth = usableWidth;
   const rowHeight = 12;
   
-  // Table header
-  pdf.setFillColor(255, 102, 0);
-  pdf.rect(margin, tableStartY, tableWidth, rowHeight, 'FD');
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(12);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('PROPERTY SPECIFICATIONS', margin + 5, tableStartY + 8);
-  
-  yPosition = tableStartY + rowHeight;
-  
-  // Table rows
-  const specs = [
-    ['Bedrooms', property.bedrooms.toString()],
-    ['Bathrooms', property.bathrooms.toString()],
-    ['Area', `${property.area} sq ft`],
-    ['Total Rooms', (property.bedrooms + 1).toString()]
-  ];
-  
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(10);
-  
-  specs.forEach(([label, value]) => {
-    // Draw row border
-    pdf.setDrawColor(255, 102, 0);
-    pdf.rect(margin, yPosition, tableWidth, rowHeight, 'D');
-    
-    // Add text
-    pdf.text(label, margin + 5, yPosition + 8);
-    pdf.text(value, margin + tableWidth/2 + 5, yPosition + 8);
-    
-    yPosition += rowHeight;
-  });
-  
-  yPosition += 15;
-  
-  // Amenities Table
   pdf.setFillColor(255, 102, 0);
   pdf.rect(margin, yPosition, tableWidth, rowHeight, 'FD');
   pdf.setTextColor(255, 255, 255);
@@ -253,23 +227,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   
   yPosition += 20;
   
-  // Contact Section
-  pdf.setFillColor(255, 102, 0);
-  pdf.rect(margin, yPosition, tableWidth, 25, 'F');
-  
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Contact Owner', margin + 10, yPosition + 12);
-  
-  pdf.setFontSize(12);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(`Name: ${encodeText(property.ownerName)}`, margin + 10, yPosition + 19);
-  pdf.text(`Phone: ${property.contactPhone}`, margin + 10, yPosition + 23);
-  
-  yPosition += 35;
-  
-  // QR Code Section
+  // QR Code Section (moved here, after amenities)
   if (property.propertyId) {
     try {
       const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
@@ -292,6 +250,22 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
       console.error('Error generating QR code:', error);
     }
   }
+  
+  // Contact Section
+  pdf.setFillColor(255, 102, 0);
+  pdf.rect(margin, yPosition, tableWidth, 25, 'F');
+  
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Contact Owner', margin + 10, yPosition + 12);
+  
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`Name: ${encodeText(property.ownerName)}`, margin + 10, yPosition + 19);
+  pdf.text(`Phone: ${property.contactPhone}`, margin + 10, yPosition + 23);
+  
+  yPosition += 35;
   
   // Footer
   yPosition = pageHeight - 30;
