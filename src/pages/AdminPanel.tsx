@@ -28,7 +28,6 @@ interface Property {
   created_at: string;
   is_public: boolean;
   owner: {
-    email: string;
     full_name: string | null;
   };
 }
@@ -39,7 +38,6 @@ interface Review {
   comment: string | null;
   created_at: string;
   user: {
-    email: string;
     full_name: string | null;
   };
   property: {
@@ -103,7 +101,7 @@ const AdminPanel = () => {
         secureLog.error('Error fetching roles', rolesError);
       }
 
-      // Combine users with their roles
+      // Combine users with their roles - no email exposure for security
       const usersWithRoles = usersData?.map(user => ({
         ...user,
         email: 'Protected', // Don't expose emails in admin panel for security
@@ -131,7 +129,7 @@ const AdminPanel = () => {
         throw propertiesError;
       }
 
-      // Get owner profiles using the safe view
+      // Get owner profiles using the safe view (no email exposure)
       const ownerIds = propertiesData?.map(p => p.owner_id) || [];
       const { data: ownersData, error: ownersError } = await supabase
         .from('public_profiles_safe')
@@ -145,7 +143,6 @@ const AdminPanel = () => {
       const propertiesWithOwners = propertiesData?.map(property => ({
         ...property,
         owner: ownersData?.find(o => o.id === property.owner_id) || { 
-          email: 'Unknown', 
           full_name: null 
         }
       })) || [];
@@ -171,7 +168,7 @@ const AdminPanel = () => {
         throw reviewsError;
       }
 
-      // Get user and property info for reviews using safe views
+      // Get user and property info for reviews using safe views (no email exposure)
       const reviewUserIds = reviewsData?.map(r => r.user_id) || [];
       const reviewPropertyIds = reviewsData?.map(r => r.property_id) || [];
 
@@ -196,7 +193,6 @@ const AdminPanel = () => {
       const reviewsWithDetails = reviewsData?.map(review => ({
         ...review,
         user: reviewUsersData?.find(u => u.id === review.user_id) || { 
-          email: 'Unknown', 
           full_name: null 
         },
         property: reviewPropertiesData?.find(p => p.id === review.property_id) || { 
