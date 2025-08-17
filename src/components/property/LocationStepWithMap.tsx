@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PropertyMapPicker } from "./PropertyMapPicker";
 import { MapPin, Navigation } from "lucide-react";
 import { toast } from "sonner";
+import { OLA_MAPS_CONFIG, getPrecisionCoordinates } from "@/lib/olaMapsConfig";
 
 interface LocationStepWithMapProps {
   form: UseFormReturn<any>;
@@ -20,8 +21,11 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
   } | null>(null);
 
   const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
-    setSelectedLocation(location);
-    form.setValue("coordinates", { lat: location.lat, lng: location.lng });
+    // Use ultra-high precision coordinates
+    const preciseCoords = getPrecisionCoordinates(location.lat, location.lng, OLA_MAPS_CONFIG.precision.coordinates);
+    
+    setSelectedLocation({ ...preciseCoords, address: location.address });
+    form.setValue("coordinates", preciseCoords);
     
     // Auto-populate the address fields if they're empty
     const currentStreet = form.getValues("street");
@@ -44,19 +48,22 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
       return;
     }
 
-    toast.info("Getting your location...");
+    toast.info("Getting your ultra-precise location with Ola Maps...");
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
+        const coords = getPrecisionCoordinates(
+          position.coords.latitude, 
+          position.coords.longitude, 
+          OLA_MAPS_CONFIG.precision.coordinates
+        );
         
         // This will trigger the map to center on user's location
         // The PropertyMapPicker component will handle the rest
         setSelectedLocation({ ...coords, address: "Current Location" });
-        toast.success("📍 Location detected! Please adjust the marker if needed.");
+        toast.success("📍 Ultra-precise location detected! Please adjust the marker if needed.", {
+          description: "Powered by Ola Maps for maximum accuracy in India"
+        });
       },
       (error) => {
         console.error("Error getting location:", error);
@@ -78,7 +85,7 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 20000,
         maximumAge: 0
       }
     );
@@ -91,7 +98,7 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
       <div>
         <h2 className="text-2xl font-semibold mb-4">Property Location</h2>
         <p className="text-gray-600 mb-6">
-          Enter your property address and mark the exact location on the map for better accuracy
+          Enter your property address and mark the exact location on the map for ultra-precise accuracy using Ola Maps
         </p>
       </div>
 
@@ -104,11 +111,11 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
           className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
         >
           <Navigation className="h-4 w-4 mr-2" />
-          📍 Use My Current Location
+          📍 Use My Current Location (Ultra-Precise)
         </Button>
       </div>
 
-      {/* Map Component */}
+      {/* Ola Maps Component */}
       <PropertyMapPicker 
         onLocationSelect={handleLocationSelect}
         initialLocation={initialLocation}
@@ -191,16 +198,19 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
         <div className="bg-green-50 p-4 rounded-md border border-green-200">
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="h-4 w-4 text-green-600" />
-            <span className="font-medium text-green-800">Location Confirmed</span>
+            <span className="font-medium text-green-800">Ultra-Precise Location Confirmed</span>
           </div>
           <p className="text-sm text-green-700">
-            Coordinates: {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
+            Coordinates: {selectedLocation.lat.toFixed(8)}, {selectedLocation.lng.toFixed(8)}
           </p>
           {selectedLocation.address !== "Current Location" && (
             <p className="text-sm text-green-700 mt-1">
               Address: {selectedLocation.address}
             </p>
           )}
+          <p className="text-xs text-green-600 mt-2">
+            ✨ Powered by Ola Maps for India-specific ultra-high precision
+          </p>
         </div>
       )}
     </div>

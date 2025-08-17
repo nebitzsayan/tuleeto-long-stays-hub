@@ -1,13 +1,12 @@
 
 import React, { useEffect, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { OlaMaps } from '@olamaps/js-sdk';
 import { MapPin, Navigation, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Set the Mapbox access token
-mapboxgl.accessToken = 'pk.eyJ1Ijoic2F5YW5nYXllbiIsImEiOiJjbWR1Y2V5dHowaGs0Mmxxd2t0OGw2cDVxIn0.MTK_Fk7k7ApP20VUhBm9_g';
+// Ola Maps configuration
+const OLA_MAPS_API_KEY = '58Gg9I1pBkxNQ48r0bTmZe1u3VkO876kos1MOYe3';
 
 interface PropertyMapDisplayProps {
   coordinates: { lat: number; lng: number };
@@ -18,33 +17,51 @@ interface PropertyMapDisplayProps {
 
 export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = true }: PropertyMapDisplayProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const map = useRef<any>(null);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    // Initialize map with street view for better property visibility
-    map.current = new mapboxgl.Map({
+    // Initialize Ola Maps with high precision
+    const olaMaps = new OlaMaps({
+      apiKey: OLA_MAPS_API_KEY,
+    });
+
+    // Create map with street view for better property visibility
+    map.current = olaMaps.init({
+      style: 'https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json',
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12', // Clean street map style
       center: [coordinates.lng, coordinates.lat],
-      zoom: showMarker ? 16 : 8, // Higher zoom for properties with coordinates
+      zoom: showMarker ? 18 : 10, // Higher zoom for properties with coordinates
       pitch: 0,
-      bearing: 0
+      bearing: 0,
+      maxZoom: 20,
+      minZoom: 5
     });
 
     // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl({
-      visualizePitch: false,
+    map.current.addControl(new olaMaps.NavigationControl({
       showCompass: true,
-      showZoom: true
+      showZoom: true,
+      visualizePitch: false
     }), 'top-right');
 
     // Add scale control
-    map.current.addControl(new mapboxgl.ScaleControl({
+    map.current.addControl(new olaMaps.ScaleControl({
       maxWidth: 100,
       unit: 'metric'
     }), 'bottom-left');
+
+    // Add geolocate control for precise positioning
+    map.current.addControl(new olaMaps.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 15000
+      },
+      trackUserLocation: false,
+      showAccuracyCircle: true
+    }), 'top-right');
 
     // Add custom marker with property-specific styling
     if (showMarker) {
@@ -108,7 +125,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
       document.head.appendChild(style);
 
       // Add marker with popup
-      const popup = new mapboxgl.Popup({ 
+      const popup = new olaMaps.Popup({ 
         offset: 25,
         closeButton: false,
         className: 'property-popup'
@@ -119,7 +136,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
         </div>
       `);
 
-      new mapboxgl.Marker({ 
+      new olaMaps.Marker({ 
         element: markerElement,
         anchor: 'bottom'
       })
@@ -184,7 +201,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
           {location}
           {showMarker && (
             <div className="text-xs text-gray-500 mt-2">
-              Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+              Coordinates: {coordinates.lat.toFixed(8)}, {coordinates.lng.toFixed(8)}
             </div>
           )}
         </div>
@@ -227,7 +244,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
         {showMarker && (
           <div className="text-xs text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
             <div className="font-medium mb-1">✅ Precise Location</div>
-            This property has been mapped with high-precision coordinates for accurate navigation.
+            This property has been mapped with ultra-high precision coordinates for accurate navigation.
           </div>
         )}
       </CardContent>
