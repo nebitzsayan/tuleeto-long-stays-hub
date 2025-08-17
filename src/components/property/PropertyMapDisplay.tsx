@@ -1,12 +1,9 @@
 
 import React, { useEffect, useRef } from 'react';
-import { OlaMaps } from '@olamaps/js-sdk';
 import { MapPin, Navigation, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-// Ola Maps configuration
-const OLA_MAPS_API_KEY = '58Gg9I1pBkxNQ48r0bTmZe1u3VkO876kos1MOYe3';
+import { OLA_MAPS_CONFIG } from '@/lib/olaMapsConfig';
 
 interface PropertyMapDisplayProps {
   coordinates: { lat: number; lng: number };
@@ -17,144 +14,115 @@ interface PropertyMapDisplayProps {
 
 export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = true }: PropertyMapDisplayProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current) return;
 
-    // Initialize Ola Maps with high precision
-    const olaMaps = new OlaMaps({
-      apiKey: OLA_MAPS_API_KEY,
-    });
+    // Create map using Ola Maps tile service
+    const initializeMap = () => {
+      // Load Mapbox GL JS for tile rendering (free for tile display)
+      const script = document.createElement('script');
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+      script.onload = () => {
+        const link = document.createElement('link');
+        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
 
-    // Create map with street view for better property visibility
-    map.current = olaMaps.init({
-      style: 'https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json',
-      container: mapContainer.current,
-      center: [coordinates.lng, coordinates.lat],
-      zoom: showMarker ? 18 : 10, // Higher zoom for properties with coordinates
-      pitch: 0,
-      bearing: 0,
-      maxZoom: 20,
-      minZoom: 5
-    });
+        // @ts-ignore
+        const mapboxgl = window.mapboxgl;
+        
+        // Initialize with Ola Maps tiles
+        const map = new mapboxgl.Map({
+          container: mapContainer.current!,
+          style: {
+            version: 8,
+            sources: {
+              'ola-tiles': {
+                type: 'raster',
+                tiles: [
+                  `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/{z}/{x}/{y}.png?api_key=${OLA_MAPS_CONFIG.apiKey}`
+                ],
+                tileSize: 256
+              }
+            },
+            layers: [{
+              id: 'ola-tiles',
+              type: 'raster',
+              source: 'ola-tiles'
+            }]
+          },
+          center: [coordinates.lng, coordinates.lat],
+          zoom: showMarker ? 16 : 10,
+          attributionControl: false
+        });
 
-    // Add navigation controls
-    map.current.addControl(new olaMaps.NavigationControl({
-      showCompass: true,
-      showZoom: true,
-      visualizePitch: false
-    }), 'top-right');
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Add scale control
-    map.current.addControl(new olaMaps.ScaleControl({
-      maxWidth: 100,
-      unit: 'metric'
-    }), 'bottom-left');
-
-    // Add geolocate control for precise positioning
-    map.current.addControl(new olaMaps.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 15000
-      },
-      trackUserLocation: false,
-      showAccuracyCircle: true
-    }), 'top-right');
-
-    // Add custom marker with property-specific styling
-    if (showMarker) {
-      // Create custom marker HTML
-      const markerElement = document.createElement('div');
-      markerElement.innerHTML = `
-        <div style="
-          position: relative;
-          width: 50px;
-          height: 50px;
-        ">
-          <div style="
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
-            border: 4px solid #ffffff;
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: bounce 2s infinite;
-          ">
+        // Add custom marker if coordinates are available
+        if (showMarker) {
+          // Create custom marker element
+          const markerElement = document.createElement('div');
+          markerElement.innerHTML = `
             <div style="
-              width: 16px;
-              height: 16px;
-              background: #ffffff;
-              border-radius: 50%;
-              transform: rotate(45deg);
-            "></div>
-          </div>
-          <div style="
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 102, 0, 0.9);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          ">
-            Property Location
-          </div>
-        </div>
-      `;
+              position: relative;
+              width: 50px;
+              height: 50px;
+            ">
+              <div style="
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+                border: 4px solid #ffffff;
+                border-radius: 50% 50% 50% 0;
+                transform: rotate(-45deg);
+                box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              ">
+                <div style="
+                  width: 16px;
+                  height: 16px;
+                  background: #ffffff;
+                  border-radius: 50%;
+                  transform: rotate(45deg);
+                "></div>
+              </div>
+            </div>
+          `;
 
-      // Add CSS animation
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes bounce {
-          0%, 20%, 50%, 80%, 100% { transform: translateY(0) rotate(-45deg); }
-          40% { transform: translateY(-8px) rotate(-45deg); }
-          60% { transform: translateY(-4px) rotate(-45deg); }
+          // Add marker to map
+          new mapboxgl.Marker({ element: markerElement })
+            .setLngLat([coordinates.lng, coordinates.lat])
+            .addTo(map);
+
+          // Create popup
+          const popup = new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+              <div style="padding: 8px; text-align: center;">
+                <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${title}</div>
+                <div style="font-size: 12px; color: #666;">${location}</div>
+              </div>
+            `);
+
+          // Show popup on marker click
+          markerElement.addEventListener('click', () => {
+            popup.setLngLat([coordinates.lng, coordinates.lat]).addTo(map);
+          });
         }
-      `;
-      document.head.appendChild(style);
 
-      // Add marker with popup
-      const popup = new olaMaps.Popup({ 
-        offset: 25,
-        closeButton: false,
-        className: 'property-popup'
-      }).setHTML(`
-        <div style="padding: 8px; text-align: center;">
-          <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${title}</div>
-          <div style="font-size: 12px; color: #666;">${location}</div>
-        </div>
-      `);
+        // Cleanup function
+        return () => {
+          map.remove();
+        };
+      };
 
-      new olaMaps.Marker({ 
-        element: markerElement,
-        anchor: 'bottom'
-      })
-        .setLngLat([coordinates.lng, coordinates.lat])
-        .setPopup(popup)
-        .addTo(map.current);
-
-      // Show popup after a delay
-      setTimeout(() => {
-        popup.addTo(map.current!);
-      }, 1000);
-    }
-
-    // Cleanup
-    return () => {
-      map.current?.remove();
-      map.current = null;
+      document.head.appendChild(script);
     };
+
+    initializeMap();
   }, [coordinates, title, location, showMarker]);
 
   const handleDirections = () => {
@@ -244,7 +212,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
         {showMarker && (
           <div className="text-xs text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
             <div className="font-medium mb-1">✅ Precise Location</div>
-            This property has been mapped with ultra-high precision coordinates for accurate navigation.
+            This property has been mapped with ultra-high precision coordinates using Ola Maps.
           </div>
         )}
       </CardContent>

@@ -1,13 +1,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { OlaMaps } from '@olamaps/js-sdk';
 import { MapPin, Crosshair } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-
-// Ola Maps configuration
-const OLA_MAPS_API_KEY = '58Gg9I1pBkxNQ48r0bTmZe1u3VkO876kos1MOYe3';
+import { OLA_MAPS_CONFIG, getPrecisionCoordinates } from '@/lib/olaMapsConfig';
 
 interface PropertyMapPickerProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
@@ -16,8 +13,8 @@ interface PropertyMapPickerProps {
 
 export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: PropertyMapPickerProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
-  const marker = useRef<any>(null);
+  const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(
     initialLocation || null
   );
@@ -25,185 +22,155 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Default to Siliguri, India with ultra-high precision coordinates
-    const defaultCenter: [number, number] = initialLocation 
+    const defaultCenter = initialLocation 
       ? [initialLocation.lng, initialLocation.lat] 
-      : [88.428421, 26.727066];
+      : [OLA_MAPS_CONFIG.defaultCenter.lng, OLA_MAPS_CONFIG.defaultCenter.lat];
 
-    // Initialize Ola Maps
-    const olaMaps = new OlaMaps({
-      apiKey: OLA_MAPS_API_KEY,
-    });
+    // Load Mapbox GL JS for map rendering
+    const script = document.createElement('script');
+    script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+    script.onload = () => {
+      const link = document.createElement('link');
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
 
-    map.current = olaMaps.init({
-      style: 'https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json',
-      container: mapContainer.current,
-      center: defaultCenter,
-      zoom: 18, // Ultra-high zoom for maximum accuracy
-      pitch: 0,
-      bearing: 0,
-      maxZoom: 22, // Maximum possible zoom for precision
-      minZoom: 5
-    });
-
-    // Add navigation controls
-    map.current.addControl(new olaMaps.NavigationControl({
-      visualizePitch: false,
-      showCompass: true,
-      showZoom: true
-    }), 'top-right');
-    
-    // Add geolocate control for ultra-accurate positioning
-    const geolocateControl = new olaMaps.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 20000
-      },
-      trackUserLocation: false,
-      showAccuracyCircle: true,
-      showUserHeading: false
-    });
-    
-    map.current.addControl(geolocateControl, 'top-right');
-    
-    // Add scale control
-    map.current.addControl(new olaMaps.ScaleControl({
-      maxWidth: 100,
-      unit: 'metric'
-    }), 'bottom-left');
-
-    // Create ultra-high-precision custom marker
-    const markerElement = document.createElement('div');
-    markerElement.innerHTML = `
-      <div style="
-        width: 40px;
-        height: 40px;
-        background: #ff6600;
-        border: 3px solid #ffffff;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        cursor: grab;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <div style="
-          width: 16px;
-          height: 16px;
-          background: #ffffff;
-          border-radius: 50%;
-          transform: rotate(45deg);
-        "></div>
-      </div>
-    `;
-
-    marker.current = new olaMaps.Marker({ 
-      element: markerElement,
-      draggable: true 
-    })
-      .setLngLat(defaultCenter)
-      .addTo(map.current);
-
-    const updateLocation = async (lngLat: any) => {
-      // Ultra-high precision coordinates (10 decimal places for sub-millimeter accuracy)
-      const coords = { 
-        lat: Math.round(lngLat.lat * 10000000000) / 10000000000,
-        lng: Math.round(lngLat.lng * 10000000000) / 10000000000
-      };
+      // @ts-ignore
+      const mapboxgl = window.mapboxgl;
       
-      setSelectedCoords(coords);
-      
-      // Enhanced reverse geocoding using Ola Maps API
-      try {
-        const response = await fetch(
-          `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_API_KEY}`,
-          {
-            headers: {
-              'X-Request-Id': Math.random().toString(36).substring(7)
+      // Initialize map with Ola Maps tiles
+      mapRef.current = new mapboxgl.Map({
+        container: mapContainer.current!,
+        style: {
+          version: 8,
+          sources: {
+            'ola-tiles': {
+              type: 'raster',
+              tiles: [
+                `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/{z}/{x}/{y}.png?api_key=${OLA_MAPS_CONFIG.apiKey}`
+              ],
+              tileSize: 256
             }
-          }
-        );
+          },
+          layers: [{
+            id: 'ola-tiles',
+            type: 'raster',
+            source: 'ola-tiles'
+          }]
+        },
+        center: defaultCenter,
+        zoom: OLA_MAPS_CONFIG.precision.zoom.picker,
+        attributionControl: false
+      });
+
+      // Add navigation controls
+      mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      // Create draggable marker
+      const markerElement = document.createElement('div');
+      markerElement.innerHTML = `
+        <div style="
+          width: 40px;
+          height: 40px;
+          background: #ff6600;
+          border: 3px solid #ffffff;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+          cursor: grab;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <div style="
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            border-radius: 50%;
+            transform: rotate(45deg);
+          "></div>
+        </div>
+      `;
+
+      markerRef.current = new mapboxgl.Marker({ 
+        element: markerElement,
+        draggable: true 
+      })
+        .setLngLat(defaultCenter)
+        .addTo(mapRef.current);
+
+      // Function to update location with Ola Maps reverse geocoding
+      const updateLocation = async (lngLat: { lat: number; lng: number }) => {
+        const coords = getPrecisionCoordinates(lngLat.lat, lngLat.lng, OLA_MAPS_CONFIG.precision.coordinates);
+        setSelectedCoords(coords);
         
-        if (!response.ok) {
-          throw new Error(`Geocoding failed: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        let address;
-        if (data.results && data.results.length > 0) {
-          const result = data.results[0];
-          address = result.formatted_address || result.name;
+        try {
+          const response = await fetch(
+            `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
+            {
+              headers: {
+                'X-Request-Id': Math.random().toString(36).substring(7)
+              }
+            }
+          );
           
-          // Clean up the address for better readability
-          if (address) {
-            address = address.replace(/,\s*,/g, ',').replace(/^\s*,\s*/, '');
+          if (!response.ok) {
+            throw new Error(`Geocoding failed: ${response.status}`);
           }
-        } else {
-          address = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
-        }
           
-        onLocationSelect({ ...coords, address });
-        toast.success('📍 Ultra-high-precision location selected!', {
-          description: 'Location marked with sub-meter accuracy using Ola Maps'
-        });
-      } catch (error) {
-        console.error('Error getting address:', error);
-        const fallbackAddress = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
-        onLocationSelect({ ...coords, address: fallbackAddress });
-        toast.success('📍 Precise location selected!', {
-          description: 'Using ultra-high precision coordinate-based addressing'
-        });
-      }
+          const data = await response.json();
+          
+          let address;
+          if (data.results && data.results.length > 0) {
+            const result = data.results[0];
+            address = result.formatted_address || result.name;
+            
+            if (address) {
+              address = address.replace(/,\s*,/g, ',').replace(/^\s*,\s*/, '');
+            }
+          } else {
+            address = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
+          }
+            
+          onLocationSelect({ ...coords, address });
+          toast.success('📍 Ultra-high-precision location selected!', {
+            description: 'Location marked with sub-meter accuracy using Ola Maps'
+          });
+        } catch (error) {
+          console.error('Error getting address:', error);
+          const fallbackAddress = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
+          onLocationSelect({ ...coords, address: fallbackAddress });
+          toast.success('📍 Precise location selected!', {
+            description: 'Using ultra-high precision coordinate-based addressing'
+          });
+        }
+      };
+
+      // Handle marker drag events
+      markerRef.current.on('dragend', () => {
+        const lngLat = markerRef.current!.getLngLat();
+        updateLocation({ lat: lngLat.lat, lng: lngLat.lng });
+      });
+
+      // Handle map clicks
+      mapRef.current.on('click', (e: any) => {
+        markerRef.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        updateLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+      });
+
+      // Set crosshair cursor
+      mapRef.current.on('mouseenter', () => {
+        mapRef.current!.getCanvas().style.cursor = 'crosshair';
+      });
     };
 
-    // Handle marker drag
-    marker.current.on('dragstart', () => {
-      markerElement.style.cursor = 'grabbing';
-    });
-
-    marker.current.on('drag', () => {
-      // Visual feedback during drag
-      markerElement.style.transform = 'scale(1.1) rotate(-45deg)';
-    });
-
-    marker.current.on('dragend', () => {
-      markerElement.style.cursor = 'grab';
-      markerElement.style.transform = 'scale(1) rotate(-45deg)';
-      const lngLat = marker.current!.getLngLat();
-      updateLocation(lngLat);
-    });
-
-    // Handle map clicks
-    map.current.on('click', (e: any) => {
-      marker.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
-      updateLocation(e.lngLat);
-    });
-
-    // Add crosshair cursor
-    map.current.on('mouseenter', () => {
-      map.current!.getCanvas().style.cursor = 'crosshair';
-    });
-
-    // Handle geolocate events
-    geolocateControl.on('geolocate', (e: any) => {
-      const coords = {
-        lat: Math.round(e.coords.latitude * 10000000000) / 10000000000,
-        lng: Math.round(e.coords.longitude * 10000000000) / 10000000000
-      };
-      
-      setSelectedCoords(coords);
-      marker.current?.setLngLat([coords.lng, coords.lat]);
-      
-      // Get address for GPS location
-      updateLocation({ lat: coords.lat, lng: coords.lng });
-    });
+    document.head.appendChild(script);
 
     // Cleanup
     return () => {
-      map.current?.remove();
+      if (mapRef.current) {
+        mapRef.current.remove();
+      }
     };
   }, [initialLocation, onLocationSelect]);
 
@@ -220,45 +187,50 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     });
     
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          lat: Math.round(position.coords.latitude * 10000000000) / 10000000000,
-          lng: Math.round(position.coords.longitude * 10000000000) / 10000000000
-        };
+      async (position) => {
+        const coords = getPrecisionCoordinates(
+          position.coords.latitude, 
+          position.coords.longitude, 
+          OLA_MAPS_CONFIG.precision.coordinates
+        );
         
         setSelectedCoords(coords);
-        marker.current?.setLngLat([coords.lng, coords.lat]);
-        map.current?.flyTo({ 
+        markerRef.current?.setLngLat([coords.lng, coords.lat]);
+        mapRef.current?.flyTo({ 
           center: [coords.lng, coords.lat], 
-          zoom: 20,
-          duration: 2000,
-          essential: true
+          zoom: OLA_MAPS_CONFIG.precision.zoom.maximum,
+          duration: 2000
         });
         
-        // Get ultra-high-accuracy address using Ola Maps
-        fetch(`https://api.olamaps.io/places/v1/reverse-geocode?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_API_KEY}`, {
-          headers: {
-            'X-Request-Id': Math.random().toString(36).substring(7)
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            let address = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
-            if (data.results && data.results.length > 0) {
-              address = data.results[0].formatted_address || data.results[0].name;
+        // Get address using Ola Maps
+        try {
+          const response = await fetch(
+            `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
+            {
+              headers: {
+                'X-Request-Id': Math.random().toString(36).substring(7)
+              }
             }
-            onLocationSelect({ ...coords, address });
-            toast.success("🎯 Ultra-precise GPS location acquired!", {
-              description: `Accuracy: ±${Math.round(position.coords.accuracy)}m using Ola Maps`
-            });
-          })
-          .catch(() => {
-            const fallbackAddress = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
-            onLocationSelect({ ...coords, address: fallbackAddress });
-            toast.success("📍 GPS location set with ultra-precision!", {
-              description: "Using high-precision coordinates with Ola Maps"
-            });
+          );
+          
+          const data = await response.json();
+          let address = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
+          
+          if (data.results && data.results.length > 0) {
+            address = data.results[0].formatted_address || data.results[0].name;
+          }
+          
+          onLocationSelect({ ...coords, address });
+          toast.success("🎯 Ultra-precise GPS location acquired!", {
+            description: `Accuracy: ±${Math.round(position.coords.accuracy)}m using Ola Maps`
           });
+        } catch (error) {
+          const fallbackAddress = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
+          onLocationSelect({ ...coords, address: fallbackAddress });
+          toast.success("📍 GPS location set with ultra-precision!", {
+            description: "Using high-precision coordinates with Ola Maps"
+          });
+        }
       },
       (error) => {
         console.error("GPS Error:", error);
@@ -339,7 +311,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         <div className="font-medium text-blue-800 mb-2">💡 Ultra-Accuracy Tips:</div>
         <div className="space-y-1 text-blue-700">
           <div>• Use GPS button for automatic ultra-high-precision location</div>
-          <div>• Zoom to maximum level (22x) before placing marker</div>
+          <div>• Zoom to maximum level before placing marker</div>
           <div>• Drag marker for fine position adjustment with sub-meter precision</div>
           <div>• Click map to quickly relocate marker with pinpoint accuracy</div>
           <div>• Powered by Ola Maps for India-specific precision</div>
