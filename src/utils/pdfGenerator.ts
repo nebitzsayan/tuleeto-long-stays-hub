@@ -83,11 +83,20 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   const margin = 20;
   const usableWidth = pageWidth - (margin * 2);
   
-  let yPosition = 20;
+  let yPosition = 0; // Start at the very top
   
-  // Header - TO-LET
+  // Header - TO-LET with Logo
   pdf.setFillColor(255, 102, 0);
   pdf.rect(0, yPosition, pageWidth, 35, 'F');
+  
+  // Add logo on the left side of header
+  try {
+    const logoData = await loadImageAsBase64('/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png');
+    const logoSize = 25;
+    pdf.addImage(logoData.dataURL, 'PNG', 10, yPosition + 5, logoSize, logoSize);
+  } catch (error) {
+    console.log('Logo not loaded, continuing without it');
+  }
   
   pdf.setFontSize(32);
   pdf.setTextColor(255, 255, 255);
@@ -189,24 +198,21 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
     }
   }
   
-  // Amenities Section (removed property specifications)
-  const tableWidth = usableWidth;
-  const rowHeight = 12;
-  
+  // Amenities Section (clean, non-boxy design)
   pdf.setFillColor(255, 102, 0);
-  pdf.rect(margin, yPosition, tableWidth, rowHeight, 'FD');
+  pdf.rect(margin, yPosition, usableWidth, 12, 'F');
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
   pdf.text('AMENITIES', margin + 5, yPosition + 8);
   
-  yPosition += rowHeight;
+  yPosition += 20;
   
   const amenities = [
-    ['AIR CONDITIONING', property.features.some(f => f.toLowerCase().includes('ac') || f.toLowerCase().includes('air condition')) ? 'YES' : 'NO'],
-    ['WIFI', property.features.some(f => f.toLowerCase().includes('wifi') || f.toLowerCase().includes('internet')) ? 'YES' : 'NO'],
-    ['PARKING', property.features.some(f => f.toLowerCase().includes('parking')) ? 'YES' : 'NO'],
-    ['PET FRIENDLY', property.features.some(f => f.toLowerCase().includes('pet')) ? 'YES' : 'NO']
+    ['• Air Conditioning', property.features.some(f => f.toLowerCase().includes('ac') || f.toLowerCase().includes('air condition')) ? 'YES' : 'NO'],
+    ['• WiFi', property.features.some(f => f.toLowerCase().includes('wifi') || f.toLowerCase().includes('internet')) ? 'YES' : 'NO'],
+    ['• Parking', property.features.some(f => f.toLowerCase().includes('parking')) ? 'YES' : 'NO'],
+    ['• Pet Friendly', property.features.some(f => f.toLowerCase().includes('pet')) ? 'YES' : 'NO']
   ];
   
   pdf.setTextColor(0, 0, 0);
@@ -214,20 +220,16 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.setFontSize(10);
   
   amenities.forEach(([amenity, status]) => {
-    pdf.setDrawColor(255, 102, 0);
-    pdf.rect(margin, yPosition, tableWidth, rowHeight, 'D');
-    
-    pdf.text(amenity, margin + 5, yPosition + 8);
+    pdf.text(amenity, margin + 5, yPosition);
     pdf.setTextColor(status === 'YES' ? 0 : 180, status === 'YES' ? 150 : 0, 0);
-    pdf.text(status, margin + tableWidth/2 + 5, yPosition + 8);
+    pdf.text(status, margin + usableWidth - 20, yPosition);
     pdf.setTextColor(0, 0, 0);
-    
-    yPosition += rowHeight;
+    yPosition += 8;
   });
   
-  yPosition += 20;
+  yPosition += 15;
   
-  // QR Code Section (moved here, after amenities)
+  // QR Code Section
   if (property.propertyId) {
     try {
       const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
@@ -245,7 +247,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
       const qrTextWidth = pdf.getTextWidth(qrText);
       pdf.text(qrText, (pageWidth - qrTextWidth) / 2, yPosition + qrSize + 8);
       
-      yPosition += qrSize + 20;
+      yPosition += qrSize + 25;
     } catch (error) {
       console.error('Error generating QR code:', error);
     }
@@ -253,7 +255,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   
   // Contact Section
   pdf.setFillColor(255, 102, 0);
-  pdf.rect(margin, yPosition, tableWidth, 25, 'F');
+  pdf.rect(margin, yPosition, usableWidth, 25, 'F');
   
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(14);
@@ -265,29 +267,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.text(`Name: ${encodeText(property.ownerName)}`, margin + 10, yPosition + 19);
   pdf.text(`Phone: ${property.contactPhone}`, margin + 10, yPosition + 23);
   
-  yPosition += 35;
-  
-  // Footer
-  yPosition = pageHeight - 30;
-  
-  pdf.setFillColor(50, 50, 50);
-  pdf.rect(0, yPosition, pageWidth, 30, 'F');
-  
-  pdf.setTextColor(255, 102, 0);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  const brandText = 'TULEETO';
-  const brandWidth = pdf.getTextWidth(brandText);
-  pdf.text(brandText, (pageWidth - brandWidth) / 2, yPosition + 15);
-  
-  pdf.setTextColor(200, 200, 200);
-  pdf.setFontSize(8);
-  pdf.setFont('helvetica', 'normal');
-  const footerText = 'Find your perfect home at Tuleeto.in';
-  const footerWidth = pdf.getTextWidth(footerText);
-  pdf.text(footerText, (pageWidth - footerWidth) / 2, yPosition + 22);
-  
-  // Save PDF
+  // Save PDF (no footer section)
   const cleanLocation = encodeText(property.location).replace(/[^a-zA-Z0-9]/g, '_');
   const fileName = `TO_LET_${cleanLocation}.pdf`;
   pdf.save(fileName);
