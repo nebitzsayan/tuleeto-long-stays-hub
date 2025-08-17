@@ -1,10 +1,10 @@
 
+
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Crosshair, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { MAPBOX_CONFIG, getPrecisionCoordinates, reverseGeocode } from '@/lib/mapboxConfig';
@@ -33,16 +33,23 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: MAPBOX_CONFIG.styles.streets,
+      style: MAPBOX_CONFIG.styles.streets, // Simple street map
       center: [
         initialLocation?.lng || MAPBOX_CONFIG.defaultCenter.lng,
         initialLocation?.lat || MAPBOX_CONFIG.defaultCenter.lat
       ],
-      zoom: MAPBOX_CONFIG.defaultZoom
+      zoom: MAPBOX_CONFIG.defaultZoom,
+      pitch: 0, // Flat map, no 3D
+      bearing: 0, // North up
+      antialias: false // Better performance
     });
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    // Add simple navigation controls
+    map.current.addControl(new mapboxgl.NavigationControl({
+      showCompass: false,
+      showZoom: true,
+      visualizePitch: false
+    }), 'top-right');
 
     // Add click handler
     map.current.on('click', (e) => {
@@ -71,7 +78,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       marker.current.remove();
     }
 
-    // Add new marker
+    // Add new marker with simple red color
     marker.current = new mapboxgl.Marker({ color: '#ef4444' })
       .setLngLat([lng, lat])
       .addTo(map.current);
@@ -94,23 +101,19 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       }
         
       onLocationSelect({ ...preciseCoords, address });
-      toast.success('📍 Location selected successfully!');
     } catch (error) {
       console.error('Error getting address:', error);
       const fallbackAddress = `${preciseCoords.lat.toFixed(6)}°N, ${preciseCoords.lng.toFixed(6)}°E`;
       onLocationSelect({ ...preciseCoords, address: fallbackAddress });
-      toast.success('📍 Location selected!');
     }
   };
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error("Geolocation not supported");
       return;
     }
 
     setIsGettingLocation(true);
-    toast.loading("🔍 Getting your location...");
     
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -144,18 +147,13 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
             }
             
             onLocationSelect({ ...coords, address });
-            toast.success("🎯 GPS location found!", {
-              description: `Accuracy: ±${Math.round(position.coords.accuracy)}m`
-            });
           } catch (error) {
             console.error('GPS geocoding error:', error);
             const fallbackAddress = `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°E`;
             onLocationSelect({ ...coords, address: fallbackAddress });
-            toast.success("📍 GPS location set!");
           }
         } catch (error) {
           console.error('Error processing GPS location:', error);
-          toast.error("Error processing location");
         } finally {
           setIsGettingLocation(false);
         }
@@ -163,21 +161,6 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       (error) => {
         console.error("GPS Error:", error);
         setIsGettingLocation(false);
-        
-        let errorMessage = "GPS location failed";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access denied. Please allow location access.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "GPS unavailable. Location services not available.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "GPS timeout. Location request took too long.";
-            break;
-        }
-        
-        toast.error(errorMessage);
       },
       {
         enableHighAccuracy: true,
@@ -190,64 +173,49 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
   const handleTokenSubmit = () => {
     if (tokenInput.trim()) {
       setMapboxToken(tokenInput.trim());
-      toast.success('Mapbox token set! Map will reload.');
-    } else {
-      toast.error('Please enter a valid Mapbox token');
     }
   };
 
   // Show token input if no token is available
   if (!mapboxToken) {
     return (
-      <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-tuleeto-orange/10 rounded-lg">
-            <MapPin className="h-5 w-5 text-tuleeto-orange" />
-          </div>
-          <div>
-            <Label className="text-sm font-semibold text-gray-900">Mapbox Setup Required</Label>
-            <p className="text-xs text-gray-600">Enter your Mapbox access token to use the map</p>
-          </div>
+      <div className="space-y-3 p-3 border border-gray-200 rounded-lg bg-white">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-tuleeto-orange" />
+          <Label className="text-sm font-medium text-gray-900">Mapbox Setup Required</Label>
         </div>
         
-        <div className="space-y-3">
-          <div>
-            <Label htmlFor="mapbox-token" className="text-sm">Mapbox Access Token</Label>
-            <Input
-              id="mapbox-token"
-              type="password"
-              placeholder="pk.eyJ1..."
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          <Button onClick={handleTokenSubmit} className="w-full">
+        <div className="space-y-2">
+          <Label htmlFor="mapbox-token" className="text-xs">Mapbox Access Token</Label>
+          <Input
+            id="mapbox-token"
+            type="password"
+            placeholder="pk.eyJ1..."
+            value={tokenInput}
+            onChange={(e) => setTokenInput(e.target.value)}
+            className="text-sm"
+          />
+          <Button onClick={handleTokenSubmit} size="sm" className="w-full">
             Set Token & Load Map
           </Button>
-          <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-            💡 Get your free Mapbox token at{' '}
-            <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="underline">
-              mapbox.com
-            </a>
-            {' '}→ Account → Access Tokens
-          </div>
+        </div>
+        
+        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
+          Get your free token at{' '}
+          <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="underline">
+            mapbox.com
+          </a>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
+    <div className="space-y-3 p-3 border border-gray-200 rounded-lg bg-white">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-tuleeto-orange/10 rounded-lg">
-            <MapPin className="h-5 w-5 text-tuleeto-orange" />
-          </div>
-          <div>
-            <Label className="text-sm font-semibold text-gray-900">Property Location</Label>
-            <p className="text-xs text-gray-600">Click on the map to set exact location</p>
-          </div>
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-tuleeto-orange" />
+          <Label className="text-sm font-medium text-gray-900">Property Location</Label>
         </div>
         <Button
           type="button"
@@ -255,46 +223,34 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           disabled={isGettingLocation}
           variant="outline"
           size="sm"
-          className="text-xs bg-green-50 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 disabled:opacity-50"
+          className="text-xs h-8 px-2"
         >
           {isGettingLocation ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
           ) : (
-            <Crosshair className="h-4 w-4 mr-2" />
+            <Crosshair className="h-3 w-3 mr-1" />
           )}
-          {isGettingLocation ? "Getting GPS..." : "Use GPS"}
+          {isGettingLocation ? "Getting..." : "GPS"}
         </Button>
       </div>
       
       <div 
         ref={mapContainer} 
-        className="w-full h-80 rounded-xl border border-gray-300 shadow-inner overflow-hidden cursor-crosshair"
+        className="w-full h-64 rounded-lg border border-gray-300 overflow-hidden cursor-crosshair"
       />
       
       {selectedCoords && (
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="font-semibold text-green-800">Location Selected</span>
+        <div className="bg-green-50 p-2 rounded border border-green-200">
+          <div className="flex items-center gap-1 mb-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs font-medium text-green-800">Location Selected</span>
           </div>
-          <p className="text-sm text-green-700 font-mono">
-            📍 {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
-          </p>
-          <p className="text-xs text-green-600 mt-1">
-            High precision coordinates with Mapbox
+          <p className="text-xs text-green-700 font-mono">
+            {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
           </p>
         </div>
       )}
-      
-      <div className="text-xs text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-        <div className="font-medium text-blue-800 mb-2">💡 How to use:</div>
-        <div className="space-y-1 text-blue-700">
-          <div>• Use GPS button for automatic location detection</div>
-          <div>• Click anywhere on map to set marker</div>
-          <div>• Use map controls to zoom and navigate</div>
-          <div>• Powered by Mapbox for global coverage</div>
-        </div>
-      </div>
     </div>
   );
 };
+

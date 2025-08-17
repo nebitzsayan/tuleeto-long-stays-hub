@@ -1,4 +1,5 @@
 
+
 // Mapbox configuration
 export const MAPBOX_CONFIG = {
   // This should be set via user input since we don't have environment variables in browser
@@ -14,16 +15,16 @@ export const MAPBOX_CONFIG = {
     satelliteStreets: 'mapbox://styles/mapbox/satellite-streets-v12',
   },
   
-  // Default coordinates for Siliguri, India
+  // Precise coordinates for Siliguri, West Bengal, India
   defaultCenter: {
-    lat: 26.7270661,
-    lng: 88.4284210
+    lat: 26.7271,
+    lng: 88.4284
   },
   
-  // Default zoom levels
-  defaultZoom: 15,
-  maxZoom: 20,
-  minZoom: 1
+  // Default zoom levels for better accuracy
+  defaultZoom: 13,
+  maxZoom: 18,
+  minZoom: 8
 };
 
 // Helper function to get precision coordinates
@@ -57,3 +58,4 @@ export const reverseGeocode = async (lat: number, lng: number) => {
   const data = await response.json();
   return data;
 };
+
