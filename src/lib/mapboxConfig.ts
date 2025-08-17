@@ -1,8 +1,8 @@
 
 // Mapbox configuration
 export const MAPBOX_CONFIG = {
-  // This should be set via environment variable or user input
-  accessToken: process.env.REACT_APP_MAPBOX_ACCESS_TOKEN || '',
+  // This should be set via user input since we don't have environment variables in browser
+  accessToken: '',
   
   // Map styles
   styles: {
