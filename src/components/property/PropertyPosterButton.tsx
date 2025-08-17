@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { generatePropertyPoster } from "@/utils/pdfGenerator";
+import { generatePropertyPDF } from "@/utils/pdfGenerator";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface PropertyPosterButtonProps {
@@ -49,7 +49,8 @@ const PropertyPosterButton = ({ property, className = "" }: PropertyPosterButton
     setIsGenerating(true);
     
     try {
-      await generatePropertyPoster({
+      await generatePropertyPDF({
+        propertyId: property.id || '',
         title: property.title,
         location: property.location,
         price: property.price,
@@ -60,10 +61,7 @@ const PropertyPosterButton = ({ property, className = "" }: PropertyPosterButton
         features: property.features || [],
         ownerName: property.owner_name || property.ownerName || "Property Owner",
         contactPhone: contactPhone,
-        images: property.images || [],
-        averageRating: property.average_rating,
-        reviewCount: property.review_count,
-        propertyId: property.id
+        images: property.images || []
       });
       
       toast.success("Property poster generated successfully!");
