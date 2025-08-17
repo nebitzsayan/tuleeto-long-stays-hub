@@ -1,8 +1,9 @@
-
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
+import { OLA_MAPS_CONFIG } from '@/lib/olaMapsConfig';
 
-interface PropertyPosterData {
+interface PropertyForPDF {
+  propertyId: string;
   title: string;
   location: string;
   price: number;
@@ -11,73 +12,44 @@ interface PropertyPosterData {
   area: number;
   description: string;
   features: string[];
+  images: string[];
   ownerName: string;
   contactPhone: string;
-  images: string[];
-  averageRating?: number;
-  reviewCount?: number;
-  propertyId?: string;
+  coordinates?: { lat: number; lng: number };
 }
 
-const loadImageAsBase64 = (url: string): Promise<{dataURL: string, width: number, height: number}> => {
+interface Base64Data {
+  dataURL: string;
+  format: string;
+}
+
+const loadImageAsBase64 = (url: string): Promise<Base64Data> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
+    img.setAttribute('crossOrigin', 'anonymous');
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
       canvas.width = img.width;
       canvas.height = img.height;
-      
+      const ctx = canvas.getContext('2d');
       ctx?.drawImage(img, 0, 0);
-      
-      try {
-        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
-        resolve({
-          dataURL,
-          width: img.width,
-          height: img.height
-        });
-      } catch (error) {
-        reject(error);
-      }
+      const dataURL = canvas.toDataURL('image/png');
+      const dataParts = dataURL.split(';base64,');
+      const format = dataParts[0].split(':')[1];
+      const data = dataParts[1];
+      resolve({ dataURL, format });
     };
-    
-    img.onerror = () => reject(new Error('Failed to load image'));
+    img.onerror = (error) => reject(error);
     img.src = url;
   });
 };
 
-const generateQRCode = async (url: string): Promise<string> => {
-  try {
-    return await QRCode.toDataURL(url, {
-      width: 80,
-      margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
-  } catch (error) {
-    console.error('Error generating QR code:', error);
-    throw error;
-  }
-};
-
 const encodeText = (text: string): string => {
-  return text
-    .replace(/[^\x00-\x7F]/g, '')
-    .replace(/'/g, "'")
-    .replace(/"/g, '"')
-    .replace(/–/g, '-')
-    .replace(/—/g, '-')
-    .trim();
+  return text.replace(/[\u00A0-\uFFFF]/g, (char) => `&#${char.charCodeAt(0)};`);
 };
 
-export const generatePropertyPoster = async (property: PropertyPosterData) => {
-  const pdf = new jsPDF('p', 'mm', 'a4');
+export const generatePropertyPDF = async (property: PropertyForPDF) => {
+  const pdf = new jsPDF();
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 20;
@@ -101,101 +73,69 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.setFontSize(32);
   pdf.setTextColor(255, 255, 255);
   pdf.setFont('helvetica', 'bold');
-  const headerText = 'TO-LET';
-  const headerWidth = pdf.getTextWidth(headerText);
-  pdf.text(headerText, (pageWidth - headerWidth) / 2, yPosition + 22);
+  const text = 'TO-LET';
+  const textWidth = pdf.getTextWidth(text);
+  pdf.text(text, (pageWidth - textWidth) / 2, yPosition + 22);
   
-  pdf.setFontSize(12);
-  pdf.setFont('helvetica', 'normal');
-  const subtitleText = 'RENT AVAILABLE';
-  const subtitleWidth = pdf.getTextWidth(subtitleText);
-  pdf.text(subtitleText, (pageWidth - subtitleWidth) / 2, yPosition + 30);
+  yPosition += 45;
   
-  yPosition += 50;
+  // Location - Fixed overlapping text
+  pdf.setFillColor(240, 240, 240);
+  const locationHeight = 25; // Increased height to prevent overlapping
+  pdf.rect(margin, yPosition, usableWidth, locationHeight, 'F');
   
-  // Location (Address only - no title)
-  pdf.setFontSize(14);
   pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('LOCATION:', margin + 5, yPosition + 8);
+  
   pdf.setFont('helvetica', 'normal');
-  const locationLines = pdf.splitTextToSize(encodeText(property.location), usableWidth);
-  locationLines.forEach((line: string) => {
-    pdf.text(line, margin, yPosition);
-    yPosition += 7;
+  pdf.setFontSize(10);
+  const locationText = encodeText(property.location);
+  const maxLocationWidth = usableWidth - 10;
+  const locationLines = pdf.splitTextToSize(locationText, maxLocationWidth);
+  
+  // Position location text properly to avoid overlap
+  let locationY = yPosition + 15; // Start below the LOCATION: label
+  locationLines.forEach((line: string, index: number) => {
+    if (index < 2) { // Limit to 2 lines to prevent overflow
+      pdf.text(line, margin + 5, locationY);
+      locationY += 5;
+    }
   });
   
-  yPosition += 10;
+  yPosition += locationHeight + 10;
   
   // Price
-  pdf.setFontSize(24);
-  pdf.setTextColor(255, 102, 0);
+  pdf.setFillColor(255, 102, 0);
+  pdf.rect(margin, yPosition, usableWidth, 20, 'F');
+  
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(18);
   pdf.setFont('helvetica', 'bold');
-  const priceText = `Rs ${property.price.toLocaleString('en-IN')}/month`;
-  pdf.text(priceText, margin, yPosition);
+  const priceText = `₹${property.price.toLocaleString('en-IN')}/month`;
+  const priceWidth = pdf.getTextWidth(priceText);
+  pdf.text(priceText, (pageWidth - priceWidth) / 2, yPosition + 13);
   
-  yPosition += 25;
+  yPosition += 30;
   
-  // Property Images with proper aspect ratio
+  // Property Images
   if (property.images && property.images.length > 0) {
-    try {
-      const imagesToShow = property.images.slice(0, 2); // Max 2 images
-      const maxImageWidth = 65; // Medium size
-      const imageSpacing = 10;
-      
-      if (imagesToShow.length === 1) {
-        // Single image - centered
-        try {
-          const imageData = await loadImageAsBase64(imagesToShow[0]);
-          const aspectRatio = imageData.height / imageData.width;
-          const imageWidth = maxImageWidth;
-          const imageHeight = imageWidth * aspectRatio;
-          const imageX = (pageWidth - imageWidth) / 2;
-          
-          pdf.addImage(imageData.dataURL, 'JPEG', imageX, yPosition, imageWidth, imageHeight);
-          yPosition += imageHeight + 15;
-        } catch (error) {
-          // Single placeholder
-          const imageHeight = 45;
-          const imageX = (pageWidth - maxImageWidth) / 2;
-          pdf.setFillColor(240, 240, 240);
-          pdf.rect(imageX, yPosition, maxImageWidth, imageHeight, 'F');
-          pdf.setTextColor(120, 120, 120);
-          pdf.setFontSize(8);
-          pdf.text('No Image', imageX + maxImageWidth/2 - 10, yPosition + imageHeight/2);
-          yPosition += imageHeight + 15;
-        }
-      } else if (imagesToShow.length >= 2) {
-        // Two images side by side
-        const imageWidth = (usableWidth - imageSpacing) / 2;
-        let maxImageHeight = 0;
-        
-        for (let i = 0; i < 2; i++) {
-          const imageX = margin + i * (imageWidth + imageSpacing);
-          
-          try {
-            const imageData = await loadImageAsBase64(imagesToShow[i]);
-            const aspectRatio = imageData.height / imageData.width;
-            const adjustedImageWidth = Math.min(imageWidth, maxImageWidth);
-            const imageHeight = adjustedImageWidth * aspectRatio;
-            maxImageHeight = Math.max(maxImageHeight, imageHeight);
-            
-            pdf.addImage(imageData.dataURL, 'JPEG', imageX, yPosition, adjustedImageWidth, imageHeight);
-          } catch (error) {
-            // Placeholder for failed image
-            const imageHeight = 45;
-            maxImageHeight = Math.max(maxImageHeight, imageHeight);
-            pdf.setFillColor(240, 240, 240);
-            pdf.rect(imageX, yPosition, imageWidth, imageHeight, 'F');
-            pdf.setTextColor(120, 120, 120);
-            pdf.setFontSize(8);
-            pdf.text('No Image', imageX + imageWidth/2 - 10, yPosition + imageHeight/2);
-          }
-        }
-        
-        yPosition += maxImageHeight + 15;
+    const imagesToShow = property.images.slice(0, 2);
+    const imageWidth = imagesToShow.length === 1 ? usableWidth : (usableWidth - 5) / 2;
+    const imageHeight = 60;
+    
+    for (let i = 0; i < imagesToShow.length; i++) {
+      try {
+        const imageData = await loadImageAsBase64(imagesToShow[i]);
+        const xPos = margin + (i * (imageWidth + 5));
+        pdf.addImage(imageData.dataURL, imageData.format, xPos, yPosition, imageWidth, imageHeight);
+      } catch (error) {
+        console.error(`Error loading image ${i + 1}:`, error);
       }
-    } catch (error) {
-      console.error('Error processing images:', error);
     }
+    
+    yPosition += imageHeight + 15;
   }
   
   // Amenities Section (clean, non-boxy design)
@@ -229,20 +169,55 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   
   yPosition += 15;
   
+  // Ola Maps Static Map (replacing Mapbox)
+  if (property.coordinates && property.coordinates.lat && property.coordinates.lng) {
+    try {
+      // Use Ola Maps static map API instead of Mapbox
+      const mapUrl = `https://api.olamaps.io/places/v1/staticmap?center=${property.coordinates.lat},${property.coordinates.lng}&zoom=16&size=400x200&markers=color:red|${property.coordinates.lat},${property.coordinates.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`;
+      
+      const mapData = await loadImageAsBase64(mapUrl);
+      const mapWidth = usableWidth * 0.8;
+      const mapHeight = 40;
+      const mapX = margin + (usableWidth - mapWidth) / 2;
+      
+      pdf.addImage(mapData.dataURL, 'PNG', mapX, yPosition, mapWidth, mapHeight);
+      yPosition += mapHeight + 10;
+      
+      // Map caption with Ola Maps branding
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 100, 100);
+      const mapCaption = 'Powered by Ola Maps';
+      const captionWidth = pdf.getTextWidth(mapCaption);
+      pdf.text(mapCaption, (pageWidth - captionWidth) / 2, yPosition);
+      yPosition += 15;
+    } catch (error) {
+      console.error('Error loading Ola Maps static map:', error);
+      // Fallback: Show coordinates instead
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      const coordText = `Location: ${property.coordinates.lat.toFixed(6)}, ${property.coordinates.lng.toFixed(6)}`;
+      const coordWidth = pdf.getTextWidth(coordText);
+      pdf.text(coordText, (pageWidth - coordWidth) / 2, yPosition);
+      yPosition += 15;
+    }
+  }
+  
   // QR Code Section
   if (property.propertyId) {
     try {
       const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
-      const qrCode = await generateQRCode(propertyUrl);
+      const qrCodeDataURL = await QRCode.toDataURL(propertyUrl, {
+        width: 80,
+        margin: 1,
+        color: { dark: '#000000', light: '#FFFFFF' }
+      });
       
-      const qrSize = 60;
+      const qrSize = 30;
       const qrX = (pageWidth - qrSize) / 2;
+      pdf.addImage(qrCodeDataURL, 'PNG', qrX, yPosition, qrSize, qrSize);
       
-      pdf.addImage(qrCode, 'PNG', qrX, yPosition, qrSize, qrSize);
-      
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 100, 100);
       const qrText = 'Scan to view online';
       const qrTextWidth = pdf.getTextWidth(qrText);
       pdf.text(qrText, (pageWidth - qrTextWidth) / 2, yPosition + qrSize + 8);
@@ -260,9 +235,9 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Contact Owner', margin + 10, yPosition + 12);
+  pdf.text('CONTACT INFORMATION', margin + 10, yPosition + 8);
   
-  pdf.setFontSize(12);
+  pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
   pdf.text(`Name: ${encodeText(property.ownerName)}`, margin + 10, yPosition + 19);
   pdf.text(`Phone: ${property.contactPhone}`, margin + 10, yPosition + 23);
