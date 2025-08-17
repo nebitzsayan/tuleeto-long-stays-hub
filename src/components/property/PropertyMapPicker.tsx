@@ -22,7 +22,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    const defaultCenter = initialLocation 
+    const defaultCenter: [number, number] = initialLocation 
       ? [initialLocation.lng, initialLocation.lat] 
       : [OLA_MAPS_CONFIG.defaultCenter.lng, OLA_MAPS_CONFIG.defaultCenter.lat];
 
@@ -154,7 +154,8 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
 
       // Handle map clicks
       mapRef.current.on('click', (e: any) => {
-        markerRef.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        const clickCoords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        markerRef.current!.setLngLat(clickCoords);
         updateLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
       });
 
@@ -195,9 +196,10 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
         );
         
         setSelectedCoords(coords);
-        markerRef.current?.setLngLat([coords.lng, coords.lat]);
+        const gpsCoords: [number, number] = [coords.lng, coords.lat];
+        markerRef.current?.setLngLat(gpsCoords);
         mapRef.current?.flyTo({ 
-          center: [coords.lng, coords.lat], 
+          center: gpsCoords, 
           zoom: OLA_MAPS_CONFIG.precision.zoom.maximum,
           duration: 2000
         });
