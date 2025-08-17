@@ -166,11 +166,11 @@ export const FeaturesPhotosStep = ({
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold mb-3">Property Details & Photos</h2>
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold mb-4">Property Details & Photos</h2>
       
-      {/* Property Details - Compact Grid */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Property Details - Better Spacing */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="bedrooms"
@@ -179,8 +179,8 @@ export const FeaturesPhotosStep = ({
               <FormLabel className="text-sm">Bedrooms</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select" />
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Select bedrooms" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -204,8 +204,8 @@ export const FeaturesPhotosStep = ({
               <FormLabel className="text-sm">Bathrooms</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select" />
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Select bathrooms" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -224,7 +224,7 @@ export const FeaturesPhotosStep = ({
         />
       </div>
       
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="area"
@@ -232,7 +232,7 @@ export const FeaturesPhotosStep = ({
             <FormItem>
               <FormLabel className="text-sm">Area (sq ft)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. 1200" className="h-9" {...field} />
+                <Input placeholder="e.g. 1200" className="h-10" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -246,7 +246,7 @@ export const FeaturesPhotosStep = ({
             <FormItem>
               <FormLabel className="text-sm">Monthly Rent (₹)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. 25000" className="h-9" {...field} />
+                <Input placeholder="e.g. 25000" className="h-10" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -261,26 +261,26 @@ export const FeaturesPhotosStep = ({
           <FormItem>
             <FormLabel className="text-sm">Available From</FormLabel>
             <FormControl>
-              <Input type="date" className="h-9" {...field} />
+              <Input type="date" className="h-10" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
       
-      {/* Features Selection - Compact Layout */}
-      <div className="space-y-3">
-        <FormLabel className="text-sm">Property Features</FormLabel>
-        <div className="grid grid-cols-2 gap-2">
+      {/* Features Selection - Fixed Layout */}
+      <div className="space-y-4">
+        <FormLabel className="text-sm font-medium">Property Features</FormLabel>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {features.map((feature) => (
-            <div key={feature} className="flex items-center space-x-2 p-1">
+            <div key={feature} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
               <Checkbox
                 id={feature}
                 checked={selectedFeatures.includes(feature)}
                 onCheckedChange={(checked) => handleFeatureChange(feature, checked as boolean)}
                 className="h-4 w-4"
               />
-              <label htmlFor={feature} className="text-xs font-medium leading-none cursor-pointer">
+              <label htmlFor={feature} className="text-sm font-medium leading-5 cursor-pointer flex-1">
                 {feature}
               </label>
             </div>
@@ -288,9 +288,9 @@ export const FeaturesPhotosStep = ({
         </div>
       </div>
       
-      {/* Photo Upload Section - Compact */}
-      <div className="space-y-3">
-        <FormLabel className="text-sm">Property Photos</FormLabel>
+      {/* Photo Upload Section */}
+      <div className="space-y-4">
+        <FormLabel className="text-sm font-medium">Property Photos</FormLabel>
         
         <input
           ref={fileInputRef}
@@ -301,9 +301,9 @@ export const FeaturesPhotosStep = ({
           className="hidden"
         />
         
-        {/* Photo Preview Grid - Smaller Cards */}
+        {/* Photo Preview Grid */}
         {photos.length > 0 && (
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {photos.map((photo, index) => (
               <Card key={index} className="relative overflow-hidden">
                 <CardContent className="p-0">
@@ -317,14 +317,14 @@ export const FeaturesPhotosStep = ({
                       type="button"
                       variant="destructive"
                       size="sm"
-                      className="absolute top-1 right-1 h-5 w-5 p-0"
+                      className="absolute top-2 right-2 h-6 w-6 p-0"
                       onClick={() => removePhoto(index)}
                     >
-                      <X className="h-2 w-2" />
+                      <X className="h-3 w-3" />
                     </Button>
                     {index === 0 && (
-                      <div className="absolute bottom-1 left-1 bg-black text-white text-xs px-1 py-0.5 rounded">
-                        Main
+                      <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                        Main Photo
                       </div>
                     )}
                   </div>
@@ -333,7 +333,7 @@ export const FeaturesPhotosStep = ({
             ))}
             
             {photos.length < 10 && (
-              <Card className="border-dashed border-2 border-gray-300">
+              <Card className="border-dashed border-2 border-gray-300 hover:border-tuleeto-orange">
                 <CardContent className="p-0">
                   <div className="aspect-square flex items-center justify-center">
                     <Button
@@ -341,10 +341,10 @@ export const FeaturesPhotosStep = ({
                       variant="ghost"
                       onClick={triggerFileInput}
                       disabled={isUploading}
-                      className="h-full w-full flex flex-col items-center gap-1 p-2"
+                      className="h-full w-full flex flex-col items-center gap-2 p-4"
                     >
-                      <Plus className="h-4 w-4 text-gray-400" />
-                      <span className="text-xs text-gray-500">Add</span>
+                      <Plus className="h-6 w-6 text-gray-400" />
+                      <span className="text-sm text-gray-500">Add Photo</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -355,21 +355,22 @@ export const FeaturesPhotosStep = ({
         
         {/* Upload button when no photos */}
         {photos.length === 0 && (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-tuleeto-orange">
             <Button
               type="button"
               onClick={triggerFileInput}
               disabled={isUploading}
-              size="sm"
-              className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
+              className="bg-tuleeto-orange hover:bg-tuleeto-orange/90 text-white"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isUploading ? 'Processing...' : 'Choose Photos'}
+              {isUploading ? 'Processing...' : 'Upload Property Photos'}
             </Button>
+            <p className="text-sm text-gray-500 mt-2">
+              Upload up to 10 photos (Max 5MB each)
+            </p>
           </div>
         )}
       </div>
     </div>
   );
 };
-

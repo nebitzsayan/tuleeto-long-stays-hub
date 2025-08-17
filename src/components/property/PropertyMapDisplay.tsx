@@ -19,7 +19,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
   const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || !MAPBOX_CONFIG.accessToken) return;
+    if (!mapContainer.current) return;
 
     mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
 
@@ -28,8 +28,17 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
       style: MAPBOX_CONFIG.styles.streets,
       center: [coordinates.lng, coordinates.lat],
       zoom: showMarker ? 16 : 10,
-      interactive: false // Make it static for display
+      interactive: true,
+      pitch: 0,
+      bearing: 0
     });
+
+    // Add navigation controls
+    map.current.addControl(new mapboxgl.NavigationControl({
+      showCompass: false,
+      showZoom: true,
+      visualizePitch: false
+    }), 'top-right');
 
     // Add marker if coordinates are available
     if (showMarker) {
@@ -62,65 +71,6 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
       window.open(url, '_blank');
     }
   };
-
-  // If no Mapbox token, show fallback
-  if (!MAPBOX_CONFIG.accessToken) {
-    return (
-      <Card className="w-full shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="p-2 bg-tuleeto-orange/10 rounded-lg">
-              <MapPin className="h-5 w-5 text-tuleeto-orange" />
-            </div>
-            <div>
-              <div className="text-gray-900">Property Location</div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border">
-            <div className="font-medium text-gray-900 mb-1">📍 Address</div>
-            {location}
-            {showMarker && (
-              <div className="text-xs text-gray-500 mt-2">
-                Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
-              </div>
-            )}
-          </div>
-          
-          <div className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative bg-gray-100 flex items-center justify-center">
-            <div className="text-center p-4">
-              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600 text-sm">Mapbox token required</p>
-              <p className="text-gray-500 text-xs">Configure Mapbox to view map</p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3 flex-wrap">
-            <Button
-              onClick={handleViewLarger}
-              variant="outline"
-              size="sm"
-              className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white transition-all duration-200"
-            >
-              <Maximize2 className="h-4 w-4 mr-2" />
-              View Full Map
-            </Button>
-            
-            <Button
-              onClick={handleDirections}
-              variant="outline"
-              size="sm"
-              className="border-green-500 text-green-600 hover:bg-green-500 hover:text-white transition-all duration-200"
-            >
-              <Navigation className="h-4 w-4 mr-2" />
-              Get Directions
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">

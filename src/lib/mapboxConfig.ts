@@ -1,9 +1,8 @@
 
-
 // Mapbox configuration
 export const MAPBOX_CONFIG = {
-  // This should be set via user input since we don't have environment variables in browser
-  accessToken: '',
+  // Configured Mapbox access token
+  accessToken: 'pk.eyJ1Ijoic2F5YW5nYXllbiIsImEiOiJjbWR1Y2V5dHowaGs0Mmxxd2t0OGw2cDVxIn0.MTK_Fk7k7ApP20VUhBm9_g',
   
   // Map styles
   styles: {
@@ -22,7 +21,7 @@ export const MAPBOX_CONFIG = {
   },
   
   // Default zoom levels for better accuracy
-  defaultZoom: 13,
+  defaultZoom: 14,
   maxZoom: 18,
   minZoom: 8
 };
@@ -59,3 +58,20 @@ export const reverseGeocode = async (lat: number, lng: number) => {
   return data;
 };
 
+// Helper function to forward geocode (search for address)
+export const forwardGeocode = async (query: string) => {
+  if (!MAPBOX_CONFIG.accessToken) {
+    throw new Error('Mapbox access token is required');
+  }
+  
+  const response = await fetch(
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?proximity=${MAPBOX_CONFIG.defaultCenter.lng},${MAPBOX_CONFIG.defaultCenter.lat}&access_token=${MAPBOX_CONFIG.accessToken}`
+  );
+  
+  if (!response.ok) {
+    throw new Error(`Geocoding search failed: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data;
+};

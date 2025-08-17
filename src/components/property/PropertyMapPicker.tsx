@@ -1,13 +1,12 @@
 
-
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Crosshair, Loader2 } from 'lucide-react';
+import { MapPin, Crosshair, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { MAPBOX_CONFIG, getPrecisionCoordinates, reverseGeocode } from '@/lib/mapboxConfig';
+import { MAPBOX_CONFIG, getPrecisionCoordinates, reverseGeocode, forwardGeocode } from '@/lib/mapboxConfig';
 
 interface PropertyMapPickerProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
@@ -22,26 +21,26 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     initialLocation || null
   );
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [mapboxToken, setMapboxToken] = useState(MAPBOX_CONFIG.accessToken);
-  const [tokenInput, setTokenInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
+    if (!mapContainer.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
+    mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: MAPBOX_CONFIG.styles.streets, // Simple street map
+      style: MAPBOX_CONFIG.styles.streets,
       center: [
         initialLocation?.lng || MAPBOX_CONFIG.defaultCenter.lng,
         initialLocation?.lat || MAPBOX_CONFIG.defaultCenter.lat
       ],
       zoom: MAPBOX_CONFIG.defaultZoom,
-      pitch: 0, // Flat map, no 3D
-      bearing: 0, // North up
-      antialias: false // Better performance
+      pitch: 0,
+      bearing: 0,
+      antialias: false
     });
 
     // Add simple navigation controls
@@ -68,7 +67,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken, initialLocation]);
+  }, [initialLocation]);
 
   const addMarker = (lng: number, lat: number) => {
     if (!map.current) return;
@@ -78,7 +77,7 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
       marker.current.remove();
     }
 
-    // Add new marker with simple red color
+    // Add new marker with red color
     marker.current = new mapboxgl.Marker({ color: '#ef4444' })
       .setLngLat([lng, lat])
       .addTo(map.current);
@@ -170,52 +169,49 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     );
   };
 
-  const handleTokenSubmit = () => {
-    if (tokenInput.trim()) {
-      setMapboxToken(tokenInput.trim());
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const data = await forwardGeocode(searchQuery);
+      
+      if (data.features && data.features.length > 0) {
+        const feature = data.features[0];
+        const coords = {
+          lat: feature.center[1],
+          lng: feature.center[0]
+        };
+        
+        // Fly to the searched location
+        if (map.current) {
+          map.current.flyTo({
+            center: [coords.lng, coords.lat],
+            zoom: 16
+          });
+        }
+        
+        updateLocation(coords);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  // Show token input if no token is available
-  if (!mapboxToken) {
-    return (
-      <div className="space-y-3 p-3 border border-gray-200 rounded-lg bg-white">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-tuleeto-orange" />
-          <Label className="text-sm font-medium text-gray-900">Mapbox Setup Required</Label>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="mapbox-token" className="text-xs">Mapbox Access Token</Label>
-          <Input
-            id="mapbox-token"
-            type="password"
-            placeholder="pk.eyJ1..."
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value)}
-            className="text-sm"
-          />
-          <Button onClick={handleTokenSubmit} size="sm" className="w-full">
-            Set Token & Load Map
-          </Button>
-        </div>
-        
-        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
-          Get your free token at{' '}
-          <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="underline">
-            mapbox.com
-          </a>
-        </div>
-      </div>
-    );
-  }
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
-    <div className="space-y-3 p-3 border border-gray-200 rounded-lg bg-white">
+    <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-tuleeto-orange" />
-          <Label className="text-sm font-medium text-gray-900">Property Location</Label>
+          <Label className="text-sm font-medium text-gray-900">Select Property Location</Label>
         </div>
         <Button
           type="button"
@@ -226,24 +222,49 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
           className="text-xs h-8 px-2"
         >
           {isGettingLocation ? (
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            <div className="h-3 w-3 mr-1 animate-spin border border-current border-t-transparent rounded-full" />
           ) : (
             <Crosshair className="h-3 w-3 mr-1" />
           )}
           {isGettingLocation ? "Getting..." : "GPS"}
         </Button>
       </div>
+
+      {/* Search Box */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="Search for an address..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className="text-sm"
+        />
+        <Button
+          type="button"
+          onClick={handleSearch}
+          disabled={isSearching}
+          size="sm"
+          variant="outline"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Instructions */}
+      <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded border border-blue-200">
+        💡 Click anywhere on the map to mark your property's exact location, or search for an address above.
+      </div>
       
       <div 
         ref={mapContainer} 
-        className="w-full h-64 rounded-lg border border-gray-300 overflow-hidden cursor-crosshair"
+        className="w-full h-80 rounded-lg border border-gray-300 overflow-hidden cursor-crosshair"
       />
       
       {selectedCoords && (
-        <div className="bg-green-50 p-2 rounded border border-green-200">
-          <div className="flex items-center gap-1 mb-1">
+        <div className="bg-green-50 p-3 rounded border border-green-200">
+          <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-xs font-medium text-green-800">Location Selected</span>
+            <span className="text-sm font-medium text-green-800">Location Selected</span>
           </div>
           <p className="text-xs text-green-700 font-mono">
             {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
@@ -253,4 +274,3 @@ export const PropertyMapPicker = ({ onLocationSelect, initialLocation }: Propert
     </div>
   );
 };
-
