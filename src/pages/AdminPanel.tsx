@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -10,6 +9,7 @@ import { Users, Home, MessageSquare, Shield, Trash2, Eye, Loader2 } from "lucide
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { secureLog, sanitizeErrorMessage } from "@/lib/secureLogging";
 
 interface User {
   id: string;
@@ -57,20 +57,20 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState<'users' | 'properties' | 'reviews'>('users');
 
   useEffect(() => {
-    console.log('AdminPanel - Auth loading:', authLoading, 'User:', user?.email, 'Profile:', userProfile);
+    secureLog.info('AdminPanel loading state check');
     
     if (authLoading) {
       return; // Wait for auth to load
     }
 
     if (!user) {
-      console.log('No user, redirecting to auth');
+      secureLog.warn('No user found, redirecting to auth');
       navigate('/auth');
       return;
     }
 
     if (!userProfile?.isAdmin) {
-      console.log('User is not admin, redirecting to home');
+      secureLog.warn('Non-admin user attempted to access admin panel');
       toast.error("Access denied. Admin privileges required.");
       navigate('/');
       return;
@@ -82,41 +82,36 @@ const AdminPanel = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching admin data...');
+      secureLog.info('Fetching admin panel data');
       
-      // Fetch users with their roles
+      // Fetch users with their roles using the secure view
       const { data: usersData, error: usersError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          email,
-          full_name,
-          avatar_url,
-          created_at
-        `);
+        .from('public_profiles_safe')
+        .select('*');
 
       if (usersError) {
-        console.error('Error fetching users:', usersError);
+        secureLog.error('Error fetching users', usersError);
         throw usersError;
       }
 
-      // Fetch user roles
+      // Fetch user roles (only admins can see all roles due to RLS)
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) {
-        console.error('Error fetching roles:', rolesError);
+        secureLog.error('Error fetching roles', rolesError);
       }
 
       // Combine users with their roles
       const usersWithRoles = usersData?.map(user => ({
         ...user,
+        email: 'Protected', // Don't expose emails in admin panel for security
         role: rolesData?.find(r => r.user_id === user.id)?.role || 'user'
       })) || [];
 
       setUsers(usersWithRoles);
-      console.log('Users fetched:', usersWithRoles.length);
+      secureLog.info('Users data loaded');
 
       // Fetch properties with owner info
       const { data: propertiesData, error: propertiesError } = await supabase
@@ -132,28 +127,31 @@ const AdminPanel = () => {
         `);
 
       if (propertiesError) {
-        console.error('Error fetching properties:', propertiesError);
+        secureLog.error('Error fetching properties', propertiesError);
         throw propertiesError;
       }
 
-      // Get owner profiles
+      // Get owner profiles using the safe view
       const ownerIds = propertiesData?.map(p => p.owner_id) || [];
       const { data: ownersData, error: ownersError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
+        .from('public_profiles_safe')
+        .select('id, full_name')
         .in('id', ownerIds);
 
       if (ownersError) {
-        console.error('Error fetching owners:', ownersError);
+        secureLog.error('Error fetching owners', ownersError);
       }
 
       const propertiesWithOwners = propertiesData?.map(property => ({
         ...property,
-        owner: ownersData?.find(o => o.id === property.owner_id) || { email: 'Unknown', full_name: null }
+        owner: ownersData?.find(o => o.id === property.owner_id) || { 
+          email: 'Unknown', 
+          full_name: null 
+        }
       })) || [];
 
       setProperties(propertiesWithOwners);
-      console.log('Properties fetched:', propertiesWithOwners.length);
+      secureLog.info('Properties data loaded');
 
       // Fetch reviews with user and property info
       const { data: reviewsData, error: reviewsError } = await supabase
@@ -169,21 +167,21 @@ const AdminPanel = () => {
         .order('created_at', { ascending: false });
 
       if (reviewsError) {
-        console.error('Error fetching reviews:', reviewsError);
+        secureLog.error('Error fetching reviews', reviewsError);
         throw reviewsError;
       }
 
-      // Get user and property info for reviews
+      // Get user and property info for reviews using safe views
       const reviewUserIds = reviewsData?.map(r => r.user_id) || [];
       const reviewPropertyIds = reviewsData?.map(r => r.property_id) || [];
 
       const { data: reviewUsersData, error: reviewUsersError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
+        .from('public_profiles_safe')
+        .select('id, full_name')
         .in('id', reviewUserIds);
 
       if (reviewUsersError) {
-        console.error('Error fetching review users:', reviewUsersError);
+        secureLog.error('Error fetching review users', reviewUsersError);
       }
 
       const { data: reviewPropertiesData, error: reviewPropertiesError } = await supabase
@@ -192,20 +190,25 @@ const AdminPanel = () => {
         .in('id', reviewPropertyIds);
 
       if (reviewPropertiesError) {
-        console.error('Error fetching review properties:', reviewPropertiesError);
+        secureLog.error('Error fetching review properties', reviewPropertiesError);
       }
 
       const reviewsWithDetails = reviewsData?.map(review => ({
         ...review,
-        user: reviewUsersData?.find(u => u.id === review.user_id) || { email: 'Unknown', full_name: null },
-        property: reviewPropertiesData?.find(p => p.id === review.property_id) || { title: 'Unknown Property' }
+        user: reviewUsersData?.find(u => u.id === review.user_id) || { 
+          email: 'Unknown', 
+          full_name: null 
+        },
+        property: reviewPropertiesData?.find(p => p.id === review.property_id) || { 
+          title: 'Unknown Property' 
+        }
       })) || [];
 
       setReviews(reviewsWithDetails);
-      console.log('Reviews fetched:', reviewsWithDetails.length);
+      secureLog.info('Reviews data loaded');
 
     } catch (error: any) {
-      console.error('Error fetching admin data:', error);
+      secureLog.error('Error fetching admin data', error);
       toast.error('Failed to load admin data');
     } finally {
       setLoading(false);
@@ -224,7 +227,7 @@ const AdminPanel = () => {
       toast.success('Property deleted successfully');
       fetchData();
     } catch (error: any) {
-      console.error('Error deleting property:', error);
+      secureLog.error('Error deleting property', error);
       toast.error('Failed to delete property');
     }
   };
@@ -241,7 +244,7 @@ const AdminPanel = () => {
       toast.success('Review deleted successfully');
       fetchData();
     } catch (error: any) {
-      console.error('Error deleting review:', error);
+      secureLog.error('Error deleting review', error);
       toast.error('Failed to delete review');
     }
   };
@@ -346,7 +349,7 @@ const AdminPanel = () => {
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <p className="font-medium">{user.full_name || 'No name'}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-sm text-gray-500">Email: Protected</p>
                         <p className="text-xs text-gray-400">
                           Joined: {new Date(user.created_at).toLocaleDateString()}
                         </p>
@@ -374,7 +377,7 @@ const AdminPanel = () => {
                         <p className="font-medium">{property.title}</p>
                         <p className="text-sm text-gray-500">{property.location}</p>
                         <p className="text-sm text-gray-500">
-                          Owner: {property.owner.full_name || property.owner.email}
+                          Owner: {property.owner.full_name || 'Unknown'}
                         </p>
                         <p className="text-xs text-gray-400">
                           Listed: {new Date(property.created_at).toLocaleDateString()}
@@ -434,7 +437,7 @@ const AdminPanel = () => {
                         </div>
                         <p className="text-sm text-gray-700 mb-2">{review.comment || 'No comment'}</p>
                         <p className="text-xs text-gray-500">
-                          By: {review.user.full_name || review.user.email}
+                          By: {review.user.full_name || 'Anonymous'}
                         </p>
                         <p className="text-xs text-gray-500">
                           Property: {review.property.title}

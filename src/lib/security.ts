@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Input sanitization functions
@@ -15,6 +16,41 @@ export const sanitizeHtml = (input: string): string => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;')
     .replace(/\//g, '&#x2F;');
+};
+
+// Enhanced input validation
+export const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+};
+
+export const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  if (password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+  
+  if (!/\d/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Password must contain at least one special character');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 };
 
 // File validation
@@ -55,7 +91,7 @@ export const validateImageFile = (file: File): Promise<{ isValid: boolean; error
   });
 };
 
-// Rate limiting (simple client-side implementation)
+// Enhanced rate limiting (simple client-side implementation)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 export const checkRateLimit = (key: string, maxRequests: number, windowMs: number): boolean => {
@@ -75,17 +111,54 @@ export const checkRateLimit = (key: string, maxRequests: number, windowMs: numbe
   return true;
 };
 
-// Security event logging
+// Security event logging with enhanced sanitization
 export const logSecurityEvent = async (event: string, details: any) => {
   try {
-    console.log(`[SECURITY] ${event}:`, details);
-    // In a production app, you'd send this to a logging service
+    // Sanitize the details to prevent logging sensitive information
+    const sanitizedDetails = sanitizeLogDetails(details);
+    
+    // In development, log to console
+    if (import.meta.env.DEV) {
+      console.log(`[SECURITY] ${event}:`, sanitizedDetails);
+    }
+    
+    // In production, you would send this to a proper logging service
+    // For now, we'll store in a separate security_logs table if it exists
   } catch (error) {
     console.error('Failed to log security event:', error);
   }
 };
 
-// Role checking utility
+// Sanitize log details to prevent sensitive data leakage
+const sanitizeLogDetails = (details: any): any => {
+  if (!details || typeof details !== 'object') {
+    return details;
+  }
+  
+  const sanitized = { ...details };
+  
+  // Remove or mask sensitive fields
+  const sensitiveFields = ['password', 'token', 'email', 'phone', 'credit_card', 'ssn'];
+  
+  for (const field of sensitiveFields) {
+    if (field in sanitized) {
+      if (field === 'email') {
+        // Partially mask email
+        const email = sanitized[field];
+        if (typeof email === 'string' && email.includes('@')) {
+          const [local, domain] = email.split('@');
+          sanitized[field] = `${local.substring(0, 2)}***@${domain}`;
+        }
+      } else {
+        sanitized[field] = '[REDACTED]';
+      }
+    }
+  }
+  
+  return sanitized;
+};
+
+// Role checking utility (using the secure function)
 export const getUserRole = async (): Promise<string | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -109,8 +182,36 @@ export const getUserRole = async (): Promise<string | null> => {
   }
 };
 
-// Check if user is admin
+// Check if user is admin using the secure function
 export const isAdmin = async (): Promise<boolean> => {
-  const role = await getUserRole();
-  return role === 'admin';
+  try {
+    const { data, error } = await supabase.rpc('is_current_user_admin');
+    
+    if (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+    
+    return data || false;
+  } catch (error) {
+    console.error('Error in isAdmin:', error);
+    return false;
+  }
+};
+
+// Content Security Policy helper
+export const generateCSPNonce = (): string => {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+// Safe HTML rendering helper (to replace dangerouslySetInnerHTML)
+export const createSafeHtml = (html: string): string => {
+  // Basic HTML sanitization - in production, use a library like DOMPurify
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '');
 };

@@ -4,6 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeInput, logSecurityEvent } from '@/lib/security';
+import { secureLog, sanitizeErrorMessage } from '@/lib/secureLogging';
 
 type UserProfile = {
   id: string;
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
+      secureLog.info('Fetching user profile');
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -45,23 +46,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError);
+        secureLog.error('Error fetching profile', profileError);
         return;
       }
 
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
+      // Use the secure function to check admin status
+      const { data: isAdminResult, error: adminError } = await supabase
+        .rpc('is_current_user_admin');
 
-      if (rolesError) {
-        console.error('Error fetching roles:', rolesError);
+      if (adminError) {
+        secureLog.error('Error checking admin status', adminError);
       }
 
-      const isAdmin = roles?.some(r => r.role === 'admin') || false;
+      const isAdmin = isAdminResult || false;
 
       if (profile) {
-        console.log('Profile fetched successfully:', profile);
+        secureLog.info('Profile fetched successfully');
         setUserProfile({
           id: profile.id,
           full_name: profile.full_name,
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
     } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
+      secureLog.error('Error in fetchUserProfile', error);
       await logSecurityEvent('profile_fetch_error', { userId, error });
     }
   };
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, currentSession) => {
         if (!mounted) return;
         
-        console.log('Auth state changed:', event, currentSession?.user?.email);
+        secureLog.info('Auth state changed', { event });
         
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       if (!mounted) return;
       
-      console.log('Initial session check:', currentSession?.user?.email);
+      secureLog.info('Initial session check');
       
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     }).catch(error => {
-      console.error('Error getting session:', error);
+      secureLog.error('Error getting session', error);
       if (mounted) {
         setIsLoading(false);
       }
@@ -156,11 +156,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) throw error;
-      console.log('Sign in successful:', data);
+      secureLog.info('Sign in successful');
     } catch (error: any) {
-      console.error('Sign in error:', error);
+      secureLog.error('Sign in error', error);
       await logSecurityEvent('sign_in_failed', { email, error: error.message });
-      toast.error(`Error signing in: ${error.message}`);
+      toast.error(`Error signing in: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
       setIsLoading(false);
@@ -187,9 +187,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await logSecurityEvent('user_signed_up', { email: sanitizedEmail });
       toast.success('Registration successful! Please check your email for verification.');
     } catch (error: any) {
-      console.error('Sign up error:', error);
+      secureLog.error('Sign up error', error);
       await logSecurityEvent('sign_up_failed', { email, error: error.message });
-      toast.error(`Error signing up: ${error.message}`);
+      toast.error(`Error signing up: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
       setIsLoading(false);
@@ -205,9 +205,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       window.location.href = '/';
     } catch (error: any) {
-      console.error('Sign out error:', error);
+      secureLog.error('Sign out error', error);
       await logSecurityEvent('sign_out_failed', { error: error.message });
-      toast.error(`Error signing out: ${error.message}`);
+      toast.error(`Error signing out: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
       setIsLoading(false);
@@ -226,9 +226,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       await logSecurityEvent('password_reset_requested', { email: sanitizedEmail });
     } catch (error: any) {
-      console.error('Reset password error:', error);
+      secureLog.error('Reset password error', error);
       await logSecurityEvent('password_reset_failed', { email, error: error.message });
-      toast.error(`Error resetting password: ${error.message}`);
+      toast.error(`Error resetting password: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
       setIsLoading(false);
@@ -251,9 +251,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     } catch (error: any) {
-      console.error('Google sign in error:', error);
+      secureLog.error('Google sign in error', error);
       await logSecurityEvent('google_sign_in_failed', { error: error.message });
-      toast.error(`Error signing in with Google: ${error.message}`);
+      toast.error(`Error signing in with Google: ${sanitizeErrorMessage(error)}`);
       throw error;
     } finally {
       setIsLoading(false);

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/types";
+import { secureLog } from "@/lib/secureLogging";
 
 export const getPropertyById = async (id: string): Promise<Property> => {
   const { data, error } = await supabase
@@ -26,7 +27,7 @@ export const getPropertyById = async (id: string): Promise<Property> => {
   // Enhanced coordinate parsing with better validation
   let coordinates: { lat: number; lng: number } | undefined;
   
-  console.log('Raw coordinates from database:', data.coordinates);
+  secureLog.debug('Processing property coordinates');
   
   if (data.coordinates) {
     try {
@@ -47,13 +48,13 @@ export const getPropertyById = async (id: string): Promise<Property> => {
         // Check if coordinates are valid numbers and not zero
         if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
           coordinates = { lat, lng };
-          console.log('Parsed coordinates successfully:', coordinates);
+          secureLog.debug('Coordinates parsed successfully');
         } else {
-          console.log('Invalid coordinates detected:', { lat, lng });
+          secureLog.warn('Invalid coordinates detected');
         }
       }
     } catch (parseError) {
-      console.error('Error parsing coordinates:', parseError);
+      secureLog.error('Error parsing coordinates', parseError);
     }
   }
 
@@ -85,7 +86,7 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     updatedAt: data.created_at
   };
 
-  console.log('Final property object coordinates:', property.coordinates);
+  secureLog.debug('Property data processed successfully');
   return property;
 };
 
@@ -132,7 +133,7 @@ export const getAllProperties = async (): Promise<Property[]> => {
           }
         }
       } catch (parseError) {
-        console.error('Error parsing coordinates for property', item.id, parseError);
+        secureLog.error('Error parsing coordinates for property', parseError);
       }
     }
 
