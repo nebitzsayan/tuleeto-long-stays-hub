@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapPin, Navigation, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { generateStaticMapUrl, OLA_MAPS_CONFIG } from '@/lib/olaMapsConfig';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { MAPBOX_CONFIG } from '@/lib/mapboxConfig';
 
 interface PropertyMapDisplayProps {
   coordinates: { lat: number; lng: number };
@@ -13,13 +15,33 @@ interface PropertyMapDisplayProps {
 }
 
 export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = true }: PropertyMapDisplayProps) => {
-  // Generate Ola Maps static map URL using the helper function
-  const getMapImageUrl = () => {
-    const zoom = showMarker ? 16 : 10;
-    const markers = showMarker ? [{ lat: coordinates.lat, lng: coordinates.lng, color: 'red' }] : undefined;
-    
-    return generateStaticMapUrl(coordinates, zoom, 800, 400, markers);
-  };
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapContainer.current || !MAPBOX_CONFIG.accessToken) return;
+
+    mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: MAPBOX_CONFIG.styles.streets,
+      center: [coordinates.lng, coordinates.lat],
+      zoom: showMarker ? 16 : 10,
+      interactive: false // Make it static for display
+    });
+
+    // Add marker if coordinates are available
+    if (showMarker) {
+      new mapboxgl.Marker({ color: '#ef4444' })
+        .setLngLat([coordinates.lng, coordinates.lat])
+        .addTo(map.current);
+    }
+
+    return () => {
+      map.current?.remove();
+    };
+  }, [coordinates, showMarker]);
 
   const handleDirections = () => {
     if (showMarker) {
@@ -40,6 +62,65 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
       window.open(url, '_blank');
     }
   };
+
+  // If no Mapbox token, show fallback
+  if (!MAPBOX_CONFIG.accessToken) {
+    return (
+      <Card className="w-full shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-tuleeto-orange/10 rounded-lg">
+              <MapPin className="h-5 w-5 text-tuleeto-orange" />
+            </div>
+            <div>
+              <div className="text-gray-900">Property Location</div>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border">
+            <div className="font-medium text-gray-900 mb-1">📍 Address</div>
+            {location}
+            {showMarker && (
+              <div className="text-xs text-gray-500 mt-2">
+                Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+              </div>
+            )}
+          </div>
+          
+          <div className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative bg-gray-100 flex items-center justify-center">
+            <div className="text-center p-4">
+              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-600 text-sm">Mapbox token required</p>
+              <p className="text-gray-500 text-xs">Configure Mapbox to view map</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 flex-wrap">
+            <Button
+              onClick={handleViewLarger}
+              variant="outline"
+              size="sm"
+              className="border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white transition-all duration-200"
+            >
+              <Maximize2 className="h-4 w-4 mr-2" />
+              View Full Map
+            </Button>
+            
+            <Button
+              onClick={handleDirections}
+              variant="outline"
+              size="sm"
+              className="border-green-500 text-green-600 hover:bg-green-500 hover:text-white transition-all duration-200"
+            >
+              <Navigation className="h-4 w-4 mr-2" />
+              Get Directions
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
@@ -70,32 +151,10 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
           )}
         </div>
         
-        <div className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative">
-          <img
-            src={getMapImageUrl()}
-            alt={`Map showing ${title}`}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error('Ola Maps static image failed to load');
-              // Fallback to a simple placeholder
-              const target = e.target as HTMLImageElement;
-              target.src = `data:image/svg+xml,${encodeURIComponent(`
-                <svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="100%" height="100%" fill="#f3f4f6"/>
-                  <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="16" fill="#6b7280">
-                    Map unavailable
-                  </text>
-                </svg>
-              `)}`;
-            }}
-            onLoad={() => {
-              console.log('Ola Maps static image loaded successfully');
-            }}
-          />
-          <div className="absolute bottom-2 right-2 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
-            Powered by Ola Maps
-          </div>
-        </div>
+        <div 
+          ref={mapContainer} 
+          className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative"
+        />
         
         <div className="flex gap-3 flex-wrap">
           <Button
@@ -129,7 +188,7 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
         {showMarker && (
           <div className="text-xs text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
             <div className="font-medium mb-1">✅ Precise Location</div>
-            This property has been mapped with high precision coordinates using Ola Maps.
+            This property has been mapped with high precision coordinates using Mapbox.
           </div>
         )}
       </CardContent>

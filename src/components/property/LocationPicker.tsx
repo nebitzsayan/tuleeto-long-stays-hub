@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { OLA_MAPS_CONFIG, getPrecisionCoordinates } from "@/lib/olaMapsConfig";
+import { getPrecisionCoordinates, reverseGeocode } from "@/lib/mapboxConfig";
 
 interface LocationPickerProps {
   onLocationChange: (location: { lat: number; lng: number; address: string }) => void;
@@ -31,31 +31,17 @@ export const LocationPicker = ({ onLocationChange, initialLocation }: LocationPi
         const coords = getPrecisionCoordinates(
           position.coords.latitude,
           position.coords.longitude,
-          OLA_MAPS_CONFIG.precision.coordinates
+          8
         );
         
         setCoordinates(coords);
         
-        // Try to get address from coordinates using Ola Maps reverse geocoding
+        // Try to get address from coordinates using Mapbox reverse geocoding
         try {
-          const response = await fetch(
-            `${OLA_MAPS_CONFIG.endpoints.reverseGeocode}?latlng=${coords.lat},${coords.lng}&api_key=${OLA_MAPS_CONFIG.apiKey}`,
-            {
-              headers: {
-                'X-Request-Id': Math.random().toString(36).substring(7)
-              }
-            }
-          );
+          const data = await reverseGeocode(coords.lat, coords.lng);
           
-          if (!response.ok) {
-            throw new Error(`Geocoding failed: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          if (data.results && data.results.length > 0) {
-            const result = data.results[0];
-            const fullAddress = result.formatted_address || result.name;
+          if (data.features && data.features.length > 0) {
+            const fullAddress = data.features[0].place_name;
             setAddress(fullAddress);
             onLocationChange({ ...coords, address: fullAddress });
           } else {
@@ -64,13 +50,13 @@ export const LocationPicker = ({ onLocationChange, initialLocation }: LocationPi
             onLocationChange({ ...coords, address: manualAddress });
           }
         } catch (error) {
-          console.error("Error getting address from Ola Maps:", error);
+          console.error("Error getting address from Mapbox:", error);
           const manualAddress = `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
           setAddress(manualAddress);
           onLocationChange({ ...coords, address: manualAddress });
         }
         
-        toast.success("Ultra-precise location detected with Ola Maps!");
+        toast.success("Precise location detected with Mapbox!");
         setIsGettingLocation(false);
       },
       (error) => {
@@ -100,12 +86,12 @@ export const LocationPicker = ({ onLocationChange, initialLocation }: LocationPi
       return;
     }
     
-    const coords = getPrecisionCoordinates(lat, lng, OLA_MAPS_CONFIG.precision.coordinates);
+    const coords = getPrecisionCoordinates(lat, lng, 8);
     setCoordinates(coords);
     const manualAddress = address || `${coords.lat.toFixed(8)}°N, ${coords.lng.toFixed(8)}°E`;
     setAddress(manualAddress);
     onLocationChange({ ...coords, address: manualAddress });
-    toast.success("Ultra-precise location set with Ola Maps!");
+    toast.success("Precise location set with Mapbox!");
   };
 
   return (
@@ -116,19 +102,19 @@ export const LocationPicker = ({ onLocationChange, initialLocation }: LocationPi
       </div>
       
       <p className="text-sm text-gray-600">
-        Help tenants find your property easily by marking its exact location using Ola Maps precision.
+        Help tenants find your property easily by marking its exact location using Mapbox precision.
       </p>
       
       {coordinates && (
         <div className="bg-green-50 p-3 rounded-md">
           <p className="text-sm text-green-800">
-            📍 Ultra-precise location set: {coordinates.lat.toFixed(8)}, {coordinates.lng.toFixed(8)}
+            📍 Precise location set: {coordinates.lat.toFixed(8)}, {coordinates.lng.toFixed(8)}
           </p>
           {address && (
             <p className="text-xs text-green-700 mt-1">{address}</p>
           )}
           <p className="text-xs text-blue-600 mt-1">
-            ✨ Powered by Ola Maps for India-specific accuracy
+            ✨ Powered by Mapbox for global accuracy
           </p>
         </div>
       )}
@@ -142,7 +128,7 @@ export const LocationPicker = ({ onLocationChange, initialLocation }: LocationPi
           className="w-full border-tuleeto-orange text-tuleeto-orange hover:bg-tuleeto-orange hover:text-white"
         >
           <Locate className="h-4 w-4 mr-2" />
-          {isGettingLocation ? "Getting Ultra-Precise Location..." : "Use Current Location (Ola Maps)"}
+          {isGettingLocation ? "Getting Precise Location..." : "Use Current Location (Mapbox)"}
         </Button>
         
         <div className="text-center text-xs text-gray-500">OR</div>
@@ -177,7 +163,7 @@ export const LocationPicker = ({ onLocationChange, initialLocation }: LocationPi
           size="sm"
           className="w-full"
         >
-          Set Ultra-Precise Coordinates
+          Set Precise Coordinates
         </Button>
         
         <div className="space-y-2">
@@ -193,7 +179,7 @@ export const LocationPicker = ({ onLocationChange, initialLocation }: LocationPi
       </div>
       
       <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-200">
-        💡 <strong>Ola Maps Advantage:</strong> Get India-specific ultra-high precision location data. Use "Current Location" if you're at the property, or enter coordinates manually for sub-meter accuracy.
+        💡 <strong>Mapbox Advantage:</strong> Get global high precision location data. Use "Current Location" if you're at the property, or enter coordinates manually for high accuracy.
       </div>
     </div>
   );

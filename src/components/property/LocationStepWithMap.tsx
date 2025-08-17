@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PropertyMapPicker } from "./PropertyMapPicker";
 import { MapPin, Navigation } from "lucide-react";
 import { toast } from "sonner";
-import { OLA_MAPS_CONFIG, getPrecisionCoordinates } from "@/lib/olaMapsConfig";
+import { getPrecisionCoordinates } from "@/lib/mapboxConfig";
 
 interface LocationStepWithMapProps {
   form: UseFormReturn<any>;
@@ -21,8 +21,8 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
   } | null>(null);
 
   const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
-    // Use ultra-high precision coordinates
-    const preciseCoords = getPrecisionCoordinates(location.lat, location.lng, OLA_MAPS_CONFIG.precision.coordinates);
+    // Use high precision coordinates
+    const preciseCoords = getPrecisionCoordinates(location.lat, location.lng, 8);
     
     setSelectedLocation({ ...preciseCoords, address: location.address });
     form.setValue("coordinates", preciseCoords);
@@ -48,21 +48,20 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
       return;
     }
 
-    toast.info("Getting your ultra-precise location with Ola Maps...");
+    toast.info("Getting your precise location with Mapbox...");
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = getPrecisionCoordinates(
           position.coords.latitude, 
           position.coords.longitude, 
-          OLA_MAPS_CONFIG.precision.coordinates
+          8
         );
         
         // This will trigger the map to center on user's location
-        // The PropertyMapPicker component will handle the rest
         setSelectedLocation({ ...coords, address: "Current Location" });
-        toast.success("📍 Ultra-precise location detected! Please adjust the marker if needed.", {
-          description: "Powered by Ola Maps for maximum accuracy in India"
+        toast.success("📍 Precise location detected! Please adjust the marker if needed.", {
+          description: "Powered by Mapbox for high accuracy"
         });
       },
       (error) => {
@@ -98,7 +97,7 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
       <div>
         <h2 className="text-2xl font-semibold mb-4">Property Location</h2>
         <p className="text-gray-600 mb-6">
-          Enter your property address and mark the exact location on the map for ultra-precise accuracy using Ola Maps
+          Enter your property address and mark the exact location on the map for precise accuracy using Mapbox
         </p>
       </div>
 
@@ -111,11 +110,11 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
           className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
         >
           <Navigation className="h-4 w-4 mr-2" />
-          📍 Use My Current Location (Ultra-Precise)
+          📍 Use My Current Location (High Precision)
         </Button>
       </div>
 
-      {/* Ola Maps Component */}
+      {/* Mapbox Component */}
       <PropertyMapPicker 
         onLocationSelect={handleLocationSelect}
         initialLocation={initialLocation}
@@ -198,7 +197,7 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
         <div className="bg-green-50 p-4 rounded-md border border-green-200">
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="h-4 w-4 text-green-600" />
-            <span className="font-medium text-green-800">Ultra-Precise Location Confirmed</span>
+            <span className="font-medium text-green-800">Precise Location Confirmed</span>
           </div>
           <p className="text-sm text-green-700">
             Coordinates: {selectedLocation.lat.toFixed(8)}, {selectedLocation.lng.toFixed(8)}
@@ -209,7 +208,7 @@ const LocationStepWithMap = ({ form }: LocationStepWithMapProps) => {
             </p>
           )}
           <p className="text-xs text-green-600 mt-2">
-            ✨ Powered by Ola Maps for India-specific ultra-high precision
+            ✨ Powered by Mapbox for global high precision mapping
           </p>
         </div>
       )}
