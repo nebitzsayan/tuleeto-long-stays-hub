@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { secureLog, logSecurityEvent } from './secureLogging';
+import { secureLog } from './secureLogging';
 
 // Enhanced input sanitization
 export const sanitizeInput = (input: string): string => {
@@ -47,41 +47,20 @@ export const checkRateLimit = (key: string, maxRequests: number = 10, windowMs: 
   return true;
 };
 
-// Enhanced security event logging with more context
-export const logSecurityEvent = async (
-  eventType: string,
-  details: Record<string, any> = {},
-  severity: 'low' | 'medium' | 'high' = 'medium'
-) => {
+// Admin check function
+export const isAdmin = async (): Promise<boolean> => {
   try {
-    secureLog.info(`Security event: ${eventType}`, { severity, ...details });
+    const { data, error } = await supabase.rpc('is_current_user_admin');
     
-    // Enhanced details with security context
-    const enhancedDetails = {
-      ...details,
-      severity,
-      timestamp: new Date().toISOString(),
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 200) : 'Unknown',
-      url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
-      // Remove sensitive data
-      password: undefined,
-      token: undefined,
-      email: details.email ? '[REDACTED]' : undefined,
-    };
-
-    const { error } = await supabase
-      .from('security_logs')
-      .insert({
-        event_type: eventType,
-        details: enhancedDetails,
-        user_agent: enhancedDetails.userAgent
-      });
-
     if (error) {
-      secureLog.error('Failed to log security event', error);
+      secureLog.error('Error checking admin status', error);
+      return false;
     }
+    
+    return data || false;
   } catch (error) {
-    secureLog.error('Security logging failed', error);
+    secureLog.error('Admin check failed', error);
+    return false;
   }
 };
 

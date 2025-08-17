@@ -31,15 +31,12 @@ export const secureLog = {
   }
 };
 
-// Enhanced security event logging
+// Enhanced security event logging - simplified version that doesn't use database
 export const logSecurityEvent = async (
   eventType: string, 
   details: Record<string, any> = {}
 ) => {
   try {
-    // Only import supabase when needed to avoid circular dependencies
-    const { supabase } = await import('@/integrations/supabase/client');
-    
     // Get user agent and other client info safely
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
     
@@ -55,21 +52,15 @@ export const logSecurityEvent = async (
       userAgent: userAgent.slice(0, 200) // Limit length
     };
 
-    const { error } = await supabase
-      .from('security_logs')
-      .insert({
-        event_type: eventType,
-        details: sanitizedDetails,
-        user_agent: userAgent.slice(0, 200)
-      });
-
-    if (error && isDevelopment) {
-      console.error('Failed to log security event:', error);
+    // For now, just log to console in development
+    // In production, this could be sent to an external logging service
+    if (isDevelopment) {
+      secureLog.info(`Security Event: ${eventType}`, sanitizedDetails);
     }
   } catch (error) {
-    // Fail silently in production to avoid blocking user operations
+    // Fail silently to avoid blocking user operations
     if (isDevelopment) {
-      console.error('Security logging error:', error);
+      secureLog.error('Security logging error:', error);
     }
   }
 };

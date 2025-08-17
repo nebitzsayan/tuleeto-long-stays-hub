@@ -51,17 +51,15 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   }
 
   return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(config)
-          .filter(([_, config]) => config.theme || config.color)
-          .map(([key, itemConfig]) => {
-            const cssVariable = itemConfig.theme?.[theme] ?? itemConfig.color
-            return `--color-${key}: ${cssVariable};`
-          })
-          .join("\n"),
-      }}
-    />
+    <style>
+      {Object.entries(config)
+        .filter(([_, itemConfig]) => itemConfig.theme || itemConfig.color)
+        .map(([key, itemConfig]) => {
+          const cssVariable = itemConfig.color || 'hsl(var(--primary))'
+          return `[data-chart="${id}"] { --color-${key}: ${cssVariable}; }`
+        })
+        .join('\n')}
+    </style>
   )
 }
 
@@ -76,6 +74,7 @@ const ChartTooltipContent = React.forwardRef<
       indicator?: "line" | "dot" | "dashed"
       nameKey?: string
       labelKey?: string
+      config?: ChartConfig
     }
 >(
   (
@@ -93,6 +92,7 @@ const ChartTooltipContent = React.forwardRef<
       color,
       nameKey,
       labelKey,
+      config = {},
     },
     ref
   ) => {
@@ -206,9 +206,10 @@ const ChartLegendContent = React.forwardRef<
     Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
       hideIcon?: boolean
       nameKey?: string
+      config?: ChartConfig
     }
 >(
-  ({ className, hideIcon = false, payload, verticalAlign = "bottom", nameKey }, ref) => {
+  ({ className, hideIcon = false, payload, verticalAlign = "bottom", nameKey, config = {} }, ref) => {
     if (!payload?.length) {
       return null
     }
