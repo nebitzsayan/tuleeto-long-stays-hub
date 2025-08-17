@@ -145,16 +145,22 @@ const PropertyDetailPage = () => {
                   </Card>
                 )}
 
-                {/* Map Section - Fix coordinate display */}
-                {property.coordinates && property.coordinates.lat && property.coordinates.lng ? (
+                {/* Map Section - Fixed coordinate handling */}
+                {property.coordinates && 
+                 typeof property.coordinates === 'object' && 
+                 property.coordinates.lat && 
+                 property.coordinates.lng && 
+                 property.coordinates.lat !== 0 && 
+                 property.coordinates.lng !== 0 ? (
                   <PropertyMapDisplay
                     coordinates={property.coordinates}
                     title={property.title}
                     location={property.location}
+                    showMarker={true}
                   />
                 ) : (
                   <PropertyMapDisplay
-                    coordinates={{ lat: 0, lng: 0 }}
+                    coordinates={{ lat: 26.727066, lng: 88.428421 }} // Default to Siliguri
                     title={property.title}
                     location={property.location}
                     showMarker={false}
