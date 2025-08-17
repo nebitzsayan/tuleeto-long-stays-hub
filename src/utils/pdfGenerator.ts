@@ -105,18 +105,8 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   
   yPosition += 20;
   
-  // Property Name (Bold, Black)
-  pdf.setFontSize(24);
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'bold');
-  const encodedTitle = encodeText(property.title);
-  const titleWidth = pdf.getTextWidth(encodedTitle);
-  pdf.text(encodedTitle, (pageWidth - titleWidth) / 2, yPosition);
-  
-  yPosition += 15;
-  
-  // Full Address (Smaller, Gray)
-  pdf.setFontSize(12);
+  // Property Location (Smaller, Gray)
+  pdf.setFontSize(14);
   pdf.setTextColor(100, 100, 100);
   pdf.setFont('helvetica', 'normal');
   const encodedLocation = encodeText(property.location);
@@ -139,18 +129,175 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   
   yPosition += 25;
   
-  // QR Code for UPI Payment (Centered)
+  // Property Images Section
+  if (property.images && property.images.length > 0) {
+    try {
+      const imagesToShow = property.images.slice(0, 2); // Maximum 2 images
+      const imageWidth = usableWidth / imagesToShow.length - 5;
+      const imageHeight = 60;
+      
+      let imageX = margin;
+      
+      for (const imageUrl of imagesToShow) {
+        try {
+          const imageData = await loadImageAsBase64(imageUrl);
+          pdf.addImage(imageData.dataURL, 'JPEG', imageX, yPosition, imageWidth, imageHeight);
+          imageX += imageWidth + 10;
+        } catch (error) {
+          console.error('Error loading image:', error);
+        }
+      }
+      
+      yPosition += imageHeight + 15;
+    } catch (error) {
+      console.error('Error processing images:', error);
+    }
+  }
+  
+  // QR Code for Property Details (Centered)
+  if (property.propertyId) {
+    try {
+      const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
+      const propertyQRCode = await generateQRCode(propertyUrl);
+      
+      const qrSize = 60;
+      const qrX = (pageWidth - qrSize) / 2;
+      
+      // Background for QR code
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(1);
+      pdf.roundedRect(qrX - 5, yPosition - 5, qrSize + 10, qrSize + 10, 3, 3, 'FD');
+      
+      pdf.addImage(propertyQRCode, 'PNG', qrX, yPosition, qrSize, qrSize);
+      yPosition += qrSize + 10;
+      
+      // QR Label
+      pdf.setFontSize(12);
+      pdf.setTextColor(50, 50, 50);
+      pdf.setFont('helvetica', 'bold');
+      const qrText = 'Scan to View Full Details';
+      const qrTextWidth = pdf.getTextWidth(qrText);
+      pdf.text(qrText, (pageWidth - qrTextWidth) / 2, yPosition);
+      yPosition += 20;
+      
+    } catch (error) {
+      console.error('Error generating property QR code:', error);
+    }
+  }
+  
+  // Property Specifications Section
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont('helvetica', 'bold');
+  const specsTitle = 'Property Specifications';
+  const specsTitleWidth = pdf.getTextWidth(specsTitle);
+  pdf.text(specsTitle, (pageWidth - specsTitleWidth) / 2, yPosition);
+  yPosition += 15;
+  
+  // Specifications Table
+  const tableY = yPosition;
+  const tableHeight = 50;
+  
+  // Table background
+  pdf.setFillColor(250, 250, 250);
+  pdf.setDrawColor(255, 102, 0);
+  pdf.setLineWidth(2);
+  pdf.roundedRect(margin, tableY, usableWidth, tableHeight, 5, 5, 'FD');
+  
+  // Table content
+  pdf.setFontSize(12);
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont('helvetica', 'bold');
+  
+  let tableRowY = tableY + 12;
+  const leftColX = margin + 10;
+  const rightColX = margin + (usableWidth / 2) + 10;
+  
+  // Left column
+  pdf.text(`Bedrooms: ${property.bedrooms}`, leftColX, tableRowY);
+  tableRowY += 10;
+  pdf.text(`Bathrooms: ${property.bathrooms}`, leftColX, tableRowY);
+  
+  // Right column
+  tableRowY = tableY + 12;
+  pdf.text(`Area: ${property.area} sq ft`, rightColX, tableRowY);
+  tableRowY += 10;
+  pdf.text(`Total Rooms: ${property.bedrooms + 1}`, rightColX, tableRowY);
+  
+  yPosition = tableY + tableHeight + 20;
+  
+  // Amenities Section
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont('helvetica', 'bold');
+  const amenitiesTitle = 'Amenities';
+  const amenitiesTitleWidth = pdf.getTextWidth(amenitiesTitle);
+  pdf.text(amenitiesTitle, (pageWidth - amenitiesTitleWidth) / 2, yPosition);
+  yPosition += 15;
+  
+  // Amenities boxes
+  const amenityChecks = {
+    'Air Conditioning': property.features.some(f => f.toLowerCase().includes('ac') || f.toLowerCase().includes('air condition')),
+    'WiFi': property.features.some(f => f.toLowerCase().includes('wifi') || f.toLowerCase().includes('internet')),
+    'Parking': property.features.some(f => f.toLowerCase().includes('parking')),
+    'Pet Friendly': property.features.some(f => f.toLowerCase().includes('pet')),
+    'PG (Paying Guest)': property.features.some(f => f.toLowerCase().includes('pg') || f.toLowerCase().includes('paying guest'))
+  };
+  
+  const boxWidth = (usableWidth - 20) / 2;
+  const boxHeight = 12;
+  let boxX = margin;
+  let boxY = yPosition;
+  let amenityCount = 0;
+  
+  Object.entries(amenityChecks).forEach(([amenity, hasAmenity]) => {
+    // Box background
+    const bgColor = hasAmenity ? [200, 255, 200] : [255, 200, 200]; // Light green for YES, light red for NO
+    pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+    pdf.setDrawColor(150, 150, 150);
+    pdf.setLineWidth(0.5);
+    pdf.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'FD');
+    
+    // Text
+    pdf.setFontSize(10);
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont('helvetica', 'normal');
+    const status = hasAmenity ? 'YES' : 'NO';
+    const amenityText = `${amenity}: ${status}`;
+    pdf.text(amenityText, boxX + 3, boxY + 8);
+    
+    amenityCount++;
+    if (amenityCount % 2 === 0) {
+      boxX = margin;
+      boxY += boxHeight + 5;
+    } else {
+      boxX += boxWidth + 10;
+    }
+  });
+  
+  yPosition = boxY + (amenityCount % 2 === 0 ? 0 : boxHeight) + 20;
+  
+  // UPI Payment QR Code Section
   try {
     const upiQRData = `upi://pay?pa=owner@upi&pn=${encodeURIComponent(property.ownerName)}&am=${property.price}&cu=INR`;
     const upiQRCode = await generateQRCode(upiQRData);
     
-    const qrSize = 60;
+    pdf.setFontSize(14);
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont('helvetica', 'bold');
+    const upiTitle = 'Quick Payment';
+    const upiTitleWidth = pdf.getTextWidth(upiTitle);
+    pdf.text(upiTitle, (pageWidth - upiTitleWidth) / 2, yPosition);
+    yPosition += 15;
+    
+    const qrSize = 50;
     const qrX = (pageWidth - qrSize) / 2;
     
     // Background for QR code
     pdf.setFillColor(255, 255, 255);
-    pdf.setDrawColor(200, 200, 200);
-    pdf.setLineWidth(1);
+    pdf.setDrawColor(255, 102, 0);
+    pdf.setLineWidth(2);
     pdf.roundedRect(qrX - 5, yPosition - 5, qrSize + 10, qrSize + 10, 3, 3, 'FD');
     
     pdf.addImage(upiQRCode, 'PNG', qrX, yPosition, qrSize, qrSize);
@@ -169,75 +316,6 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
     console.error('Error generating UPI QR code:', error);
   }
   
-  // Property Specifications Table
-  pdf.setFontSize(14);
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'bold');
-  
-  const tableY = yPosition;
-  const tableHeight = 40;
-  const leftColWidth = usableWidth / 2;
-  const rightColWidth = usableWidth / 2;
-  
-  // Table background
-  pdf.setFillColor(250, 250, 250);
-  pdf.setDrawColor(255, 102, 0);
-  pdf.setLineWidth(2);
-  pdf.roundedRect(margin, tableY, usableWidth, tableHeight, 5, 5, 'FD');
-  
-  // Table content
-  pdf.setFontSize(12);
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'bold');
-  
-  let tableRowY = tableY + 8;
-  
-  // Left column
-  pdf.text(`Bedrooms: ${property.bedrooms}`, margin + 5, tableRowY);
-  tableRowY += 8;
-  pdf.text(`Bathrooms: ${property.bathrooms}`, margin + 5, tableRowY);
-  
-  // Right column
-  tableRowY = tableY + 8;
-  pdf.text(`Area: ${property.area} sq ft`, margin + leftColWidth + 5, tableRowY);
-  tableRowY += 8;
-  pdf.text(`Rooms: ${property.bedrooms + 1}`, margin + leftColWidth + 5, tableRowY);
-  
-  yPosition = tableY + tableHeight + 10;
-  
-  // Amenities Section
-  if (property.features && property.features.length > 0) {
-    pdf.setFontSize(12);
-    pdf.setTextColor(0, 0, 0);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Amenities:', margin + 5, yPosition);
-    yPosition += 8;
-    
-    // Convert features to YES/NO format
-    const amenityChecks = {
-      'AIR CONDITIONING': property.features.some(f => f.toLowerCase().includes('ac') || f.toLowerCase().includes('air condition')),
-      'WIFI': property.features.some(f => f.toLowerCase().includes('wifi') || f.toLowerCase().includes('internet')),
-      'PARKING': property.features.some(f => f.toLowerCase().includes('parking')),
-      'PET FRIENDLY': property.features.some(f => f.toLowerCase().includes('pet'))
-    };
-    
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    
-    Object.entries(amenityChecks).forEach(([amenity, hasAmenity]) => {
-      const status = hasAmenity ? 'YES' : 'NO';
-      const color = hasAmenity ? [0, 150, 0] : [150, 0, 0]; // Green for YES, Red for NO
-      
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(`${amenity}: `, margin + 5, yPosition);
-      pdf.setTextColor(...color);
-      pdf.text(status, margin + 5 + pdf.getTextWidth(`${amenity}: `), yPosition);
-      yPosition += 6;
-    });
-    
-    yPosition += 10;
-  }
-  
   // Contact Owner Section (Orange highlighted box)
   const contactBoxHeight = 25;
   pdf.setFillColor(255, 102, 0); // Orange background
@@ -253,53 +331,17 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.text(`Name: ${encodeText(property.ownerName)}`, margin + 5, yPosition + 16);
   pdf.text(`Phone: ${property.contactPhone}`, margin + 5, yPosition + 22);
   
-  yPosition += contactBoxHeight + 20;
+  yPosition += contactBoxHeight + 25;
   
-  // Property Details QR Code
-  if (property.propertyId) {
-    try {
-      const propertyUrl = `${window.location.origin}/property/${property.propertyId}`;
-      const propertyQRCode = await generateQRCode(propertyUrl);
-      
-      // QR Code section background
-      pdf.setFillColor(245, 245, 245);
-      pdf.setDrawColor(200, 200, 200);
-      pdf.setLineWidth(1);
-      const qrSectionHeight = 50;
-      pdf.roundedRect(margin, yPosition, usableWidth, qrSectionHeight, 5, 5, 'FD');
-      
-      // QR Code
-      const detailQRSize = 40;
-      pdf.addImage(propertyQRCode, 'PNG', margin + 10, yPosition + 5, detailQRSize, detailQRSize);
-      
-      // QR Code details text
-      pdf.setFontSize(12);
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('View More Photos & Details Online', margin + detailQRSize + 20, yPosition + 12);
-      
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(80, 80, 80);
-      
-      const details = [
-        '• View all property images in full resolution',
-        '• See detailed property information',
-        '• Contact owner directly',
-        '• Get directions to the property'
-      ];
-      
-      let detailY = yPosition + 18;
-      details.forEach(detail => {
-        pdf.text(detail, margin + detailQRSize + 20, detailY);
-        detailY += 5;
-      });
-      
-      yPosition += qrSectionHeight + 15;
-    } catch (error) {
-      console.error('Error generating property QR code:', error);
-    }
-  }
+  // Tuleeto Branding Section
+  pdf.setFontSize(20);
+  pdf.setTextColor(255, 102, 0);
+  pdf.setFont('helvetica', 'bold');
+  const brandText = 'TULEETO';
+  const brandWidth = pdf.getTextWidth(brandText);
+  pdf.text(brandText, (pageWidth - brandWidth) / 2, yPosition);
+  
+  yPosition += 10;
   
   // Footer
   pdf.setFontSize(10);
@@ -307,7 +349,7 @@ export const generatePropertyPoster = async (property: PropertyPosterData) => {
   pdf.setFont('helvetica', 'italic');
   const footerText = 'Find your perfect home at Tuleeto.in - India\'s trusted rental platform';
   const footerWidth = pdf.getTextWidth(footerText);
-  pdf.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 15);
+  pdf.text(footerText, (pageWidth - footerWidth) / 2, yPosition);
   
   // Save PDF
   const cleanLocation = encodeText(property.location).replace(/[^a-zA-Z0-9]/g, '_');
