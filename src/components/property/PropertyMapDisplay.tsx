@@ -83,28 +83,10 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
           <div className="p-2 bg-tuleeto-orange/10 rounded-lg">
             <MapPin className="h-5 w-5 text-tuleeto-orange" />
           </div>
-          <div>
-            <div className="text-gray-900">Property Location</div>
-            {showMarker && (
-              <div className="text-sm text-green-600 font-normal flex items-center gap-1 mt-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                Exact coordinates available
-              </div>
-            )}
-          </div>
+          <div className="text-gray-900">Property Location</div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border">
-          <div className="font-medium text-gray-900 mb-1">📍 Address</div>
-          {location}
-          {showMarker && coordinates.lat && coordinates.lng && (
-            <div className="text-xs text-gray-500 mt-2">
-              Precise coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
-            </div>
-          )}
-        </div>
-        
         <div 
           ref={mapContainer} 
           className="w-full h-64 rounded-xl border border-gray-200 shadow-inner overflow-hidden relative"
@@ -131,20 +113,6 @@ export const PropertyMapDisplay = ({ coordinates, title, location, showMarker = 
             Get Directions
           </Button>
         </div>
-        
-        {!showMarker && (
-          <div className="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-            <div className="font-medium mb-1">ℹ️ General Area View</div>
-            This property doesn't have exact coordinates. The map shows the general area based on the address.
-          </div>
-        )}
-        
-        {showMarker && coordinates.lat && coordinates.lng && (
-          <div className="text-xs text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
-            <div className="font-medium mb-1">✅ Precise Location</div>
-            This property has been mapped with high precision coordinates. The red marker shows the exact location selected by the owner.
-          </div>
-        )}
       </CardContent>
     </Card>
   );
