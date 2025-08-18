@@ -61,11 +61,8 @@ const PropertyListingForm = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(currentStep);
-  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<{ file: File; preview: string; status: 'pending' | 'uploading' | 'success' | 'error'; url?: string; error?: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
     "Pet friendly", 
@@ -98,55 +95,83 @@ const PropertyListingForm = ({
   });
 
   const uploadPhotos = async () => {
-    if (photos.length === 0) {
-      if (photoUrls.length > 0) {
-        return photoUrls;
-      }
-      setUploadError("Please upload at least one photo of your property");
-      return [];
+    const photosToUpload = photos.filter(p => p.status === 'pending' || p.status === 'error');
+    
+    if (photosToUpload.length === 0) {
+      const successfulPhotos = photos.filter(p => p.status === 'success' && p.url);
+      return successfulPhotos.map(p => p.url!);
     }
     
-    setIsUploading(true);
-    setUploadProgress(0);
     setUploadError(null);
     
+    // Set all pending/error photos to uploading
+    setPhotos(prev => prev.map(photo => 
+      photosToUpload.some(p => p.file === photo.file) 
+        ? { ...photo, status: 'uploading' as const }
+        : photo
+    ));
+    
     try {
-      console.log(`Starting ImageKit upload of ${photos.length} photos...`);
-      toast.info(`Uploading ${photos.length} photos to ImageKit...`);
+      console.log(`Starting ImageKit upload of ${photosToUpload.length} photos...`);
+      toast.info(`Uploading ${photosToUpload.length} photos...`);
       
-      const files = photos.map(photo => photo.file);
+      const files = photosToUpload.map(photo => photo.file);
       
-      // Upload to ImageKit
+      // Upload to ImageKit with progress tracking
       const urls = await uploadMultipleToImageKit(
         files,
         'property-images',
-        (progress) => {
-          setUploadProgress(progress);
+        (progress, results) => {
           console.log(`Upload progress: ${progress}%`);
+          
+          // Update photo statuses based on results
+          setPhotos(prev => prev.map(photo => {
+            const result = results.find(r => r.fileName === photo.file.name);
+            if (result) {
+              return {
+                ...photo,
+                status: result.success ? 'success' as const : 'error' as const,
+                url: result.url,
+                error: result.error
+              };
+            }
+            return photo;
+          }));
         }
       );
       
       if (urls.length === 0) {
-        setUploadError("Failed to upload photos to ImageKit. Please try again.");
-        toast.error("Failed to upload photos to ImageKit. Please try again.");
+        setUploadError("All photo uploads failed. Please check your images and try again.");
+        toast.error("All photo uploads failed. Please try again.");
         return [];
       }
       
-      if (urls.length !== files.length) {
-        toast.warning(`Only ${urls.length} out of ${files.length} photos were uploaded successfully.`);
+      const totalPhotos = photos.length;
+      const successCount = urls.length;
+      const failureCount = totalPhotos - successCount;
+      
+      if (failureCount > 0) {
+        toast.warning(`${successCount} of ${totalPhotos} photos uploaded successfully. You can retry failed uploads.`);
       } else {
-        toast.success(`All ${urls.length} photos uploaded successfully to ImageKit!`);
+        toast.success(`All ${successCount} photos uploaded successfully!`);
       }
       
-      setPhotoUrls(urls);
-      return urls;
+      // Return all successful URLs (including previously uploaded ones)
+      const allSuccessfulPhotos = photos.filter(p => p.status === 'success' && p.url);
+      return [...allSuccessfulPhotos.map(p => p.url!), ...urls];
     } catch (error: any) {
       console.error("Error in uploadPhotos:", error);
       setUploadError(`Upload error: ${error.message || "Unknown error"}`);
       toast.error(`Upload error: ${error.message || "Unknown error"}`);
+      
+      // Set all uploading photos back to error state
+      setPhotos(prev => prev.map(photo => 
+        photo.status === 'uploading' 
+          ? { ...photo, status: 'error' as const, error: error.message || "Upload failed" }
+          : photo
+      ));
+      
       return [];
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -160,17 +185,22 @@ const PropertyListingForm = ({
         return;
       }
       
-      // Check if we have photos to upload
-      if (photos.length === 0 && photoUrls.length === 0) {
+      // Check if we have photos
+      const hasPhotos = photos.length > 0;
+      const successfulPhotos = photos.filter(p => p.status === 'success');
+      const pendingPhotos = photos.filter(p => p.status === 'pending' || p.status === 'error');
+      
+      if (!hasPhotos) {
         toast.error("Please upload at least one photo of your property");
         setUploadError("Please upload at least one photo of your property");
         setIsSubmitting(false);
         return;
       }
       
-      // Upload photos if needed
-      let finalPhotoUrls = photoUrls;
-      if (photos.length > 0) {
+      // Upload any remaining photos
+      let finalPhotoUrls: string[] = [];
+      
+      if (pendingPhotos.length > 0) {
         finalPhotoUrls = await uploadPhotos();
         
         if (finalPhotoUrls.length === 0) {
@@ -179,6 +209,9 @@ const PropertyListingForm = ({
           setIsSubmitting(false);
           return;
         }
+      } else {
+        // Use already uploaded photos
+        finalPhotoUrls = successfulPhotos.map(p => p.url!);
       }
       
       const location = `${data.street}, ${data.city}, ${data.state} ${data.zipCode}`;
@@ -247,7 +280,7 @@ const PropertyListingForm = ({
         break;
       case 2:
         fieldsToValidate = ["bedrooms", "bathrooms", "area", "price", "availableFrom"];
-        if (photos.length === 0 && photoUrls.length === 0) {
+        if (photos.length === 0) {
           toast.warning("Please upload at least one photo before continuing");
           return;
         }
@@ -272,6 +305,11 @@ const PropertyListingForm = ({
       window.scrollTo(0, 0);
     }
   };
+
+  // Count photo upload status
+  const uploadingCount = photos.filter(p => p.status === 'uploading').length;
+  const errorCount = photos.filter(p => p.status === 'error').length;
+  const hasUploadingPhotos = uploadingCount > 0;
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -299,13 +337,6 @@ const PropertyListingForm = ({
             <ContactInfoStep form={form} />
           )}
           
-          {isUploading && (
-            <div className="space-y-2">
-              <p className="text-sm text-center">Uploading photos: {uploadProgress}%</p>
-              <Progress value={uploadProgress} className="h-2" />
-            </div>
-          )}
-          
           {uploadError && (
             <div className="text-red-500 text-sm p-2 bg-red-50 border border-red-200 rounded">
               {uploadError}
@@ -319,7 +350,7 @@ const PropertyListingForm = ({
                 variant="outline"
                 className="flex items-center"
                 onClick={prevStep}
-                disabled={isUploading || isSubmitting}
+                disabled={hasUploadingPhotos || isSubmitting}
               >
                 Back
               </Button>
@@ -332,7 +363,7 @@ const PropertyListingForm = ({
                 type="button"
                 className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white flex items-center"
                 onClick={nextStep}
-                disabled={isUploading}
+                disabled={hasUploadingPhotos}
               >
                 Next
               </Button>
@@ -340,7 +371,7 @@ const PropertyListingForm = ({
               <Button 
                 type="submit"
                 className="bg-tuleeto-orange hover:bg-tuleeto-orange-dark text-white"
-                disabled={isUploading || isSubmitting}
+                disabled={hasUploadingPhotos || isSubmitting}
                 onClick={async (e) => {
                   e.preventDefault();
                   try {
@@ -350,10 +381,14 @@ const PropertyListingForm = ({
                       return;
                     }
                     
-                    if (photos.length === 0 && photoUrls.length === 0) {
+                    if (photos.length === 0) {
                       toast.error("Please add at least one photo of your property");
                       setUploadError("Please add at least one photo of your property");
                       return;
+                    }
+                    
+                    if (errorCount > 0) {
+                      toast.warning("Some photos failed to upload. Only successfully uploaded photos will be used.");
                     }
                     
                     const formValues = form.getValues();
@@ -365,7 +400,7 @@ const PropertyListingForm = ({
                   }
                 }}
               >
-                {isUploading ? (
+                {hasUploadingPhotos ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Uploading Photos...
