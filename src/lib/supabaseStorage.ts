@@ -105,8 +105,10 @@ export const uploadPropertyImage = async (file: File, propertyId: string): Promi
     const fileName = `${propertyId}-${Date.now()}.${fileExt}`;
     const filePath = `property-images/${fileName}`;
 
+    console.log('Uploading property image to bucket: property_images, path:', filePath);
+
     const { data, error } = await supabase.storage
-      .from('property-images')
+      .from('property_images')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
@@ -121,8 +123,10 @@ export const uploadPropertyImage = async (file: File, propertyId: string): Promi
       return null;
     }
 
+    console.log('Property image uploaded successfully:', data);
+
     const { data: urlData } = supabase.storage
-      .from('property-images')
+      .from('property_images')
       .getPublicUrl(filePath);
 
     await logSecurityEvent('property_image_upload_successful', { 
@@ -147,14 +151,28 @@ export const uploadMultipleFiles = async (
   onProgress?: (progress: number) => void
 ): Promise<string[]> => {
   const uploadedUrls: string[] = [];
+  const failedUploads: { file: string; error: string }[] = [];
   let completedUploads = 0;
 
+  console.log(`Starting upload of ${files.length} files to bucket: property_images`);
+
+  // Check if bucket exists first
+  const bucketExists = await checkBucketExists('property_images');
+  if (!bucketExists) {
+    console.error('Bucket property_images does not exist');
+    return [];
+  }
+
   try {
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      console.log(`Processing file ${i + 1}/${files.length}: ${file.name} (${file.size} bytes, ${file.type})`);
+      
       const validation = validateImageFile(file);
       
       if (!validation.isValid) {
-        console.error('File validation failed:', validation.errors);
+        console.error(`File validation failed for ${file.name}:`, validation.errors);
+        failedUploads.push({ file: file.name, error: validation.errors.join(', ') });
         continue;
       }
 
@@ -162,24 +180,33 @@ export const uploadMultipleFiles = async (
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `property-images/${pathPrefix}/${fileName}`;
 
+      console.log(`Uploading ${file.name} to path: ${filePath}`);
+
       const { data, error } = await supabase.storage
-        .from('property-images')
+        .from('property_images')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
 
       if (error) {
-        console.error('Property image upload error:', error);
+        console.error(`Property image upload error for ${file.name}:`, error);
+        failedUploads.push({ file: file.name, error: error.message });
         continue;
       }
 
+      console.log(`Successfully uploaded ${file.name}:`, data);
+
       const { data: urlData } = supabase.storage
-        .from('property-images')
+        .from('property_images')
         .getPublicUrl(filePath);
 
       if (urlData.publicUrl) {
         uploadedUrls.push(urlData.publicUrl);
+        console.log(`Generated public URL for ${file.name}:`, urlData.publicUrl);
+      } else {
+        console.error(`Failed to generate public URL for ${file.name}`);
+        failedUploads.push({ file: file.name, error: 'Failed to generate public URL' });
       }
 
       completedUploads++;
@@ -187,6 +214,11 @@ export const uploadMultipleFiles = async (
         const progress = Math.round((completedUploads / files.length) * 100);
         onProgress(progress);
       }
+    }
+
+    console.log(`Upload completed: ${uploadedUrls.length} successful, ${failedUploads.length} failed`);
+    if (failedUploads.length > 0) {
+      console.error('Failed uploads:', failedUploads);
     }
 
     return uploadedUrls;
