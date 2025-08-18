@@ -15,6 +15,7 @@ import LocationStepWithMap from "@/components/property/LocationStepWithMap";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
 import { uploadMultipleFiles } from "@/lib/supabaseStorage";
+import { uploadMultipleToImageKit } from "@/lib/imagekitService";
 
 export const formSchema = z.object({
   propertyType: z.string().min(1, { message: "Please select a property type" }),
@@ -110,17 +111,15 @@ const PropertyListingForm = ({
     setUploadError(null);
     
     try {
-      console.log(`Starting upload of ${photos.length} photos...`);
-      toast.info(`Uploading ${photos.length} photos...`);
+      console.log(`Starting ImageKit upload of ${photos.length} photos...`);
+      toast.info(`Uploading ${photos.length} photos to ImageKit...`);
       
       const files = photos.map(photo => photo.file);
       
-      // Generate a unique pathPrefix with timestamp
-      const pathPrefix = user?.id ? `${user.id}/${Date.now()}` : `anonymous/${Date.now()}`;
-      
-      const urls = await uploadMultipleFiles(
+      // Upload to ImageKit
+      const urls = await uploadMultipleToImageKit(
         files,
-        pathPrefix,
+        'property-images',
         (progress) => {
           setUploadProgress(progress);
           console.log(`Upload progress: ${progress}%`);
@@ -128,15 +127,15 @@ const PropertyListingForm = ({
       );
       
       if (urls.length === 0) {
-        setUploadError("Failed to upload photos. Please try again.");
-        toast.error("Failed to upload photos. Please try again.");
+        setUploadError("Failed to upload photos to ImageKit. Please try again.");
+        toast.error("Failed to upload photos to ImageKit. Please try again.");
         return [];
       }
       
       if (urls.length !== files.length) {
         toast.warning(`Only ${urls.length} out of ${files.length} photos were uploaded successfully.`);
       } else {
-        toast.success(`All ${urls.length} photos uploaded successfully!`);
+        toast.success(`All ${urls.length} photos uploaded successfully to ImageKit!`);
       }
       
       setPhotoUrls(urls);

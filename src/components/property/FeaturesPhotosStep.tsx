@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -290,7 +289,12 @@ export const FeaturesPhotosStep = ({
       
       {/* Photo Upload Section */}
       <div className="space-y-4">
-        <FormLabel className="text-sm font-medium">Property Photos</FormLabel>
+        <div className="flex items-center justify-between">
+          <FormLabel className="text-sm font-medium">Property Photos</FormLabel>
+          <div className="text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded">
+            Powered by ImageKit
+          </div>
+        </div>
         
         <input
           ref={fileInputRef}
@@ -366,7 +370,7 @@ export const FeaturesPhotosStep = ({
               {isUploading ? 'Processing...' : 'Upload Property Photos'}
             </Button>
             <p className="text-sm text-gray-500 mt-2">
-              Upload up to 10 photos (Max 5MB each)
+              Upload up to 10 photos (Max 5MB each) • Powered by ImageKit
             </p>
           </div>
         )}

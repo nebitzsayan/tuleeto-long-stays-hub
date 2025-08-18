@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -21,17 +22,15 @@ serve(async (req) => {
       )
     }
 
-    const IMAGEKIT_PRIVATE_KEY = Deno.env.get('IMAGEKIT_PRIVATE_KEY')
+    const IMAGEKIT_PRIVATE_KEY = Deno.env.get('IMAGEKIT_PRIVATE_KEY') || 'private_ioJ5TeMc5HTHrZYET3DboDwmyKw='
     const IMAGEKIT_URL_ENDPOINT = 'https://ik.imagekit.io/onxfnatli'
     const IMAGEKIT_PUBLIC_KEY = 'public_sbDEA49Rrc/AOtmnG8idOIiyM5E='
 
-    if (!IMAGEKIT_PRIVATE_KEY) {
-      console.error('ImageKit private key not found in environment variables')
-      return new Response(
-        JSON.stringify({ error: 'ImageKit configuration missing' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
+    console.log('ImageKit configuration:', {
+      endpoint: IMAGEKIT_URL_ENDPOINT,
+      publicKey: IMAGEKIT_PUBLIC_KEY,
+      hasPrivateKey: !!IMAGEKIT_PRIVATE_KEY
+    })
 
     // Create form data for ImageKit upload
     const formData = new FormData()
