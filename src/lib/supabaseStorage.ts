@@ -140,3 +140,58 @@ export const uploadPropertyImage = async (file: File, propertyId: string): Promi
     return null;
   }
 };
+
+export const uploadMultipleFiles = async (
+  files: File[],
+  pathPrefix: string,
+  onProgress?: (progress: number) => void
+): Promise<string[]> => {
+  const uploadedUrls: string[] = [];
+  let completedUploads = 0;
+
+  try {
+    for (const file of files) {
+      const validation = validateImageFile(file);
+      
+      if (!validation.isValid) {
+        console.error('File validation failed:', validation.errors);
+        continue;
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `property-images/${pathPrefix}/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('property-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Property image upload error:', error);
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(filePath);
+
+      if (urlData.publicUrl) {
+        uploadedUrls.push(urlData.publicUrl);
+      }
+
+      completedUploads++;
+      if (onProgress) {
+        const progress = Math.round((completedUploads / files.length) * 100);
+        onProgress(progress);
+      }
+    }
+
+    return uploadedUrls;
+  } catch (error: any) {
+    console.error('Unexpected multiple files upload error:', error);
+    return uploadedUrls;
+  }
+};
