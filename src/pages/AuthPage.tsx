@@ -80,7 +80,7 @@ const AuthPage = () => {
 
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
-      await signIn(values.email, values.password);
+      await signIn(values.email);
       navigate('/');
     } catch (error) {
       // Error is handled in the auth context
@@ -89,7 +89,7 @@ const AuthPage = () => {
 
   const onSignupSubmit = async (values: SignupFormValues) => {
     try {
-      await signUp(values.email, values.password, values.fullName);
+      await signUp(values.email, values.password, values.fullName, '');
       setActiveTab('login');
     } catch (error) {
       // Error is handled in the auth context
