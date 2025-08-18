@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,9 @@ interface AuthContextProps {
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (data: any) => Promise<void>;
+  refreshProfile: () => Promise<void>;
+  resetPassword?: (email: string) => Promise<void>;
+  signInWithGoogle?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -86,6 +90,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     fetchProfile();
   }, [user]);
+
+  const refreshProfile = async () => {
+    if (!user?.id) {
+      setUserProfile(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error("Error refreshing user profile:", error);
+        await logSecurityEvent('profile_refresh_error', { 
+          userId: user.id,
+          error: error.message 
+        });
+      }
+
+      setUserProfile(data);
+    } catch (error: any) {
+      console.error("Unexpected error refreshing profile:", error);
+      await logSecurityEvent('profile_refresh_error', { 
+        userId: user.id,
+        error: error.message 
+      });
+    }
+  };
 
   const signIn = async (email: string) => {
     if (!checkRateLimit('signIn', 5, 60000)) {
@@ -161,9 +196,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         alert('Sign-up successful! Check your email to confirm your account.');
         await logSecurityEvent('sign_up_successful', { email: sanitizedEmail });
         if (data.user) {
+          // Only insert fields that exist in the profiles table
           await supabase
             .from('profiles')
-            .insert([{ id: data.user.id, full_name: sanitizedFullName, phone: phone }]);
+            .insert([{ 
+              id: data.user.id, 
+              full_name: sanitizedFullName,
+              email: sanitizedEmail
+            }]);
         }
       }
     } catch (error: any) {
@@ -223,6 +263,36 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        console.error("Reset password error:", error);
+        await logSecurityEvent('password_reset_failed', { email, error: error.message });
+      } else {
+        await logSecurityEvent('password_reset_requested', { email });
+      }
+    } catch (error: any) {
+      console.error("Unexpected reset password error:", error);
+      await logSecurityEvent('password_reset_failed', { email, error: error.message });
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      if (error) {
+        console.error("Google sign-in error:", error);
+        await logSecurityEvent('google_signin_failed', { error: error.message });
+      } else {
+        await logSecurityEvent('google_signin_requested', {});
+      }
+    } catch (error: any) {
+      console.error("Unexpected Google sign-in error:", error);
+      await logSecurityEvent('google_signin_failed', { error: error.message });
+    }
+  };
+
   const value: AuthContextProps = {
     user,
     userProfile,
@@ -232,6 +302,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signUp,
     signOut,
     updateUser,
+    refreshProfile,
+    resetPassword,
+    signInWithGoogle,
   };
 
   return (
