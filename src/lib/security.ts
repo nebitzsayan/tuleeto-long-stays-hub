@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { secureLog } from './secureLogging';
+import { secureLog, logSecurityEvent as logSecurityEventInternal } from './secureLogging';
 
 // Enhanced input sanitization
 export const sanitizeInput = (input: string): string => {
@@ -64,6 +64,35 @@ export const isAdmin = async (): Promise<boolean> => {
   }
 };
 
+// Image validation function
+export const validateImageFile = (file: File): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  
+  if (!allowedTypes.includes(file.type)) {
+    errors.push('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
+  }
+  
+  if (file.size > maxSize) {
+    errors.push('File size too large. Maximum size is 10MB.');
+  }
+  
+  if (file.name.length > 255) {
+    errors.push('Filename too long. Maximum length is 255 characters.');
+  }
+  
+  // Check for potentially malicious filenames
+  if (/[<>:"/\\|?*]/.test(file.name)) {
+    errors.push('Invalid characters in filename.');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
 // Content Security Policy helper
 export const getCSPHeader = (): string => {
   return [
@@ -124,3 +153,6 @@ export const validatePasswordStrength = (password: string): {
     errors
   };
 };
+
+// Re-export logSecurityEvent from secureLogging
+export const logSecurityEvent = logSecurityEventInternal;

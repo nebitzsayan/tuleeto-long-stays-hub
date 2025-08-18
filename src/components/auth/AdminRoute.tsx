@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { isAdmin, logSecurityEvent } from "@/lib/security";
+import { isAdmin } from "@/lib/security";
+import { logSecurityEvent } from "@/lib/secureLogging";
 
 interface AdminRouteProps {
   children: React.ReactNode;
