@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Upload, AlertCircle } from "lucide-react";
+import { Plus, Upload, AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { FormValues } from "./PropertyListingForm";
 import { PhotoUploadStatus, PhotoStatus } from "./PhotoUploadStatus";
 import { toast } from "sonner";
@@ -47,6 +46,7 @@ export const FeaturesPhotosStep = ({
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): { isValid: boolean; error?: string } => {
@@ -80,6 +80,7 @@ export const FeaturesPhotosStep = ({
     if (!files || files.length === 0) return;
 
     setIsProcessing(true);
+    setUploadProgress(0);
     
     try {
       const newPhotos: PhotoStatus[] = [];
@@ -87,12 +88,17 @@ export const FeaturesPhotosStep = ({
       const maxPhotos = 10;
       const availableSlots = maxPhotos - photos.length;
       
+      console.log(`Processing ${files.length} files, ${availableSlots} slots available`);
+      
       for (let i = 0; i < Math.min(files.length, availableSlots); i++) {
         const file = files[i];
+        
+        console.log(`Processing file ${i + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         
         // Validate file
         const validation = validateFile(file);
         if (!validation.isValid) {
+          console.warn(`File validation failed for ${file.name}:`, validation.error);
           rejectedFiles.push(`${file.name}: ${validation.error}`);
           continue;
         }
@@ -105,31 +111,40 @@ export const FeaturesPhotosStep = ({
             preview,
             status: 'pending'
           });
+          console.log(`Created preview for ${file.name}`);
         } catch (error) {
           console.error('Error creating preview for file:', file.name, error);
-          rejectedFiles.push(`${file.name}: Failed to create preview`);
+          rejectedFiles.push(`${file.name}: Failed to create preview - ${error}`);
         }
       }
 
       if (newPhotos.length > 0) {
         setPhotos(prev => [...prev, ...newPhotos]);
-        toast.success(`${newPhotos.length} photos added successfully`);
+        toast.success(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added successfully`);
+        console.log(`Added ${newPhotos.length} photos to upload queue`);
       }
 
       if (rejectedFiles.length > 0) {
         console.warn('Rejected files:', rejectedFiles);
-        toast.error(`${rejectedFiles.length} files rejected. Check file size and format.`);
+        toast.error(`${rejectedFiles.length} file${rejectedFiles.length > 1 ? 's' : ''} rejected`, {
+          description: "Check file size (max 5MB) and format (JPG, PNG, WebP, GIF, HEIC)"
+        });
       }
 
       if (files.length > availableSlots) {
-        toast.warning(`Only ${availableSlots} photos could be added. Maximum ${maxPhotos} photos allowed.`);
+        toast.warning(`Only ${availableSlots} photo${availableSlots !== 1 ? 's' : ''} could be added`, {
+          description: `Maximum ${maxPhotos} photos allowed per property`
+        });
       }
 
     } catch (error: any) {
       console.error('Error processing photos:', error);
-      toast.error('Error processing photos. Please try again.');
+      toast.error('Error processing photos', {
+        description: error.message || 'Please try again with different images'
+      });
     } finally {
       setIsProcessing(false);
+      setUploadProgress(0);
       if (event.target) {
         event.target.value = '';
       }
@@ -139,46 +154,62 @@ export const FeaturesPhotosStep = ({
   const createImagePreview = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       try {
+        if (!file) {
+          reject(new Error('No file provided'));
+          return;
+        }
+
         const reader = new FileReader();
         
         reader.onload = (e) => {
           if (e.target?.result) {
             resolve(e.target.result as string);
           } else {
-            reject(new Error('Failed to read file'));
+            reject(new Error('Failed to read file - no result'));
           }
         };
         
-        reader.onerror = () => reject(new Error('Error reading file'));
+        reader.onerror = () => reject(new Error(`Error reading file: ${reader.error?.message || 'Unknown error'}`));
         reader.onabort = () => reject(new Error('File reading was aborted'));
         
+        // Longer timeout for larger files
         const timeout = setTimeout(() => {
           reader.abort();
-          reject(new Error('File reading timed out'));
-        }, 10000);
+          reject(new Error('File reading timed out after 15 seconds'));
+        }, 15000);
         
         reader.onloadend = () => clearTimeout(timeout);
         reader.readAsDataURL(file);
       } catch (error) {
-        reject(new Error('Failed to set up file reader'));
+        reject(new Error(`Failed to set up file reader: ${error}`));
       }
     });
   };
 
   const removePhoto = (index: number) => {
     setPhotos(prev => {
+      const photoToRemove = prev[index];
       const updated = prev.filter((_, i) => i !== index);
-      if (prev[index]?.preview?.startsWith('blob:')) {
-        URL.revokeObjectURL(prev[index].preview);
+      
+      // Clean up blob URL if it's a local preview
+      if (photoToRemove?.preview?.startsWith('blob:')) {
+        URL.revokeObjectURL(photoToRemove.preview);
       }
+      
+      console.log(`Removed photo at index ${index}`);
       return updated;
     });
+    
+    toast.info('Photo removed');
   };
 
   const retryPhoto = (index: number) => {
     setPhotos(prev => prev.map((photo, i) => 
-      i === index ? { ...photo, status: 'pending' as const } : photo
+      i === index ? { ...photo, status: 'pending' as const, error: undefined } : photo
     ));
+    
+    console.log(`Retrying upload for photo at index ${index}`);
+    toast.info('Photo queued for retry');
   };
 
   const handleFeatureChange = (feature: string, checked: boolean) => {
@@ -199,6 +230,7 @@ export const FeaturesPhotosStep = ({
   const successCount = photos.filter(p => p.status === 'success').length;
   const errorCount = photos.filter(p => p.status === 'error').length;
   const uploadingCount = photos.filter(p => p.status === 'uploading').length;
+  const pendingCount = photos.filter(p => p.status === 'pending').length;
 
   return (
     <div className="space-y-6">
@@ -328,10 +360,11 @@ export const FeaturesPhotosStep = ({
         <div className="flex items-center justify-between">
           <FormLabel className="text-sm font-medium">Property Photos</FormLabel>
           {photos.length > 0 && (
-            <div className="text-xs text-gray-500 flex items-center gap-2">
-              {successCount > 0 && <span className="text-green-600">{successCount} uploaded</span>}
-              {uploadingCount > 0 && <span className="text-blue-600">{uploadingCount} uploading</span>}
-              {errorCount > 0 && <span className="text-red-600">{errorCount} failed</span>}
+            <div className="text-xs text-gray-500 flex items-center gap-3">
+              {successCount > 0 && <span className="text-green-600 font-medium">{successCount} uploaded</span>}
+              {pendingCount > 0 && <span className="text-yellow-600 font-medium">{pendingCount} pending</span>}
+              {uploadingCount > 0 && <span className="text-blue-600 font-medium">{uploadingCount} uploading</span>}
+              {errorCount > 0 && <span className="text-red-600 font-medium">{errorCount} failed</span>}
             </div>
           )}
         </div>
@@ -339,7 +372,7 @@ export const FeaturesPhotosStep = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
           multiple
           onChange={handlePhotoUpload}
           className="hidden"
@@ -355,18 +388,21 @@ export const FeaturesPhotosStep = ({
             />
             
             {photos.length < 10 && (
-              <Card className="border-dashed border-2 border-gray-300 hover:border-tuleeto-orange">
-                <CardContent className="p-4 text-center">
+              <Card className="border-dashed border-2 border-gray-300 hover:border-tuleeto-orange transition-colors">
+                <CardContent className="p-6 text-center">
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={triggerFileInput}
                     disabled={isProcessing}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-tuleeto-orange hover:text-tuleeto-orange-dark"
                   >
                     <Plus className="h-4 w-4" />
                     Add More Photos ({photos.length}/10)
                   </Button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Click to add more property photos
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -375,29 +411,67 @@ export const FeaturesPhotosStep = ({
         
         {/* Upload button when no photos */}
         {photos.length === 0 && (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-tuleeto-orange">
-            <Button
-              type="button"
-              onClick={triggerFileInput}
-              disabled={isProcessing}
-              className="bg-tuleeto-orange hover:bg-tuleeto-orange/90 text-white"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              {isProcessing ? 'Processing...' : 'Upload Property Photos'}
-            </Button>
-            <p className="text-sm text-gray-500 mt-2">
-              Upload up to 10 photos (Max 5MB each)
-            </p>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-tuleeto-orange transition-colors">
+            <div className="space-y-4">
+              <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+              <div>
+                <Button
+                  type="button"
+                  onClick={triggerFileInput}
+                  disabled={isProcessing}
+                  className="bg-tuleeto-orange hover:bg-tuleeto-orange/90 text-white"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Property Photos
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-gray-500 mt-3">
+                  Upload up to 10 high-quality photos (Max 5MB each)
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Supported formats: JPG, PNG, WebP, GIF, HEIC
+                </p>
+              </div>
+            </div>
           </div>
         )}
         
-        {/* Upload Summary */}
+        {/* Enhanced Error Summary */}
         {errorCount > 0 && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle className="h-4 w-4 text-red-500" />
-            <span className="text-sm text-red-700">
-              {errorCount} photo{errorCount > 1 ? 's' : ''} failed to upload. You can retry individual photos.
-            </span>
+          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-red-800 mb-1">
+                Upload Issues ({errorCount} photo{errorCount > 1 ? 's' : ''})
+              </h4>
+              <p className="text-sm text-red-700 mb-2">
+                Some photos failed to upload. You can retry individual photos or remove them.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Retry all failed photos
+                  setPhotos(prev => prev.map(photo => 
+                    photo.status === 'error' ? { ...photo, status: 'pending' as const, error: undefined } : photo
+                  ));
+                  toast.info('All failed photos queued for retry');
+                }}
+                className="text-red-700 border-red-300 hover:bg-red-100"
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Retry All Failed
+              </Button>
+            </div>
           </div>
         )}
       </div>

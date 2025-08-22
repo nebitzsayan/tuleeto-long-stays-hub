@@ -20,12 +20,18 @@ export const uploadToImageKit = async (
   folder?: string
 ): Promise<ImageKitUploadResponse | null> => {
   try {
+    // Validate file before upload
+    if (!file || file.size === 0) {
+      console.error('Invalid file provided to uploadToImageKit');
+      return null;
+    }
+
     // Convert file to base64
     const base64Data = await fileToBase64(file);
     
     console.log(`Uploading ${file.name} to ImageKit (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
     
-    // Call the edge function with timeout
+    // Call the edge function with proper error handling
     const { data, error } = await supabase.functions.invoke('upload-to-imagekit', {
       body: {
         fileName: file.name,
@@ -36,14 +42,19 @@ export const uploadToImageKit = async (
 
     if (error) {
       console.error(`ImageKit upload error for ${file.name}:`, error);
-      return null;
+      throw new Error(`Upload failed: ${error.message || 'Unknown error'}`);
+    }
+
+    if (!data || !data.url) {
+      console.error(`ImageKit upload returned no data for ${file.name}`);
+      throw new Error('Upload completed but no URL returned');
     }
 
     console.log(`ImageKit upload successful for ${file.name}:`, data);
     return data;
   } catch (error: any) {
     console.error(`Error uploading ${file.name} to ImageKit:`, error);
-    return null;
+    throw error; // Re-throw to allow proper error handling upstream
   }
 };
 
@@ -54,7 +65,7 @@ export const uploadMultipleToImageKit = async (
 ): Promise<string[]> => {
   const urls: string[] = [];
   const results: UploadResult[] = [];
-  const CONCURRENT_UPLOADS = 3; // Limit concurrent uploads
+  const CONCURRENT_UPLOADS = 2; // Reduced for better reliability
   
   console.log(`Starting ImageKit upload of ${files.length} files with ${CONCURRENT_UPLOADS} concurrent uploads`);
 
@@ -62,22 +73,26 @@ export const uploadMultipleToImageKit = async (
   for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
     const batch = files.slice(i, i + CONCURRENT_UPLOADS);
     
-    // Upload batch concurrently with timeout and retry
-    const batchPromises = batch.map(async (file) => {
-      const maxRetries = 2;
+    // Upload batch with proper error handling
+    const batchPromises = batch.map(async (file, batchIndex) => {
+      const globalIndex = i + batchIndex;
+      const maxRetries = 3; // Increased retries
       let attempt = 0;
       
       while (attempt <= maxRetries) {
         try {
-          console.log(`Uploading ${file.name} (attempt ${attempt + 1}/${maxRetries + 1})`);
+          console.log(`Uploading ${file.name} (${globalIndex + 1}/${files.length}) - attempt ${attempt + 1}/${maxRetries + 1}`);
           
-          // Add timeout to upload
-          const uploadPromise = uploadToImageKit(file, folder);
-          const timeoutPromise = new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error('Upload timeout')), 30000)
+          // Create timeout promise
+          const timeoutPromise = new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Upload timeout after 45 seconds')), 45000)
           );
           
-          const result = await Promise.race([uploadPromise, timeoutPromise]);
+          // Race upload against timeout
+          const result = await Promise.race([
+            uploadToImageKit(file, folder),
+            timeoutPromise
+          ]);
           
           if (result?.url) {
             console.log(`Successfully uploaded ${file.name}: ${result.url}`);
@@ -87,15 +102,17 @@ export const uploadMultipleToImageKit = async (
               fileName: file.name
             } as UploadResult;
           } else {
-            throw new Error('Upload failed - no URL returned');
+            throw new Error('Upload returned no URL');
           }
         } catch (error: any) {
           console.error(`Upload attempt ${attempt + 1} failed for ${file.name}:`, error.message);
           attempt++;
           
           if (attempt <= maxRetries) {
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            // Exponential backoff
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+            console.log(`Waiting ${delay}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
       }
@@ -120,10 +137,16 @@ export const uploadMultipleToImageKit = async (
       }
     });
     
-    // Update progress
+    // Update progress after each batch
     if (onProgress) {
-      const progress = Math.round(((i + batch.length) / files.length) * 100);
-      onProgress(Math.min(progress, 100), results);
+      const completedFiles = Math.min(i + batch.length, files.length);
+      const progress = Math.round((completedFiles / files.length) * 100);
+      onProgress(progress, [...results]);
+    }
+
+    // Small delay between batches to prevent overwhelming the service
+    if (i + CONCURRENT_UPLOADS < files.length) {
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
 
@@ -143,30 +166,35 @@ export const uploadMultipleToImageKit = async (
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     try {
+      if (!file || file.size === 0) {
+        reject(new Error('Invalid file provided'));
+        return;
+      }
+
       const reader = new FileReader();
       
       reader.onload = () => {
         const result = reader.result as string;
-        if (result) {
+        if (result && result.includes(',')) {
           resolve(result);
         } else {
-          reject(new Error('Failed to convert file to base64'));
+          reject(new Error('Failed to convert file to base64 - invalid result'));
         }
       };
       
-      reader.onerror = () => reject(new Error('File reading error'));
-      reader.onabort = () => reject(new Error('File reading aborted'));
+      reader.onerror = () => reject(new Error(`File reading error: ${reader.error?.message || 'Unknown error'}`));
+      reader.onabort = () => reject(new Error('File reading was aborted'));
       
       // Add timeout for large files
       const timeout = setTimeout(() => {
         reader.abort();
-        reject(new Error('File reading timeout'));
-      }, 15000);
+        reject(new Error('File reading timeout after 20 seconds'));
+      }, 20000);
       
       reader.onloadend = () => clearTimeout(timeout);
       reader.readAsDataURL(file);
     } catch (error) {
-      reject(new Error('Failed to set up file reader'));
+      reject(new Error(`Failed to set up file reader: ${error}`));
     }
   });
 };
