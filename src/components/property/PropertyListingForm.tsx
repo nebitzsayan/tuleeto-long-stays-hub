@@ -15,8 +15,9 @@ import LocationStepWithMap from "@/components/property/LocationStepWithMap";
 import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
 import { uploadMultipleFiles } from "@/lib/supabaseStorage";
-import { uploadMultipleToImageKit } from "@/lib/imagekitService";
+import { uploadMultipleToImageKit, UploadProgress } from "@/lib/imagekitService";
 import { AlertCircle } from "lucide-react";
+import { EnhancedUploadProgress } from "@/components/property/EnhancedUploadProgress";
 
 export const formSchema = z.object({
   propertyType: z.string().min(1, { message: "Please select a property type" }),
@@ -70,6 +71,7 @@ const PropertyListingForm = ({
     "Air conditioning", 
     "In-unit laundry"
   ]);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -122,20 +124,21 @@ const PropertyListingForm = ({
       const urls = await uploadMultipleToImageKit(
         files,
         'property-images',
-        (progress, results, currentFile) => {
-          console.log(`Upload progress: ${progress}%`, currentFile ? `Current: ${currentFile}` : '');
+        (progress: UploadProgress) => {
+          console.log(`Upload progress: ${progress.completed}/${progress.total}`, progress.currentFile ? `Current: ${progress.currentFile}` : '');
           
-          // Update photo statuses based on results
+          // Update upload progress state
+          setUploadProgress(progress);
+          
+          // Update photo statuses based on completed uploads
           setPhotos(prev => prev.map(photo => {
-            const result = results.find(r => r.fileName === photo.file.name);
-            if (result) {
-              return {
-                ...photo,
-                status: result.success ? 'success' as const : 'error' as const,
-                url: result.url,
-                error: result.error
-              };
+            const isCurrentFile = progress.currentFile === photo.file.name;
+            const isCompleted = progress.completed > prev.findIndex(p => p.file.name === photo.file.name);
+            
+            if (isCurrentFile && progress.isUploading) {
+              return { ...photo, status: 'uploading' as const };
             }
+            
             return photo;
           }));
         }
@@ -146,6 +149,23 @@ const PropertyListingForm = ({
         toast.error("All photo uploads failed. Please check your connection and try again.");
         return [];
       }
+      
+      // Update photos with successful uploads
+      setPhotos(prev => prev.map(photo => {
+        const uploadedIndex = files.findIndex(f => f.name === photo.file.name);
+        if (uploadedIndex !== -1 && uploadedIndex < urls.length) {
+          return {
+            ...photo,
+            status: 'success' as const,
+            url: urls[uploadedIndex]
+          };
+        }
+        return {
+          ...photo,
+          status: 'error' as const,
+          error: 'Upload failed'
+        };
+      }));
       
       const totalPhotos = photos.length;
       const successCount = urls.length;
@@ -173,6 +193,8 @@ const PropertyListingForm = ({
       ));
       
       return [];
+    } finally {
+      setUploadProgress(null);
     }
   };
 
@@ -336,6 +358,21 @@ const PropertyListingForm = ({
           
           {step === 3 && (
             <ContactInfoStep form={form} />
+          )}
+          
+          {/* Enhanced Upload Progress */}
+          {uploadProgress && (
+            <EnhancedUploadProgress
+              totalFiles={uploadProgress.total}
+              completedFiles={uploadProgress.completed}
+              successCount={uploadProgress.success}
+              errorCount={uploadProgress.error}
+              currentFileName={uploadProgress.currentFile}
+              isUploading={uploadProgress.isUploading}
+              uploadSpeed={uploadProgress.uploadSpeed}
+              timeRemaining={uploadProgress.timeRemaining}
+              errorDetails={uploadProgress.errorDetails}
+            />
           )}
           
           {uploadError && (
