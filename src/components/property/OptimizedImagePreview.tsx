@@ -221,7 +221,7 @@ const OptimizedImagePreview = ({
               className="max-w-full max-h-full object-contain transition-transform duration-200 ease-out select-none"
               style={{
                 transform: `scale(${scale}) rotate(${rotation}deg)`,
-                imageRendering: scale > 1 ? 'high-quality' : 'auto'
+                imageRendering: scale > 1 ? 'crisp-edges' : 'auto'
               }}
               onLoad={() => {
                 setIsLoading(false);
