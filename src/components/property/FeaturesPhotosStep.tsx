@@ -10,9 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Upload, AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { FormValues } from "./PropertyListingForm";
 import { PhotoUploadStatus, PhotoStatus } from "./PhotoUploadStatus";
-import { UploadProgressBar } from "./UploadProgressBar";
+import { EnhancedUploadProgress } from "./EnhancedUploadProgress";
 import { toast } from "sonner";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
+import type { UploadProgress } from "@/lib/imagekitService";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -49,12 +50,12 @@ export const FeaturesPhotosStep = ({
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({
     total: 0,
     completed: 0,
     success: 0,
     error: 0,
-    currentFile: undefined as string | undefined,
+    currentFile: undefined,
     isUploading: false
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,16 +98,6 @@ export const FeaturesPhotosStep = ({
 
     setIsProcessing(true);
     
-    // Initialize upload progress
-    setUploadProgress({
-      total: files.length,
-      completed: 0,
-      success: 0,
-      error: 0,
-      currentFile: undefined,
-      isUploading: true
-    });
-    
     try {
       const newPhotos: PhotoStatus[] = [];
       const rejectedFiles: string[] = [];
@@ -114,6 +105,16 @@ export const FeaturesPhotosStep = ({
       const availableSlots = maxPhotos - photos.length;
       
       console.log(`Processing ${files.length} files, ${availableSlots} slots available (Mobile: ${isMobile})`);
+      
+      // Initialize upload progress
+      setUploadProgress(prev => ({
+        ...prev,
+        total: files.length,
+        completed: 0,
+        success: 0,
+        error: 0,
+        isUploading: true
+      }));
       
       for (let i = 0; i < Math.min(files.length, availableSlots); i++) {
         const file = files[i];
@@ -151,7 +152,7 @@ export const FeaturesPhotosStep = ({
           }));
         } catch (error) {
           console.error('Error creating preview for file:', file.name, error);
-          rejectedFiles.push(`${file.name}: Failed to create preview - ${error}`);
+          rejectedFiles.push(`${file.name}: Failed to create preview`);
           setUploadProgress(prev => ({ 
             ...prev, 
             completed: prev.completed + 1,
@@ -411,14 +412,17 @@ export const FeaturesPhotosStep = ({
           )}
         </div>
         
-        {/* Upload Progress Bar */}
-        <UploadProgressBar
+        {/* Enhanced Upload Progress Bar */}
+        <EnhancedUploadProgress
           totalFiles={uploadProgress.total}
           completedFiles={uploadProgress.completed}
-          currentFileName={uploadProgress.currentFile}
           successCount={uploadProgress.success}
           errorCount={uploadProgress.error}
+          currentFileName={uploadProgress.currentFile}
           isUploading={uploadProgress.isUploading}
+          uploadSpeed={uploadProgress.uploadSpeed}
+          timeRemaining={uploadProgress.timeRemaining}
+          errorDetails={uploadProgress.errorDetails}
         />
         
         <input

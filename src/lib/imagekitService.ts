@@ -13,6 +13,19 @@ export interface UploadResult {
   url?: string;
   fileName: string;
   error?: string;
+  details?: string;
+}
+
+export interface UploadProgress {
+  total: number;
+  completed: number;
+  success: number;
+  error: number;
+  currentFile?: string;
+  isUploading: boolean;
+  uploadSpeed?: string;
+  timeRemaining?: string;
+  errorDetails?: string[];
 }
 
 // Detect if user is on mobile device
@@ -78,13 +91,13 @@ export const uploadToImageKit = async (
     // Validate file before upload
     if (!file || file.size === 0) {
       console.error('Invalid file provided to uploadToImageKit');
-      return null;
+      throw new Error('Invalid file - file is empty or undefined');
     }
 
     // Compress image if on mobile or if file is too large
     let processedFile = file;
     if (isMobileDevice() || file.size > 2 * 1024 * 1024) { // 2MB threshold
-      console.log(`Compressing ${file.name} for mobile upload...`);
+      console.log(`Compressing ${file.name} for upload...`);
       processedFile = await compressImageForMobile(file);
       console.log(`Compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
     }
@@ -124,15 +137,38 @@ export const uploadToImageKit = async (
 export const uploadMultipleToImageKit = async (
   files: File[],
   folder?: string,
-  onProgress?: (progress: number, results: UploadResult[], currentFile?: string) => void
+  onProgress?: (progress: UploadProgress) => void
 ): Promise<string[]> => {
   const urls: string[] = [];
   const results: UploadResult[] = [];
+  const errorDetails: string[] = [];
   
   // Adjust concurrency based on device type
   const CONCURRENT_UPLOADS = isMobileDevice() ? 1 : 2; // Single upload for mobile
+  const startTime = Date.now();
   
   console.log(`Starting ImageKit upload of ${files.length} files with ${CONCURRENT_UPLOADS} concurrent uploads (Mobile: ${isMobileDevice()})`);
+
+  // Initialize progress
+  const updateProgress = (current: number, currentFile?: string) => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    const uploadSpeed = current > 0 ? `${(current / elapsed).toFixed(1)} files/sec` : undefined;
+    const remaining = files.length - current;
+    const timeRemaining = current > 0 && remaining > 0 ? 
+      `${Math.round((remaining * elapsed) / current)}s remaining` : undefined;
+
+    onProgress?.({
+      total: files.length,
+      completed: current,
+      success: results.filter(r => r.success).length,
+      error: results.filter(r => !r.success).length,
+      currentFile,
+      isUploading: current < files.length,
+      uploadSpeed,
+      timeRemaining,
+      errorDetails: errorDetails.length > 0 ? errorDetails : undefined
+    });
+  };
 
   // Process files in batches
   for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
@@ -145,13 +181,7 @@ export const uploadMultipleToImageKit = async (
       let attempt = 0;
       
       // Notify progress callback about current file
-      if (onProgress) {
-        onProgress(
-          Math.round(((globalIndex) / files.length) * 100),
-          [...results],
-          file.name
-        );
-      }
+      updateProgress(globalIndex, file.name);
       
       while (attempt <= maxRetries) {
         try {
@@ -189,6 +219,10 @@ export const uploadMultipleToImageKit = async (
             const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), 8000);
             console.log(`Waiting ${delay}ms before retry...`);
             await new Promise(resolve => setTimeout(resolve, delay));
+          } else {
+            // Add detailed error information
+            const errorDetail = `${file.name}: ${error.message || 'Unknown error'}`;
+            errorDetails.push(errorDetail);
           }
         }
       }
@@ -198,7 +232,8 @@ export const uploadMultipleToImageKit = async (
       return {
         success: false,
         fileName: file.name,
-        error: 'Upload failed after multiple attempts'
+        error: 'Upload failed after multiple attempts',
+        details: 'Network or server error - please check your connection and try again'
       } as UploadResult;
     });
 
@@ -214,11 +249,8 @@ export const uploadMultipleToImageKit = async (
     });
     
     // Update progress after each batch
-    if (onProgress) {
-      const completedFiles = Math.min(i + batch.length, files.length);
-      const progress = Math.round((completedFiles / files.length) * 100);
-      onProgress(progress, [...results]);
-    }
+    const completedFiles = Math.min(i + batch.length, files.length);
+    updateProgress(completedFiles);
 
     // Small delay between batches to prevent overwhelming the service (longer for mobile)
     if (i + CONCURRENT_UPLOADS < files.length) {
@@ -226,6 +258,9 @@ export const uploadMultipleToImageKit = async (
       await new Promise(resolve => setTimeout(resolve, batchDelay));
     }
   }
+
+  // Final progress update
+  updateProgress(files.length);
 
   const successCount = results.filter(r => r.success).length;
   const failureCount = results.filter(r => !r.success).length;

@@ -23,10 +23,10 @@ serve(async (req) => {
       )
     }
 
-    // Get ImageKit credentials from environment variables
+    // Get ImageKit credentials from environment variables with new values
     const IMAGEKIT_PRIVATE_KEY = Deno.env.get('IMAGEKIT_PRIVATE_KEY')
-    const IMAGEKIT_URL_ENDPOINT = Deno.env.get('IMAGEKIT_URL_ENDPOINT') || 'https://ik.imagekit.io/onxfnatli'
-    const IMAGEKIT_PUBLIC_KEY = Deno.env.get('IMAGEKIT_PUBLIC_KEY') || 'public_sbDEA49Rrc/AOtmnG8idOIiyM5E='
+    const IMAGEKIT_URL_ENDPOINT = 'https://ik.imagekit.io/tuleeto'
+    const IMAGEKIT_PUBLIC_KEY = 'public_H7Y0DJUlvOfJ/uwxZEgA3/mYVpk='
 
     if (!IMAGEKIT_PRIVATE_KEY) {
       console.error('IMAGEKIT_PRIVATE_KEY environment variable is not set')
@@ -40,14 +40,15 @@ serve(async (req) => {
       fileName,
       fileSize: fileData.length,
       folder: folder || 'property-images',
-      endpoint: IMAGEKIT_URL_ENDPOINT
+      endpoint: IMAGEKIT_URL_ENDPOINT,
+      publicKey: IMAGEKIT_PUBLIC_KEY
     })
 
     // Validate and process file data
     if (!fileData.includes('data:')) {
       console.error('Invalid file data format - missing data URL prefix')
       return new Response(
-        JSON.stringify({ error: 'Invalid file format' }),
+        JSON.stringify({ error: 'Invalid file format - expected base64 data URL' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
@@ -59,7 +60,12 @@ serve(async (req) => {
       // Convert base64 to blob with better error handling
       const base64Data = fileData.split(',')[1]
       if (!base64Data) {
-        throw new Error('Invalid base64 data')
+        throw new Error('Invalid base64 data - no content after comma')
+      }
+
+      // Validate base64 format
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Data)) {
+        throw new Error('Invalid base64 format')
       }
 
       const byteCharacters = atob(base64Data)
@@ -68,7 +74,11 @@ serve(async (req) => {
         byteNumbers[i] = byteCharacters.charCodeAt(i)
       }
       const byteArray = new Uint8Array(byteNumbers)
-      const blob = new Blob([byteArray])
+      
+      // Determine MIME type from data URL
+      const mimeMatch = fileData.match(/data:([^;]+);/)
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+      const blob = new Blob([byteArray], { type: mimeType })
       
       formData.append('file', blob, fileName)
       formData.append('fileName', fileName)
@@ -77,11 +87,19 @@ serve(async (req) => {
       }
       formData.append('useUniqueFileName', 'true')
       
-      console.log('Form data prepared, blob size:', blob.size)
+      console.log('Form data prepared:', {
+        blobSize: blob.size,
+        mimeType: mimeType,
+        fileName: fileName
+      })
     } catch (error) {
       console.error('Error processing file data:', error)
       return new Response(
-        JSON.stringify({ error: 'Failed to process image data', details: error.message }),
+        JSON.stringify({ 
+          error: 'Failed to process image data', 
+          details: error.message,
+          fileName: fileName
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
@@ -107,19 +125,39 @@ serve(async (req) => {
 
       clearTimeout(timeoutId)
 
+      console.log('ImageKit API response:', {
+        status: uploadResponse.status,
+        statusText: uploadResponse.statusText,
+        headers: Object.fromEntries(uploadResponse.headers.entries())
+      })
+
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text()
         console.error('ImageKit API error:', {
           status: uploadResponse.status,
           statusText: uploadResponse.statusText,
-          body: errorText
+          body: errorText,
+          fileName: fileName
         })
+        
+        // Provide specific error messages based on status code
+        let errorMessage = 'ImageKit upload failed'
+        if (uploadResponse.status === 401) {
+          errorMessage = 'Authentication failed - invalid API credentials'
+        } else if (uploadResponse.status === 413) {
+          errorMessage = 'File too large for ImageKit'
+        } else if (uploadResponse.status === 400) {
+          errorMessage = 'Invalid file format or parameters'
+        } else if (uploadResponse.status >= 500) {
+          errorMessage = 'ImageKit server error - please try again'
+        }
         
         return new Response(
           JSON.stringify({ 
-            error: 'ImageKit upload failed', 
+            error: errorMessage, 
             details: `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`,
-            body: errorText
+            body: errorText,
+            fileName: fileName
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: uploadResponse.status }
         )
@@ -130,7 +168,11 @@ serve(async (req) => {
       if (!result || !result.url) {
         console.error('ImageKit returned invalid response:', result)
         return new Response(
-          JSON.stringify({ error: 'Invalid response from ImageKit', details: result }),
+          JSON.stringify({ 
+            error: 'Invalid response from ImageKit', 
+            details: 'No URL returned in response',
+            fileName: fileName
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
@@ -138,7 +180,8 @@ serve(async (req) => {
       console.log('ImageKit upload successful:', {
         url: result.url,
         fileId: result.fileId,
-        size: result.size
+        size: result.size,
+        fileName: fileName
       })
       
       return new Response(
@@ -154,9 +197,13 @@ serve(async (req) => {
       clearTimeout(timeoutId)
       
       if (error.name === 'AbortError') {
-        console.error('ImageKit upload timeout')
+        console.error('ImageKit upload timeout for file:', fileName)
         return new Response(
-          JSON.stringify({ error: 'Upload timeout - please try again', details: 'Request timed out after 60 seconds' }),
+          JSON.stringify({ 
+            error: 'Upload timeout - please try again', 
+            details: 'Request timed out after 60 seconds',
+            fileName: fileName
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 408 }
         )
       }
