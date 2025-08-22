@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -9,7 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Upload, AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { FormValues } from "./PropertyListingForm";
 import { PhotoUploadStatus, PhotoStatus } from "./PhotoUploadStatus";
+import { UploadProgressBar } from "./UploadProgressBar";
 import { toast } from "sonner";
+import { useMobileDetection } from "@/hooks/useMobileDetection";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -46,13 +49,26 @@ export const FeaturesPhotosStep = ({
   setSelectedFeatures 
 }: FeaturesPhotosStepProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState({
+    total: 0,
+    completed: 0,
+    success: 0,
+    error: 0,
+    currentFile: undefined as string | undefined,
+    isUploading: false
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useMobileDetection();
 
   const validateFile = (file: File): { isValid: boolean; error?: string } => {
-    // File size validation - 5MB limit
-    if (file.size > 5 * 1024 * 1024) {
-      return { isValid: false, error: `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 5MB allowed.` };
+    // More lenient file size for mobile (3MB vs 5MB)
+    const maxSize = isMobile ? 3 * 1024 * 1024 : 5 * 1024 * 1024;
+    
+    if (file.size > maxSize) {
+      return { 
+        isValid: false, 
+        error: `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max ${maxSize / 1024 / 1024}MB allowed.` 
+      };
     }
 
     // File type validation
@@ -80,7 +96,16 @@ export const FeaturesPhotosStep = ({
     if (!files || files.length === 0) return;
 
     setIsProcessing(true);
-    setUploadProgress(0);
+    
+    // Initialize upload progress
+    setUploadProgress({
+      total: files.length,
+      completed: 0,
+      success: 0,
+      error: 0,
+      currentFile: undefined,
+      isUploading: true
+    });
     
     try {
       const newPhotos: PhotoStatus[] = [];
@@ -88,10 +113,12 @@ export const FeaturesPhotosStep = ({
       const maxPhotos = 10;
       const availableSlots = maxPhotos - photos.length;
       
-      console.log(`Processing ${files.length} files, ${availableSlots} slots available`);
+      console.log(`Processing ${files.length} files, ${availableSlots} slots available (Mobile: ${isMobile})`);
       
       for (let i = 0; i < Math.min(files.length, availableSlots); i++) {
         const file = files[i];
+        
+        setUploadProgress(prev => ({ ...prev, currentFile: file.name }));
         
         console.log(`Processing file ${i + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         
@@ -100,6 +127,11 @@ export const FeaturesPhotosStep = ({
         if (!validation.isValid) {
           console.warn(`File validation failed for ${file.name}:`, validation.error);
           rejectedFiles.push(`${file.name}: ${validation.error}`);
+          setUploadProgress(prev => ({ 
+            ...prev, 
+            completed: prev.completed + 1,
+            error: prev.error + 1
+          }));
           continue;
         }
 
@@ -112,9 +144,19 @@ export const FeaturesPhotosStep = ({
             status: 'pending'
           });
           console.log(`Created preview for ${file.name}`);
+          setUploadProgress(prev => ({ 
+            ...prev, 
+            completed: prev.completed + 1,
+            success: prev.success + 1
+          }));
         } catch (error) {
           console.error('Error creating preview for file:', file.name, error);
           rejectedFiles.push(`${file.name}: Failed to create preview - ${error}`);
+          setUploadProgress(prev => ({ 
+            ...prev, 
+            completed: prev.completed + 1,
+            error: prev.error + 1
+          }));
         }
       }
 
@@ -127,7 +169,7 @@ export const FeaturesPhotosStep = ({
       if (rejectedFiles.length > 0) {
         console.warn('Rejected files:', rejectedFiles);
         toast.error(`${rejectedFiles.length} file${rejectedFiles.length > 1 ? 's' : ''} rejected`, {
-          description: "Check file size (max 5MB) and format (JPG, PNG, WebP, GIF, HEIC)"
+          description: `Check file size (max ${isMobile ? '3MB' : '5MB'}) and format (JPG, PNG, WebP, GIF, HEIC)`
         });
       }
 
@@ -144,7 +186,7 @@ export const FeaturesPhotosStep = ({
       });
     } finally {
       setIsProcessing(false);
-      setUploadProgress(0);
+      setUploadProgress(prev => ({ ...prev, isUploading: false, currentFile: undefined }));
       if (event.target) {
         event.target.value = '';
       }
@@ -172,11 +214,11 @@ export const FeaturesPhotosStep = ({
         reader.onerror = () => reject(new Error(`Error reading file: ${reader.error?.message || 'Unknown error'}`));
         reader.onabort = () => reject(new Error('File reading was aborted'));
         
-        // Longer timeout for larger files
+        // Shorter timeout for mobile devices
         const timeout = setTimeout(() => {
           reader.abort();
-          reject(new Error('File reading timed out after 15 seconds'));
-        }, 15000);
+          reject(new Error(`File reading timed out after ${isMobile ? 10 : 15} seconds`));
+        }, isMobile ? 10000 : 15000);
         
         reader.onloadend = () => clearTimeout(timeout);
         reader.readAsDataURL(file);
@@ -369,6 +411,16 @@ export const FeaturesPhotosStep = ({
           )}
         </div>
         
+        {/* Upload Progress Bar */}
+        <UploadProgressBar
+          totalFiles={uploadProgress.total}
+          completedFiles={uploadProgress.completed}
+          currentFileName={uploadProgress.currentFile}
+          successCount={uploadProgress.success}
+          errorCount={uploadProgress.error}
+          isUploading={uploadProgress.isUploading}
+        />
+        
         <input
           ref={fileInputRef}
           type="file"
@@ -434,11 +486,16 @@ export const FeaturesPhotosStep = ({
                   )}
                 </Button>
                 <p className="text-sm text-gray-500 mt-3">
-                  Upload up to 10 high-quality photos (Max 5MB each)
+                  Upload up to 10 high-quality photos (Max {isMobile ? '3MB' : '5MB'} each)
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
                   Supported formats: JPG, PNG, WebP, GIF, HEIC
                 </p>
+                {isMobile && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    📱 Mobile optimized - images will be compressed for faster upload
+                  </p>
+                )}
               </div>
             </div>
           </div>

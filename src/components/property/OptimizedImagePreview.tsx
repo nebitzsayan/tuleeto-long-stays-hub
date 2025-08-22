@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
+import { useMobileDetection } from "@/hooks/useMobileDetection";
 
 interface OptimizedImagePreviewProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ const OptimizedImagePreview = ({
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
 
   const { imageList, handleImageError, handleImageLoad } = useImageHandling(images);
+  const isMobile = useMobileDetection();
 
   useEffect(() => {
     setCurrentIndex(Math.max(0, Math.min(initialIndex, imageList.length - 1)));
@@ -201,14 +203,14 @@ const OptimizedImagePreview = ({
           </div>
         </div>
 
-        {/* Main image container */}
+        {/* Main image container - Fixed centering and responsive sizing */}
         <div 
-          className="flex items-center justify-center w-full h-full p-4 pt-16 pb-20 touch-pan-x touch-pan-y"
+          className="flex items-center justify-center w-full h-full p-4 pt-16 pb-20"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="relative max-w-full max-h-full overflow-hidden">
+          <div className="relative w-full h-full flex items-center justify-center">
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -218,7 +220,10 @@ const OptimizedImagePreview = ({
             <img
               src={currentImage}
               alt={`${title} - Image ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain transition-transform duration-200 ease-out select-none"
+              className={`
+                object-contain transition-transform duration-200 ease-out select-none
+                ${isMobile ? 'max-w-full max-h-full w-auto h-auto' : 'max-w-[90vw] max-h-[80vh]'}
+              `}
               style={{
                 transform: `scale(${scale}) rotate(${rotation}deg)`,
                 imageRendering: scale > 1 ? 'crisp-edges' : 'auto'
@@ -237,13 +242,13 @@ const OptimizedImagePreview = ({
         </div>
 
         {/* Navigation arrows - desktop only */}
-        {imageList.length > 1 && (
+        {imageList.length > 1 && !isMobile && (
           <>
             <Button
               variant="ghost"
               size="icon"
               onClick={prevImage}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-12 h-12 hidden md:flex backdrop-blur-sm"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-12 h-12 backdrop-blur-sm"
             >
               <ChevronLeft className="h-6 w-6" />
             </Button>
@@ -252,7 +257,7 @@ const OptimizedImagePreview = ({
               variant="ghost"
               size="icon"
               onClick={nextImage}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-12 h-12 hidden md:flex backdrop-blur-sm"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-12 h-12 backdrop-blur-sm"
             >
               <ChevronRight className="h-6 w-6" />
             </Button>
@@ -260,40 +265,42 @@ const OptimizedImagePreview = ({
         )}
 
         {/* Bottom controls for mobile */}
-        <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4 md:hidden">
-          <div className="flex justify-center space-x-4">
+        {isMobile && (
+          <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <div className="flex justify-center space-x-4">
+              {imageList.length > 1 && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={prevImage}
+                    className="text-white hover:bg-white/20 flex items-center space-x-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="text-xs">Previous</span>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={nextImage}
+                    className="text-white hover:bg-white/20 flex items-center space-x-1"
+                  >
+                    <span className="text-xs">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+            
+            {/* Swipe hint for mobile */}
             {imageList.length > 1 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={prevImage}
-                  className="text-white hover:bg-white/20 flex items-center space-x-1"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span className="text-xs">Previous</span>
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={nextImage}
-                  className="text-white hover:bg-white/20 flex items-center space-x-1"
-                >
-                  <span className="text-xs">Next</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </>
+              <p className="text-center text-xs text-white/70 mt-2">
+                Swipe left or right to navigate
+              </p>
             )}
           </div>
-          
-          {/* Swipe hint for mobile */}
-          {imageList.length > 1 && (
-            <p className="text-center text-xs text-white/70 mt-2">
-              Swipe left or right to navigate
-            </p>
-          )}
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -15,6 +15,61 @@ export interface UploadResult {
   error?: string;
 }
 
+// Detect if user is on mobile device
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false;
+  const userAgent = navigator.userAgent || navigator.vendor;
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase()) || 
+         window.innerWidth <= 768;
+};
+
+// Compress image for mobile devices
+const compressImageForMobile = async (file: File): Promise<File> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    const img = new Image();
+    
+    img.onload = () => {
+      // Calculate new dimensions (max 1920x1080 for mobile)
+      const maxWidth = isMobileDevice() ? 1920 : 2560;
+      const maxHeight = isMobileDevice() ? 1080 : 1440;
+      
+      let { width, height } = img;
+      
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width *= ratio;
+        height *= ratio;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        },
+        'image/jpeg',
+        isMobileDevice() ? 0.8 : 0.9
+      );
+    };
+    
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 export const uploadToImageKit = async (
   file: File,
   folder?: string
@@ -26,31 +81,39 @@ export const uploadToImageKit = async (
       return null;
     }
 
+    // Compress image if on mobile or if file is too large
+    let processedFile = file;
+    if (isMobileDevice() || file.size > 2 * 1024 * 1024) { // 2MB threshold
+      console.log(`Compressing ${file.name} for mobile upload...`);
+      processedFile = await compressImageForMobile(file);
+      console.log(`Compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+    }
+
     // Convert file to base64
-    const base64Data = await fileToBase64(file);
+    const base64Data = await fileToBase64(processedFile);
     
-    console.log(`Uploading ${file.name} to ImageKit (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+    console.log(`Uploading ${processedFile.name} to ImageKit (${(processedFile.size / 1024 / 1024).toFixed(2)}MB)...`);
     
     // Call the edge function with proper error handling
     const { data, error } = await supabase.functions.invoke('upload-to-imagekit', {
       body: {
-        fileName: file.name,
+        fileName: processedFile.name,
         fileData: base64Data,
         folder: folder || 'property-images'
       }
     });
 
     if (error) {
-      console.error(`ImageKit upload error for ${file.name}:`, error);
+      console.error(`ImageKit upload error for ${processedFile.name}:`, error);
       throw new Error(`Upload failed: ${error.message || 'Unknown error'}`);
     }
 
     if (!data || !data.url) {
-      console.error(`ImageKit upload returned no data for ${file.name}`);
+      console.error(`ImageKit upload returned no data for ${processedFile.name}`);
       throw new Error('Upload completed but no URL returned');
     }
 
-    console.log(`ImageKit upload successful for ${file.name}:`, data);
+    console.log(`ImageKit upload successful for ${processedFile.name}:`, data);
     return data;
   } catch (error: any) {
     console.error(`Error uploading ${file.name} to ImageKit:`, error);
@@ -61,13 +124,15 @@ export const uploadToImageKit = async (
 export const uploadMultipleToImageKit = async (
   files: File[],
   folder?: string,
-  onProgress?: (progress: number, results: UploadResult[]) => void
+  onProgress?: (progress: number, results: UploadResult[], currentFile?: string) => void
 ): Promise<string[]> => {
   const urls: string[] = [];
   const results: UploadResult[] = [];
-  const CONCURRENT_UPLOADS = 2; // Reduced for better reliability
   
-  console.log(`Starting ImageKit upload of ${files.length} files with ${CONCURRENT_UPLOADS} concurrent uploads`);
+  // Adjust concurrency based on device type
+  const CONCURRENT_UPLOADS = isMobileDevice() ? 1 : 2; // Single upload for mobile
+  
+  console.log(`Starting ImageKit upload of ${files.length} files with ${CONCURRENT_UPLOADS} concurrent uploads (Mobile: ${isMobileDevice()})`);
 
   // Process files in batches
   for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
@@ -76,16 +141,26 @@ export const uploadMultipleToImageKit = async (
     // Upload batch with proper error handling
     const batchPromises = batch.map(async (file, batchIndex) => {
       const globalIndex = i + batchIndex;
-      const maxRetries = 3; // Increased retries
+      const maxRetries = isMobileDevice() ? 2 : 3; // Fewer retries on mobile
       let attempt = 0;
+      
+      // Notify progress callback about current file
+      if (onProgress) {
+        onProgress(
+          Math.round(((globalIndex) / files.length) * 100),
+          [...results],
+          file.name
+        );
+      }
       
       while (attempt <= maxRetries) {
         try {
           console.log(`Uploading ${file.name} (${globalIndex + 1}/${files.length}) - attempt ${attempt + 1}/${maxRetries + 1}`);
           
-          // Create timeout promise
+          // Create timeout promise with longer timeout for mobile
+          const timeoutDuration = isMobileDevice() ? 60000 : 45000; // 60s for mobile, 45s for desktop
           const timeoutPromise = new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Upload timeout after 45 seconds')), 45000)
+            setTimeout(() => reject(new Error(`Upload timeout after ${timeoutDuration / 1000} seconds`)), timeoutDuration)
           );
           
           // Race upload against timeout
@@ -109,8 +184,9 @@ export const uploadMultipleToImageKit = async (
           attempt++;
           
           if (attempt <= maxRetries) {
-            // Exponential backoff
-            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+            // Exponential backoff with longer delays for mobile
+            const baseDelay = isMobileDevice() ? 2000 : 1000;
+            const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), 8000);
             console.log(`Waiting ${delay}ms before retry...`);
             await new Promise(resolve => setTimeout(resolve, delay));
           }
@@ -144,9 +220,10 @@ export const uploadMultipleToImageKit = async (
       onProgress(progress, [...results]);
     }
 
-    // Small delay between batches to prevent overwhelming the service
+    // Small delay between batches to prevent overwhelming the service (longer for mobile)
     if (i + CONCURRENT_UPLOADS < files.length) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const batchDelay = isMobileDevice() ? 1000 : 500;
+      await new Promise(resolve => setTimeout(resolve, batchDelay));
     }
   }
 
@@ -185,11 +262,11 @@ const fileToBase64 = (file: File): Promise<string> => {
       reader.onerror = () => reject(new Error(`File reading error: ${reader.error?.message || 'Unknown error'}`));
       reader.onabort = () => reject(new Error('File reading was aborted'));
       
-      // Add timeout for large files
+      // Add timeout for large files (longer for mobile)
       const timeout = setTimeout(() => {
         reader.abort();
-        reject(new Error('File reading timeout after 20 seconds'));
-      }, 20000);
+        reject(new Error('File reading timeout after 30 seconds'));
+      }, 30000);
       
       reader.onloadend = () => clearTimeout(timeout);
       reader.readAsDataURL(file);

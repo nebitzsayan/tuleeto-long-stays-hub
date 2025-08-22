@@ -16,6 +16,7 @@ import { FeaturesPhotosStep } from "@/components/property/FeaturesPhotosStep";
 import { ContactInfoStep } from "@/components/property/ContactInfoStep";
 import { uploadMultipleFiles } from "@/lib/supabaseStorage";
 import { uploadMultipleToImageKit } from "@/lib/imagekitService";
+import { AlertCircle } from "lucide-react";
 
 export const formSchema = z.object({
   propertyType: z.string().min(1, { message: "Please select a property type" }),
@@ -117,12 +118,12 @@ const PropertyListingForm = ({
       
       const files = photosToUpload.map(photo => photo.file);
       
-      // Upload to ImageKit with progress tracking
+      // Upload to ImageKit with enhanced progress tracking
       const urls = await uploadMultipleToImageKit(
         files,
         'property-images',
-        (progress, results) => {
-          console.log(`Upload progress: ${progress}%`);
+        (progress, results, currentFile) => {
+          console.log(`Upload progress: ${progress}%`, currentFile ? `Current: ${currentFile}` : '');
           
           // Update photo statuses based on results
           setPhotos(prev => prev.map(photo => {
@@ -141,8 +142,8 @@ const PropertyListingForm = ({
       );
       
       if (urls.length === 0) {
-        setUploadError("All photo uploads failed. Please check your images and try again.");
-        toast.error("All photo uploads failed. Please try again.");
+        setUploadError("All photo uploads failed. Please check your connection and try again.");
+        toast.error("All photo uploads failed. Please check your connection and try again.");
         return [];
       }
       
@@ -161,13 +162,13 @@ const PropertyListingForm = ({
       return [...allSuccessfulPhotos.map(p => p.url!), ...urls];
     } catch (error: any) {
       console.error("Error in uploadPhotos:", error);
-      setUploadError(`Upload error: ${error.message || "Unknown error"}`);
-      toast.error(`Upload error: ${error.message || "Unknown error"}`);
+      setUploadError(`Upload error: ${error.message || "Network error - please check your connection"}`);
+      toast.error(`Upload error: ${error.message || "Network error - please check your connection"}`);
       
       // Set all uploading photos back to error state
       setPhotos(prev => prev.map(photo => 
         photo.status === 'uploading' 
-          ? { ...photo, status: 'error' as const, error: error.message || "Upload failed" }
+          ? { ...photo, status: 'error' as const, error: error.message || "Upload failed - check connection" }
           : photo
       ));
       
@@ -338,8 +339,12 @@ const PropertyListingForm = ({
           )}
           
           {uploadError && (
-            <div className="text-red-500 text-sm p-2 bg-red-50 border border-red-200 rounded">
-              {uploadError}
+            <div className="text-red-500 text-sm p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertCircle className="h-4 w-4" />
+                <span className="font-medium">Upload Error</span>
+              </div>
+              <p>{uploadError}</p>
             </div>
           )}
           
