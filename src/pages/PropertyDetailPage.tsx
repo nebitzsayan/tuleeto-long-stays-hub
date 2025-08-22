@@ -14,9 +14,12 @@ import PropertyImageCarousel from "@/components/property/PropertyImageCarousel";
 import PropertyAmenitiesDisplay from "@/components/property/PropertyAmenitiesDisplay";
 import PropertyReviewSystem from "@/components/property/PropertyReviewSystem";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
+import PropertyContactInfo from "@/components/property/PropertyContactInfo";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -185,27 +188,43 @@ const PropertyDetailPage = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-600">Email: {property.ownerEmail}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-gray-600">Phone: {property.contactPhone}</p>
+                    {/* Secure contact info display */}
+                    {user ? (
+                      <div className="space-y-3">
+                        {property.contactPhone && (
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-gray-600">Phone: {property.contactPhone}</p>
+                            <Button 
+                              onClick={() => handlePhoneCall(property.contactPhone)}
+                              size="sm"
+                              variant="outline"
+                              className="p-1 h-8 w-8"
+                            >
+                              <Phone className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        {property.contactPhone && (
+                          <Button 
+                            onClick={() => handlePhoneCall(property.contactPhone)}
+                            className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange/90"
+                          >
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call Now
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-600">Please login to view contact details</p>
                         <Button 
-                          onClick={() => handlePhoneCall(property.contactPhone)}
-                          size="sm"
-                          variant="outline"
-                          className="p-1 h-8 w-8"
+                          onClick={() => window.location.href = '/auth'}
+                          className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange/90"
                         >
-                          <Phone className="h-4 w-4" />
+                          Login to Contact Owner
                         </Button>
                       </div>
-                    </div>
-                    <Button 
-                      onClick={() => handlePhoneCall(property.contactPhone)}
-                      className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange/90"
-                    >
-                      <Phone className="h-4 w-4 mr-2" />
-                      Call Now
-                    </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>

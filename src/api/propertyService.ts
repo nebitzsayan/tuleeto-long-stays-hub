@@ -9,8 +9,7 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     .select(`
       *,
       profiles!properties_owner_id_fkey (
-        full_name,
-        email
+        full_name
       )
     `)
     .eq('id', id)
@@ -61,7 +60,7 @@ export const getPropertyById = async (id: string): Promise<Property> => {
   // Handle profile data - it could be null or an object
   const profileData = data.profiles as any;
   const ownerName = profileData?.full_name || 'Unknown';
-  const ownerEmail = profileData?.email || '';
+  const ownerEmail = ''; // Email no longer accessible through public API for security
 
   // Transform the data to match the Property interface
   const property: Property = {
@@ -96,8 +95,7 @@ export const getAllProperties = async (): Promise<Property[]> => {
     .select(`
       *,
       profiles!properties_owner_id_fkey (
-        full_name,
-        email
+        full_name
       )
     `)
     .order('created_at', { ascending: false });
@@ -140,7 +138,7 @@ export const getAllProperties = async (): Promise<Property[]> => {
     // Handle profile data - it could be null or an object
     const profileData = item.profiles as any;
     const ownerName = profileData?.full_name || 'Unknown';
-    const ownerEmail = profileData?.email || '';
+    const ownerEmail = ''; // Email no longer accessible through public API for security
 
     return {
       id: item.id,
