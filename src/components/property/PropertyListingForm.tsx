@@ -303,16 +303,81 @@ const PropertyListingForm = ({
         break;
       case 2:
         fieldsToValidate = ["bedrooms", "bathrooms", "area", "price", "availableFrom"];
-        if (photos.length === 0) {
-          toast.warning("Please upload at least one photo before continuing");
-          return;
-        }
+        // Allow proceeding without photos for now (they can add them later)
         break;
     }
     
     const stepIsValid = await form.trigger(fieldsToValidate as any);
     
-    if (stepIsValid && step < steps.length - 1) {
+    if (!stepIsValid) {
+      // Get specific field errors and show helpful messages
+      const errors = form.formState.errors;
+      const missingFields: string[] = [];
+      
+      fieldsToValidate.forEach(field => {
+        const fieldError = errors[field as keyof typeof errors];
+        if (fieldError) {
+          switch (field) {
+            case "propertyType":
+              missingFields.push("property type");
+              break;
+            case "title":
+              missingFields.push("property title");
+              break;
+            case "description":
+              missingFields.push("description");
+              break;
+            case "street":
+              missingFields.push("street address");
+              break;
+            case "city":
+              missingFields.push("city");
+              break;
+            case "state":
+              missingFields.push("state");
+              break;
+            case "zipCode":
+              missingFields.push("zip code");
+              break;
+            case "bedrooms":
+              missingFields.push("number of bedrooms");
+              break;
+            case "bathrooms":
+              missingFields.push("number of bathrooms");
+              break;
+            case "area":
+              missingFields.push("property area");
+              break;
+            case "price":
+              missingFields.push("monthly rent");
+              break;
+            case "availableFrom":
+              missingFields.push("availability date");
+              break;
+          }
+        }
+      });
+      
+      if (missingFields.length > 0) {
+        const fieldList = missingFields.length === 1 
+          ? missingFields[0]
+          : missingFields.length === 2
+          ? `${missingFields[0]} and ${missingFields[1]}`
+          : `${missingFields.slice(0, -1).join(", ")}, and ${missingFields[missingFields.length - 1]}`;
+        
+        toast.error(`Please fill in the ${fieldList} to continue`);
+      } else {
+        toast.error("Please complete all required fields to continue");
+      }
+      return;
+    }
+    
+    // Additional validation for step 2 (photos are recommended but not required)
+    if (step === 2 && photos.length === 0) {
+      toast.warning("Consider adding photos to make your listing more attractive to potential tenants");
+    }
+    
+    if (step < steps.length - 1) {
       const newStep = step + 1;
       setStep(newStep);
       onStepChange(newStep);
