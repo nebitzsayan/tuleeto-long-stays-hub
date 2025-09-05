@@ -15,6 +15,7 @@ import PropertyAmenitiesDisplay from "@/components/property/PropertyAmenitiesDis
 import PropertyReviewSystem from "@/components/property/PropertyReviewSystem";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
 import PropertyContactInfo from "@/components/property/PropertyContactInfo";
+import { PropertyPosterGenerator } from "@/components/property/PropertyPosterGenerator";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PropertyDetailPage = () => {
@@ -80,10 +81,29 @@ const PropertyDetailPage = () => {
 
             {/* Title and Location Section */}
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold">{property.title}</h1>
-              <div className="flex items-center gap-2 text-gray-600">
-                <MapPin className="h-4 w-4" />
-                <span>{property.location}</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">{property.title}</h1>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <MapPin className="h-4 w-4" />
+                    <span>{property.location}</span>
+                  </div>
+                </div>
+                {/* Property Poster Generator - Only for property owners */}
+                {user && user.id === property.ownerId && (
+                  <PropertyPosterGenerator 
+                    property={{
+                      id: property.id,
+                      title: property.title,
+                      price: property.price,
+                      images: property.images,
+                      features: property.features,
+                      owner_id: property.ownerId,
+                      location: property.location
+                    }}
+                    ownerName={property.ownerName}
+                  />
+                )}
               </div>
             </div>
             

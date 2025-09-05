@@ -14,6 +14,7 @@ import { EnhancedUploadProgress } from "./EnhancedUploadProgress";
 import { toast } from "sonner";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
 import type { UploadProgress } from "@/lib/imagekitService";
+import { uploadMultipleToImageKit } from "@/lib/imagekitService";
 
 interface FeaturesPhotosStepProps {
   form: UseFormReturn<FormValues>;
@@ -142,14 +143,9 @@ export const FeaturesPhotosStep = ({
           newPhotos.push({
             file,
             preview,
-            status: 'pending'
+            status: 'uploading' // Set to uploading immediately
           });
           console.log(`Created preview for ${file.name}`);
-          setUploadProgress(prev => ({ 
-            ...prev, 
-            completed: prev.completed + 1,
-            success: prev.success + 1
-          }));
         } catch (error) {
           console.error('Error creating preview for file:', file.name, error);
           rejectedFiles.push(`${file.name}: Failed to create preview`);
@@ -162,9 +158,63 @@ export const FeaturesPhotosStep = ({
       }
 
       if (newPhotos.length > 0) {
+        // Add photos to state immediately
         setPhotos(prev => [...prev, ...newPhotos]);
-        toast.success(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added successfully`);
         console.log(`Added ${newPhotos.length} photos to upload queue`);
+        
+        // Start uploading immediately
+        try {
+          const filesToUpload = newPhotos.map(p => p.file);
+          const uploadedUrls = await uploadMultipleToImageKit(filesToUpload, 'property-images', (progress) => {
+            setUploadProgress(progress);
+          });
+          
+          // Update photo statuses based on upload results
+          setPhotos(prev => prev.map((photo, index) => {
+            const photoIndex = prev.length - newPhotos.length + index;
+            if (photoIndex >= prev.length - newPhotos.length) {
+              const urlIndex = index;
+              if (uploadedUrls[urlIndex]) {
+                return {
+                  ...photo,
+                  status: 'success' as const,
+                  url: uploadedUrls[urlIndex]
+                };
+              } else {
+                return {
+                  ...photo,
+                  status: 'error' as const,
+                  error: 'Upload failed'
+                };
+              }
+            }
+            return photo;
+          }));
+          
+          const successCount = uploadedUrls.length;
+          const failedCount = newPhotos.length - successCount;
+          
+          if (successCount > 0) {
+            toast.success(`${successCount} photo${successCount > 1 ? 's' : ''} uploaded successfully`);
+          }
+          if (failedCount > 0) {
+            toast.error(`${failedCount} photo${failedCount > 1 ? 's' : ''} failed to upload`);
+          }
+        } catch (error) {
+          console.error('Error uploading photos:', error);
+          // Mark all new photos as failed
+          setPhotos(prev => prev.map((photo) => {
+            if (newPhotos.some(newPhoto => newPhoto.file === photo.file)) {
+              return {
+                ...photo,
+                status: 'error' as const,
+                error: 'Upload failed'
+              };
+            }
+            return photo;
+          }));
+          toast.error('Failed to upload photos. Please try again.');
+        }
       }
 
       if (rejectedFiles.length > 0) {
@@ -246,13 +296,36 @@ export const FeaturesPhotosStep = ({
     toast.info('Photo removed');
   };
 
-  const retryPhoto = (index: number) => {
-    setPhotos(prev => prev.map((photo, i) => 
-      i === index ? { ...photo, status: 'pending' as const, error: undefined } : photo
+  const retryPhoto = async (index: number) => {
+    const photo = photos[index];
+    if (!photo) return;
+    
+    // Set status to uploading
+    setPhotos(prev => prev.map((p, i) => 
+      i === index ? { ...p, status: 'uploading' as const, error: undefined } : p
     ));
     
     console.log(`Retrying upload for photo at index ${index}`);
-    toast.info('Photo queued for retry');
+    toast.info('Retrying photo upload...');
+    
+    try {
+      const uploadedUrls = await uploadMultipleToImageKit([photo.file], 'property-images');
+      
+      if (uploadedUrls.length > 0) {
+        setPhotos(prev => prev.map((p, i) => 
+          i === index ? { ...p, status: 'success' as const, url: uploadedUrls[0], error: undefined } : p
+        ));
+        toast.success('Photo uploaded successfully');
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error retrying photo upload:', error);
+      setPhotos(prev => prev.map((p, i) => 
+        i === index ? { ...p, status: 'error' as const, error: 'Upload failed' } : p
+      ));
+      toast.error('Failed to upload photo. Please try again.');
+    }
   };
 
   const handleFeatureChange = (feature: string, checked: boolean) => {

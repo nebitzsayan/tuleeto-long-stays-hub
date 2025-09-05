@@ -98,11 +98,17 @@ const PropertyListingForm = ({
   });
 
   const uploadPhotos = async () => {
+    // Get photos that have already been successfully uploaded
+    const successfulPhotos = photos.filter(p => p.status === 'success' && p.url);
     const photosToUpload = photos.filter(p => p.status === 'pending' || p.status === 'error');
     
+    console.log(`Photo status check: ${successfulPhotos.length} successful, ${photosToUpload.length} pending/error`);
+    
     if (photosToUpload.length === 0) {
-      const successfulPhotos = photos.filter(p => p.status === 'success' && p.url);
-      return successfulPhotos.map(p => p.url!);
+      // All photos are already uploaded, just return their URLs
+      const urls = successfulPhotos.map(p => p.url!);
+      console.log('All photos already uploaded, returning URLs:', urls);
+      return urls;
     }
     
     setUploadError(null);
@@ -115,71 +121,64 @@ const PropertyListingForm = ({
     ));
     
     try {
-      console.log(`Starting ImageKit upload of ${photosToUpload.length} photos...`);
-      toast.info(`Uploading ${photosToUpload.length} photos...`);
+      console.log(`Starting ImageKit upload of ${photosToUpload.length} remaining photos...`);
+      toast.info(`Uploading ${photosToUpload.length} remaining photos...`);
       
       const files = photosToUpload.map(photo => photo.file);
       
       // Upload to ImageKit with enhanced progress tracking
-      const urls = await uploadMultipleToImageKit(
+      const newUrls = await uploadMultipleToImageKit(
         files,
         'property-images',
         (progress: UploadProgress) => {
           console.log(`Upload progress: ${progress.completed}/${progress.total}`, progress.currentFile ? `Current: ${progress.currentFile}` : '');
-          
-          // Update upload progress state
           setUploadProgress(progress);
-          
-          // Update photo statuses based on completed uploads
-          setPhotos(prev => prev.map(photo => {
-            const isCurrentFile = progress.currentFile === photo.file.name;
-            const isCompleted = progress.completed > prev.findIndex(p => p.file.name === photo.file.name);
-            
-            if (isCurrentFile && progress.isUploading) {
-              return { ...photo, status: 'uploading' as const };
-            }
-            
-            return photo;
-          }));
         }
       );
       
-      if (urls.length === 0) {
+      if (newUrls.length === 0) {
         setUploadError("All photo uploads failed. Please check your connection and try again.");
         toast.error("All photo uploads failed. Please check your connection and try again.");
-        return [];
+        // Return existing successful URLs even if new uploads failed
+        return successfulPhotos.map(p => p.url!);
       }
       
       // Update photos with successful uploads
+      let urlIndex = 0;
       setPhotos(prev => prev.map(photo => {
-        const uploadedIndex = files.findIndex(f => f.name === photo.file.name);
-        if (uploadedIndex !== -1 && uploadedIndex < urls.length) {
-          return {
-            ...photo,
-            status: 'success' as const,
-            url: urls[uploadedIndex]
-          };
+        if (photosToUpload.some(p => p.file === photo.file)) {
+          if (urlIndex < newUrls.length) {
+            const result = {
+              ...photo,
+              status: 'success' as const,
+              url: newUrls[urlIndex]
+            };
+            urlIndex++;
+            return result;
+          } else {
+            return {
+              ...photo,
+              status: 'error' as const,
+              error: 'Upload failed'
+            };
+          }
         }
-        return {
-          ...photo,
-          status: 'error' as const,
-          error: 'Upload failed'
-        };
+        return photo;
       }));
       
-      const totalPhotos = photos.length;
-      const successCount = urls.length;
-      const failureCount = totalPhotos - successCount;
+      const successCount = newUrls.length;
+      const failureCount = photosToUpload.length - successCount;
       
       if (failureCount > 0) {
-        toast.warning(`${successCount} of ${totalPhotos} photos uploaded successfully. You can retry failed uploads.`);
+        toast.warning(`${successCount} of ${photosToUpload.length} remaining photos uploaded successfully.`);
       } else {
-        toast.success(`All ${successCount} photos uploaded successfully!`);
+        toast.success(`All ${successCount} remaining photos uploaded successfully!`);
       }
       
-      // Return all successful URLs (including previously uploaded ones)
-      const allSuccessfulPhotos = photos.filter(p => p.status === 'success' && p.url);
-      return [...allSuccessfulPhotos.map(p => p.url!), ...urls];
+      // Return all successful URLs (existing + new)
+      const allUrls = [...successfulPhotos.map(p => p.url!), ...newUrls];
+      console.log('Final photo URLs:', allUrls);
+      return allUrls;
     } catch (error: any) {
       console.error("Error in uploadPhotos:", error);
       setUploadError(`Upload error: ${error.message || "Network error - please check your connection"}`);
@@ -192,7 +191,8 @@ const PropertyListingForm = ({
           : photo
       ));
       
-      return [];
+      // Return existing successful URLs even if new uploads failed
+      return successfulPhotos.map(p => p.url!);
     } finally {
       setUploadProgress(null);
     }

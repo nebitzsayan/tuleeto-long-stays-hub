@@ -1,0 +1,299 @@
+import React, { useRef, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Download, Share2, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import QRCode from 'qrcode';
+
+interface PropertyPosterProps {
+  property: {
+    id: string;
+    title: string;
+    price: number;
+    images?: string[];
+    features?: string[];
+    owner_id: string;
+    location: string;
+  };
+  ownerName: string;
+}
+
+export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [posterGenerated, setPosterGenerated] = useState(false);
+
+  const generatePoster = async () => {
+    if (!canvasRef.current) return;
+    
+    setIsGenerating(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size (A4-like ratio)
+    canvas.width = 800;
+    canvas.height = 1120;
+
+    // Clear canvas with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    try {
+      // Header - TO-LET banner
+      ctx.fillStyle = '#f97316'; // Orange background
+      ctx.fillRect(0, 0, canvas.width, 80);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('TO-LET', canvas.width / 2, 55);
+
+      // Property Title
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 28px Arial';
+      const titleY = 130;
+      const words = property.title.split(' ');
+      const maxWidth = canvas.width - 60;
+      let line = '';
+      let lineY = titleY;
+      
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        
+        if (testWidth > maxWidth && i > 0) {
+          ctx.fillText(line, canvas.width / 2, lineY);
+          line = words[i] + ' ';
+          lineY += 35;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, canvas.width / 2, lineY);
+
+      // Rent Price
+      ctx.fillStyle = '#f97316';
+      ctx.font = 'bold 32px Arial';
+      ctx.fillText(`₹${property.price.toLocaleString()}/month`, canvas.width / 2, lineY + 60);
+
+      // Property Images Section (max 2 images)
+      const imagesToShow = property.images?.slice(0, 2) || [];
+      let currentY = lineY + 120;
+      
+      if (imagesToShow.length > 0) {
+        const imagePromises = imagesToShow.map((url) => {
+          return new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = url;
+          });
+        });
+
+        try {
+          const loadedImages = await Promise.all(imagePromises);
+          
+          if (loadedImages.length === 1) {
+            // Single image - full width
+            const img = loadedImages[0];
+            const imgWidth = 700;
+            const imgHeight = 300;
+            const imgX = (canvas.width - imgWidth) / 2;
+            ctx.drawImage(img, imgX, currentY, imgWidth, imgHeight);
+            currentY += imgHeight + 20;
+          } else if (loadedImages.length === 2) {
+            // Two images side by side
+            const imgWidth = 340;
+            const imgHeight = 250;
+            const spacing = 20;
+            const totalWidth = imgWidth * 2 + spacing;
+            const startX = (canvas.width - totalWidth) / 2;
+            
+            ctx.drawImage(loadedImages[0], startX, currentY, imgWidth, imgHeight);
+            ctx.drawImage(loadedImages[1], startX + imgWidth + spacing, currentY, imgWidth, imgHeight);
+            currentY += imgHeight + 20;
+          }
+        } catch (error) {
+          console.error('Error loading images:', error);
+          // Show placeholder text if images fail to load
+          ctx.fillStyle = '#6b7280';
+          ctx.font = '18px Arial';
+          ctx.fillText('Property Images', canvas.width / 2, currentY + 50);
+          currentY += 100;
+        }
+      }
+
+      // Amenities Section
+      if (property.features && property.features.length > 0) {
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 22px Arial';
+        ctx.fillText('Amenities', canvas.width / 2, currentY + 40);
+        currentY += 70;
+
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'left';
+        const amenitiesPerRow = 2;
+        const amenityHeight = 25;
+        const amenityWidth = 350;
+        
+        property.features.slice(0, 8).forEach((feature, index) => {
+          const col = index % amenitiesPerRow;
+          const row = Math.floor(index / amenitiesPerRow);
+          const x = 50 + col * amenityWidth;
+          const y = currentY + row * amenityHeight;
+          
+          // Add bullet point
+          ctx.fillStyle = '#f97316';
+          ctx.fillText('•', x, y);
+          ctx.fillStyle = '#1f2937';
+          ctx.fillText(feature, x + 20, y);
+        });
+        
+        currentY += Math.ceil(Math.min(property.features.length, 8) / amenitiesPerRow) * amenityHeight + 30;
+      }
+
+      // Owner Info
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 20px Arial';
+      ctx.fillText(`Property Owner: ${ownerName}`, canvas.width / 2, currentY + 40);
+      currentY += 80;
+
+      // Location text
+      ctx.font = '18px Arial';
+      ctx.fillStyle = '#6b7280';
+      ctx.fillText(`Location: ${property.location}`, canvas.width / 2, currentY);
+      currentY += 40;
+
+      // QR Code Section
+      const propertyUrl = `${window.location.origin}/property/${property.id}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(propertyUrl, {
+        width: 150,
+        margin: 2,
+        color: {
+          dark: '#1f2937',
+          light: '#ffffff'
+        }
+      });
+
+      const qrImg = new Image();
+      qrImg.onload = () => {
+        const qrSize = 150;
+        const qrX = (canvas.width - qrSize) / 2;
+        ctx.drawImage(qrImg, qrX, currentY, qrSize, qrSize);
+        
+        // QR Code label
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#1f2937';
+        ctx.fillText('Scan QR Code for Details', canvas.width / 2, currentY + qrSize + 25);
+        
+        setPosterGenerated(true);
+        setIsGenerating(false);
+        toast.success('Property poster generated successfully!');
+      };
+      qrImg.src = qrCodeDataUrl;
+
+    } catch (error) {
+      console.error('Error generating poster:', error);
+      toast.error('Failed to generate poster. Please try again.');
+      setIsGenerating(false);
+    }
+  };
+
+  const downloadPoster = () => {
+    if (!canvasRef.current || !posterGenerated) return;
+    
+    const link = document.createElement('a');
+    link.download = `property-poster-${property.id}.png`;
+    link.href = canvasRef.current.toDataURL();
+    link.click();
+    toast.success('Poster downloaded successfully!');
+  };
+
+  const sharePoster = async () => {
+    if (!canvasRef.current || !posterGenerated) return;
+
+    try {
+      canvasRef.current.toBlob(async (blob) => {
+        if (blob && navigator.share) {
+          const file = new File([blob], `property-poster-${property.id}.png`, { type: 'image/png' });
+          await navigator.share({
+            title: `Property Poster - ${property.title}`,
+            text: `Check out this property: ${property.title}`,
+            files: [file]
+          });
+        } else {
+          // Fallback: copy to clipboard
+          navigator.clipboard.writeText(`${window.location.origin}/property/${property.id}`);
+          toast.success('Property link copied to clipboard!');
+        }
+      });
+    } catch (error) {
+      console.error('Error sharing poster:', error);
+      toast.error('Failed to share poster');
+    }
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <ImageIcon className="h-4 w-4" />
+          Generate Poster
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Property Poster Generator</DialogTitle>
+          <DialogDescription>
+            Generate a professional poster for your property listing
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="flex justify-center gap-4">
+            <Button 
+              onClick={generatePoster} 
+              disabled={isGenerating}
+              className="gap-2"
+            >
+              {isGenerating ? 'Generating...' : 'Generate Poster'}
+            </Button>
+            
+            {posterGenerated && (
+              <>
+                <Button 
+                  onClick={downloadPoster}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+                
+                <Button 
+                  onClick={sharePoster}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </Button>
+              </>
+            )}
+          </div>
+          
+          <div className="flex justify-center">
+            <canvas
+              ref={canvasRef}
+              className="border border-gray-200 max-w-full h-auto"
+              style={{ maxHeight: '600px' }}
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
