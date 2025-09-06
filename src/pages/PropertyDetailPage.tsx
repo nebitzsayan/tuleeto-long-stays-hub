@@ -99,7 +99,8 @@ const PropertyDetailPage = () => {
                       images: property.images,
                       features: property.features,
                       owner_id: property.ownerId,
-                      location: property.location
+                      location: property.location,
+                      contactPhone: property.contactPhone
                     }}
                     ownerName={property.ownerName}
                   />

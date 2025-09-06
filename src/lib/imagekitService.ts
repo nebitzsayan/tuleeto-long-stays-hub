@@ -36,7 +36,7 @@ const isMobileDevice = () => {
          window.innerWidth <= 768;
 };
 
-// Compress image for mobile devices
+// Optimized compression for faster uploads
 const compressImageForMobile = async (file: File): Promise<File> => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
@@ -44,9 +44,9 @@ const compressImageForMobile = async (file: File): Promise<File> => {
     const img = new Image();
     
     img.onload = () => {
-      // Calculate new dimensions (max 1920x1080 for mobile)
-      const maxWidth = isMobileDevice() ? 1920 : 2560;
-      const maxHeight = isMobileDevice() ? 1080 : 1440;
+      // More aggressive compression settings for speed
+      const maxWidth = isMobileDevice() ? 1600 : 2048; // Reduced for faster processing
+      const maxHeight = isMobileDevice() ? 900 : 1152;
       
       let { width, height } = img;
       
@@ -56,10 +56,14 @@ const compressImageForMobile = async (file: File): Promise<File> => {
         height *= ratio;
       }
       
-      canvas.width = width;
-      canvas.height = height;
+      // Round dimensions to even numbers for better compression
+      canvas.width = Math.floor(width / 2) * 2;
+      canvas.height = Math.floor(height / 2) * 2;
       
-      ctx.drawImage(img, 0, 0, width, height);
+      // Use high quality scaling
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       
       canvas.toBlob(
         (blob) => {
@@ -74,7 +78,7 @@ const compressImageForMobile = async (file: File): Promise<File> => {
           }
         },
         'image/jpeg',
-        isMobileDevice() ? 0.8 : 0.9
+        isMobileDevice() ? 0.75 : 0.85 // More aggressive compression for mobile
       );
     };
     
@@ -94,10 +98,10 @@ export const uploadToImageKit = async (
       throw new Error('Invalid file - file is empty or undefined');
     }
 
-    // Compress image if on mobile or if file is too large
+    // Optimized compression for faster uploads
     let processedFile = file;
-    if (isMobileDevice() || file.size > 2 * 1024 * 1024) { // 2MB threshold
-      console.log(`Compressing ${file.name} for upload...`);
+    if (isMobileDevice() || file.size > 1.5 * 1024 * 1024) { // Lower threshold for faster processing
+      console.log(`Compressing ${file.name} for faster upload...`);
       processedFile = await compressImageForMobile(file);
       console.log(`Compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
     }

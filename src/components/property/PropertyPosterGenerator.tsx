@@ -14,6 +14,7 @@ interface PropertyPosterProps {
     features?: string[];
     owner_id: string;
     location: string;
+    contactPhone?: string;
   };
   ownerName: string;
 }
@@ -31,9 +32,9 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size (A4-like ratio)
+    // Set canvas size (A4-like ratio, optimized for mobile)
     canvas.width = 800;
-    canvas.height = 1120;
+    canvas.height = 1200;
 
     // Clear canvas with white background
     ctx.fillStyle = '#ffffff';
@@ -154,18 +155,32 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
         currentY += Math.ceil(Math.min(property.features.length, 8) / amenitiesPerRow) * amenityHeight + 30;
       }
 
-      // Owner Info
+      // Owner Info Section with border box
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 2;
+      const ownerBoxY = currentY + 20;
+      const ownerBoxHeight = property.contactPhone ? 100 : 80;
+      ctx.strokeRect(50, ownerBoxY, canvas.width - 100, ownerBoxHeight);
+      
       ctx.textAlign = 'center';
       ctx.fillStyle = '#1f2937';
       ctx.font = 'bold 20px Arial';
-      ctx.fillText(`Property Owner: ${ownerName}`, canvas.width / 2, currentY + 40);
-      currentY += 80;
+      ctx.fillText(`Property Owner: ${ownerName}`, canvas.width / 2, ownerBoxY + 30);
+      
+      // Add contact phone if available
+      if (property.contactPhone) {
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#f97316';
+        ctx.fillText(`Contact: ${property.contactPhone}`, canvas.width / 2, ownerBoxY + 55);
+      }
+      
+      currentY += ownerBoxHeight + 40;
 
       // Location text
       ctx.font = '18px Arial';
       ctx.fillStyle = '#6b7280';
       ctx.fillText(`Location: ${property.location}`, canvas.width / 2, currentY);
-      currentY += 40;
+      currentY += 50;
 
       // QR Code Section
       const propertyUrl = `${window.location.origin}/property/${property.id}`;
@@ -180,18 +195,55 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
 
       const qrImg = new Image();
       qrImg.onload = () => {
-        const qrSize = 150;
+        const qrSize = 120;
         const qrX = (canvas.width - qrSize) / 2;
         ctx.drawImage(qrImg, qrX, currentY, qrSize, qrSize);
         
         // QR Code label
-        ctx.font = '16px Arial';
+        ctx.font = '14px Arial';
         ctx.fillStyle = '#1f2937';
-        ctx.fillText('Scan QR Code for Details', canvas.width / 2, currentY + qrSize + 25);
+        ctx.fillText('Scan QR Code for Property Details', canvas.width / 2, currentY + qrSize + 20);
         
-        setPosterGenerated(true);
-        setIsGenerating(false);
-        toast.success('Property poster generated successfully!');
+        currentY += qrSize + 40;
+        
+        // Add Tuleeto logo and branding at the bottom
+        const logoImg = new Image();
+        logoImg.onload = () => {
+          const logoSize = 40;
+          const logoX = (canvas.width - logoSize) / 2;
+          ctx.drawImage(logoImg, logoX, currentY, logoSize, logoSize);
+          
+          // Tuleeto branding text
+          ctx.font = 'bold 18px Arial';
+          ctx.fillStyle = '#f97316';
+          ctx.textAlign = 'center';
+          ctx.fillText('TULEETO.IN', canvas.width / 2, currentY + logoSize + 25);
+          
+          // Add subtitle
+          ctx.font = '12px Arial';
+          ctx.fillStyle = '#6b7280';
+          ctx.fillText('Your Trusted Property Partner', canvas.width / 2, currentY + logoSize + 45);
+          
+          setPosterGenerated(true);
+          setIsGenerating(false);
+          toast.success('Property poster generated successfully!');
+        };
+        logoImg.onerror = () => {
+          // Fallback without logo
+          ctx.font = 'bold 20px Arial';
+          ctx.fillStyle = '#f97316';
+          ctx.textAlign = 'center';
+          ctx.fillText('TULEETO.IN', canvas.width / 2, currentY + 25);
+          
+          ctx.font = '14px Arial';
+          ctx.fillStyle = '#6b7280';
+          ctx.fillText('Your Trusted Property Partner', canvas.width / 2, currentY + 50);
+          
+          setPosterGenerated(true);
+          setIsGenerating(false);
+          toast.success('Property poster generated successfully!');
+        };
+        logoImg.src = '/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png';
       };
       qrImg.src = qrCodeDataUrl;
 
@@ -244,20 +296,21 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           Generate Poster
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto dialog-content">
         <DialogHeader>
-          <DialogTitle>Property Poster Generator</DialogTitle>
-          <DialogDescription>
-            Generate a professional poster for your property listing
+          <DialogTitle className="text-center">Property Poster Generator</DialogTitle>
+          <DialogDescription className="text-center">
+            Generate a professional poster for your property listing with Tuleeto branding
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-2 md:gap-4 flex-wrap">
             <Button 
               onClick={generatePoster} 
               disabled={isGenerating}
-              className="gap-2"
+              className="gap-2 flex-shrink-0"
+              size="sm"
             >
               {isGenerating ? 'Generating...' : 'Generate Poster'}
             </Button>
@@ -267,29 +320,36 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
                 <Button 
                   onClick={downloadPoster}
                   variant="outline"
-                  className="gap-2"
+                  className="gap-2 flex-shrink-0"
+                  size="sm"
                 >
                   <Download className="h-4 w-4" />
-                  Download
+                  <span className="hidden sm:inline">Download</span>
                 </Button>
                 
                 <Button 
                   onClick={sharePoster}
                   variant="outline"
-                  className="gap-2"
+                  className="gap-2 flex-shrink-0"
+                  size="sm"
                 >
                   <Share2 className="h-4 w-4" />
-                  Share
+                  <span className="hidden sm:inline">Share</span>
                 </Button>
               </>
             )}
           </div>
           
-          <div className="flex justify-center">
+          <div className="flex justify-center w-full overflow-hidden">
             <canvas
               ref={canvasRef}
-              className="border border-gray-200 max-w-full h-auto"
-              style={{ maxHeight: '600px' }}
+              className="border border-gray-200 property-poster-canvas"
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '70vh',
+                width: 'auto',
+                height: 'auto'
+              }}
             />
           </div>
         </div>

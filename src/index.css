@@ -406,5 +406,63 @@ nav,
     max-width: 95vw;
     max-height: 90vh;
     overflow-y: auto;
+    margin: 1rem;
+  }
+  
+  /* Property poster canvas mobile optimization */
+  .property-poster-canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain;
+  }
+  
+  /* Mobile-first responsive cards */
+  .property-card {
+    @apply p-3 space-y-2;
+  }
+  
+  .property-card h3 {
+    @apply text-sm font-semibold leading-tight;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .property-card .price {
+    @apply text-lg font-bold text-primary;
+  }
+  
+  /* Optimize button sizes for mobile */
+  .mobile-button {
+    @apply text-xs px-2 py-1 min-w-[60px];
+  }
+  
+  /* Better touch targets */
+  button, a, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve form inputs on mobile */
+  input, select, textarea {
+    @apply text-base; /* Prevents zoom on iOS */
+    min-height: 44px;
+  }
+}
+
+/* Enhanced mobile grid system */
+@media (max-width: 480px) {
+  .grid-mobile-single {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .container {
+    @apply px-2;
+  }
+  
+  /* Stack elements vertically on very small screens */
+  .flex-mobile-stack {
+    @apply flex-col space-y-2 space-x-0;
   }
 }
