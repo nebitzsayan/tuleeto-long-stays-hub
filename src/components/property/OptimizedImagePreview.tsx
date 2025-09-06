@@ -138,57 +138,61 @@ const OptimizedImagePreview = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black/95 border-none overflow-hidden">
+      <DialogContent className="fixed inset-0 w-screen h-screen p-0 bg-black/95 border-none overflow-hidden max-w-none max-h-none">
         {/* Header with controls */}
-        <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4">
+        <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-2 sm:p-4">
           <div className="flex items-center justify-between text-white">
-            <div className="flex items-center space-x-2">
-              <h3 className="text-sm font-medium truncate max-w-[200px]">{title}</h3>
+            <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
+              <h3 className="text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]">{title}</h3>
               {imageList.length > 1 && (
-                <span className="text-xs bg-white/20 px-2 py-1 rounded">
+                <span className="text-xs bg-white/20 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded shrink-0">
                   {currentIndex + 1} / {imageList.length}
                 </span>
               )}
             </div>
             
-            <div className="flex items-center space-x-2">
-              {/* Zoom controls */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={zoomOut}
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
-                disabled={scale <= 0.5}
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetZoom}
-                className="h-8 px-2 text-xs text-white hover:bg-white/20"
-              >
-                {Math.round(scale * 100)}%
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={zoomIn}
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
-                disabled={scale >= 3}
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              
-              {/* Rotate button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={rotateImage}
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
-              >
-                <RotateCw className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              {/* Zoom controls - Hide some on very small screens */}
+              {!isMobile && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={zoomOut}
+                    className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                    disabled={scale <= 0.5}
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetZoom}
+                    className="h-8 px-2 text-xs text-white hover:bg-white/20"
+                  >
+                    {Math.round(scale * 100)}%
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={zoomIn}
+                    className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                    disabled={scale >= 3}
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Rotate button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={rotateImage}
+                    className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                  >
+                    <RotateCw className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
 
               {/* Close button */}
               <Button
@@ -203,14 +207,17 @@ const OptimizedImagePreview = ({
           </div>
         </div>
 
-        {/* Main image container - Fixed centering and responsive sizing */}
+        {/* Main image container - Optimized for mobile */}
         <div 
-          className="flex items-center justify-center w-full h-full p-4 pt-16 pb-20"
+          className={`
+            flex items-center justify-center w-full h-full
+            ${isMobile ? 'pt-12 pb-16 px-2' : 'pt-16 pb-20 px-4'}
+          `}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="relative w-full h-full flex items-center justify-center">
+          <div className="relative w-full h-full flex items-center justify-center min-h-0">
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -220,13 +227,12 @@ const OptimizedImagePreview = ({
             <img
               src={currentImage}
               alt={`${title} - Image ${currentIndex + 1}`}
-              className={`
-                object-contain transition-transform duration-200 ease-out select-none
-                ${isMobile ? 'max-w-full max-h-full w-auto h-auto' : 'max-w-[90vw] max-h-[80vh]'}
-              `}
+              className="object-contain transition-transform duration-200 ease-out select-none w-full h-full"
               style={{
                 transform: `scale(${scale}) rotate(${rotation}deg)`,
-                imageRendering: scale > 1 ? 'crisp-edges' : 'auto'
+                imageRendering: scale > 1 ? 'crisp-edges' : 'auto',
+                maxWidth: '100%',
+                maxHeight: '100%'
               }}
               onLoad={() => {
                 setIsLoading(false);
@@ -266,27 +272,58 @@ const OptimizedImagePreview = ({
 
         {/* Bottom controls for mobile */}
         {isMobile && (
-          <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
-            <div className="flex justify-center space-x-4">
+          <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-2 sm:p-4">
+            <div className="flex justify-center items-center space-x-2 sm:space-x-4">
+              {/* Mobile zoom controls */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={zoomOut}
+                className="h-9 w-9 p-0 text-white hover:bg-white/20"
+                disabled={scale <= 0.5}
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetZoom}
+                className="h-9 px-2 text-xs text-white hover:bg-white/20"
+              >
+                {Math.round(scale * 100)}%
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={zoomIn}
+                className="h-9 w-9 p-0 text-white hover:bg-white/20"
+                disabled={scale >= 3}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+
               {imageList.length > 1 && (
                 <>
+                  <div className="w-px h-6 bg-white/20 mx-1"></div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={prevImage}
-                    className="text-white hover:bg-white/20 flex items-center space-x-1"
+                    className="text-white hover:bg-white/20 flex items-center space-x-1 h-9 px-3"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    <span className="text-xs">Previous</span>
+                    <span className="text-xs hidden xs:inline">Prev</span>
                   </Button>
                   
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={nextImage}
-                    className="text-white hover:bg-white/20 flex items-center space-x-1"
+                    className="text-white hover:bg-white/20 flex items-center space-x-1 h-9 px-3"
                   >
-                    <span className="text-xs">Next</span>
+                    <span className="text-xs hidden xs:inline">Next</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </>
@@ -295,7 +332,7 @@ const OptimizedImagePreview = ({
             
             {/* Swipe hint for mobile */}
             {imageList.length > 1 && (
-              <p className="text-center text-xs text-white/70 mt-2">
+              <p className="text-center text-xs text-white/60 mt-1">
                 Swipe left or right to navigate
               </p>
             )}

@@ -296,61 +296,68 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           Generate Poster
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto dialog-content">
-        <DialogHeader>
-          <DialogTitle className="text-center">Property Poster Generator</DialogTitle>
-          <DialogDescription className="text-center">
-            Generate a professional poster for your property listing with Tuleeto branding
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="flex justify-center gap-2 md:gap-4 flex-wrap">
-            <Button 
-              onClick={generatePoster} 
-              disabled={isGenerating}
-              className="gap-2 flex-shrink-0"
-              size="sm"
-            >
-              {isGenerating ? 'Generating...' : 'Generate Poster'}
-            </Button>
-            
-            {posterGenerated && (
-              <>
+      <DialogContent className="w-[95vw] max-w-4xl h-[95vh] max-h-[95vh] overflow-hidden p-0">
+        <div className="flex flex-col h-full">
+          <DialogHeader className="px-4 py-3 border-b shrink-0">
+            <DialogTitle className="text-center text-lg">Property Poster Generator</DialogTitle>
+            <DialogDescription className="text-center text-sm">
+              Generate a professional poster for your property listing with Tuleeto branding
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-4">
+              {/* Button controls - Mobile optimized */}
+              <div className="flex justify-center items-center gap-2 flex-wrap">
                 <Button 
-                  onClick={downloadPoster}
-                  variant="outline"
-                  className="gap-2 flex-shrink-0"
+                  onClick={generatePoster} 
+                  disabled={isGenerating}
+                  className="gap-2 min-w-[120px]"
                   size="sm"
                 >
-                  <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Download</span>
+                  {isGenerating ? 'Generating...' : 'Generate Poster'}
                 </Button>
                 
-                <Button 
-                  onClick={sharePoster}
-                  variant="outline"
-                  className="gap-2 flex-shrink-0"
-                  size="sm"
-                >
-                  <Share2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Share</span>
-                </Button>
-              </>
-            )}
-          </div>
-          
-          <div className="flex justify-center w-full overflow-hidden">
-            <canvas
-              ref={canvasRef}
-              className="border border-gray-200 property-poster-canvas"
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: '70vh',
-                width: 'auto',
-                height: 'auto'
-              }}
-            />
+                {posterGenerated && (
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={downloadPoster}
+                      variant="outline"
+                      className="gap-2 min-w-[100px]"
+                      size="sm"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm">Download</span>
+                    </Button>
+                    
+                    <Button 
+                      onClick={sharePoster}
+                      variant="outline"
+                      className="gap-2 min-w-[80px]"
+                      size="sm"
+                    >
+                      <Share2 className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm">Share</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Canvas container - Mobile optimized */}
+              <div className="flex justify-center w-full">
+                <div className="w-full max-w-md sm:max-w-lg">
+                  <canvas
+                    ref={canvasRef}
+                    className="border border-border rounded-lg shadow shadow-muted w-full h-auto"
+                    style={{ 
+                      maxWidth: '100%',
+                      height: 'auto',
+                      aspectRatio: '2/3'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>

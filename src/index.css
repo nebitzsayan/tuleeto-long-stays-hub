@@ -409,6 +409,22 @@ nav,
     margin: 1rem;
   }
   
+  /* Image preview mobile optimizations */
+  .image-preview-dialog {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  .image-preview-controls {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
   /* Property poster canvas mobile optimization */
   .property-poster-canvas {
     max-width: 100% !important;
@@ -448,6 +464,35 @@ nav,
   input, select, textarea {
     @apply text-base; /* Prevents zoom on iOS */
     min-height: 44px;
+  }
+}
+
+/* Mobile-first responsive improvements for small breakpoints */
+@media (min-width: 475px) {
+  .xs\:inline {
+    display: inline !important;
+  }
+}
+
+/* Ensure touch targets are large enough on all mobile devices */
+@media (max-width: 768px) {
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Image preview specific mobile improvements */
+  .image-preview-mobile-controls {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .image-preview-mobile-controls button {
+    min-height: 40px;
+    min-width: 40px;
   }
 }
 
