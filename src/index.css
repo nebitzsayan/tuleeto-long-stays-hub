@@ -121,6 +121,44 @@
     margin-top: 2rem;
   }
   
+  /* Enhanced mobile image preview optimizations */
+  .mobile-image-preview {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important; /* Dynamic viewport height for mobile */
+    background: black !important;
+    z-index: 9999 !important;
+  }
+
+  .mobile-image-preview * {
+    box-sizing: border-box;
+  }
+
+  .mobile-image-preview img {
+    touch-action: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+
+  /* Safe area support for devices with notches */
+  @supports (padding: max(0px)) {
+    .pb-safe {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    }
+    
+    .pt-safe {
+      padding-top: max(0.75rem, env(safe-area-inset-top)) !important;
+    }
+  }
+
+  /* Touch manipulation for better responsiveness */
+  .touch-manipulation {
+    touch-action: manipulation !important;
+  }
+
   /* Mobile optimizations - Clean 2x2 grid layout with proper text wrapping */
   @media (max-width: 640px) {
     [class*="lucide-"] {
