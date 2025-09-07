@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
 import { useImagePreview } from "@/hooks/useImagePreview";
+import { useMobileDetection } from "@/hooks/useMobileDetection";
 import OptimizedImagePreview from "./OptimizedImagePreview";
+import SimpleMobileImagePreview from "./SimpleMobileImagePreview";
 
 interface PropertyImageCarouselProps {
   images: string[];
@@ -17,6 +19,7 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { imageList, handleImageError, handleImageLoad } = useImageHandling(images);
   const { isPreviewOpen, previewIndex, openPreview, closePreview } = useImagePreview();
+  const isMobile = useMobileDetection();
 
   if (!imageList.length) {
     return (
@@ -118,14 +121,24 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
         )}
       </Card>
 
-      {/* Optimized Image Preview Modal */}
-      <OptimizedImagePreview
-        isOpen={isPreviewOpen}
-        onClose={closePreview}
-        images={imageList}
-        initialIndex={previewIndex}
-        title={title}
-      />
+      {/* Image Preview Modal - Use simple version for mobile, optimized for desktop */}
+      {isMobile ? (
+        <SimpleMobileImagePreview
+          isOpen={isPreviewOpen}
+          onClose={closePreview}
+          images={imageList}
+          initialIndex={previewIndex}
+          title={title}
+        />
+      ) : (
+        <OptimizedImagePreview
+          isOpen={isPreviewOpen}
+          onClose={closePreview}
+          images={imageList}
+          initialIndex={previewIndex}
+          title={title}
+        />
+      )}
     </>
   );
 };
