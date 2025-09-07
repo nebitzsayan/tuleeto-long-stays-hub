@@ -4,7 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
-import { useMobileDetection } from "@/hooks/useMobileDetection";
+import { useEnhancedMobileDetection } from "@/hooks/useEnhancedMobileDetection";
 
 interface OptimizedImagePreviewProps {
   isOpen: boolean;
@@ -31,7 +31,7 @@ const OptimizedImagePreview = ({
   
   const imageRef = useRef<HTMLImageElement>(null);
   const { imageList, handleImageError, handleImageLoad } = useImageHandling(images);
-  const { isMobile, orientation, viewportHeight } = useMobileDetection();
+  const { isMobile, orientation, viewportHeight } = useEnhancedMobileDetection();
 
   useEffect(() => {
     setCurrentIndex(Math.max(0, Math.min(initialIndex, imageList.length - 1)));
