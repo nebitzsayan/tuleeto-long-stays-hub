@@ -189,14 +189,19 @@ const OptimizedImagePreview = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className={`
-          fixed inset-0 w-screen border-none overflow-hidden max-w-none max-h-none p-0
+          !fixed !inset-0 !w-screen !h-screen !border-none !overflow-hidden !max-w-none !max-h-none !p-0 !transform-none !translate-x-0 !translate-y-0
           ${isMobile 
-            ? 'h-screen bg-black' 
-            : 'h-screen bg-black/95'
+            ? 'bg-black' 
+            : 'bg-black/95'
           }
         `}
         style={{
-          height: isMobile && viewportHeight ? `${viewportHeight}px` : '100vh'
+          width: '100vw',
+          height: isMobile && viewportHeight ? `${viewportHeight}px` : '100vh',
+          top: 0,
+          left: 0,
+          transform: 'none',
+          margin: 0
         }}
       >
         {/* Header with controls */}
