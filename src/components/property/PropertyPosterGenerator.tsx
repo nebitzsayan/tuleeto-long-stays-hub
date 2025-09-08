@@ -268,23 +268,58 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
     if (!canvasRef.current || !posterGenerated) return;
 
     try {
-      canvasRef.current.toBlob(async (blob) => {
-        if (blob && navigator.share) {
-          const file = new File([blob], `property-poster-${property.id}.png`, { type: 'image/png' });
-          await navigator.share({
-            title: `Property Poster - ${property.title}`,
-            text: `Check out this property: ${property.title}`,
-            files: [file]
-          });
-        } else {
-          // Fallback: copy to clipboard
-          navigator.clipboard.writeText(`${window.location.origin}/property/${property.id}`);
-          toast.success('Property link copied to clipboard!');
-        }
-      });
+      // Check if Web Share API is supported and can handle files
+      if (navigator.share && navigator.canShare) {
+        canvasRef.current.toBlob(async (blob) => {
+          if (blob) {
+            const file = new File([blob], `property-poster-${property.id}.png`, { type: 'image/png' });
+            
+            // Check if the browser can share files
+            if (navigator.canShare({ files: [file] })) {
+              try {
+                await navigator.share({
+                  title: `Property Poster - ${property.title}`,
+                  text: `Check out this property: ${property.title}`,
+                  files: [file]
+                });
+                toast.success('Poster shared successfully!');
+                return;
+              } catch (shareError) {
+                console.error('File share failed:', shareError);
+              }
+            }
+          }
+          
+          // Fallback to URL sharing if file sharing fails
+          try {
+            await navigator.share({
+              title: `Property Poster - ${property.title}`,
+              text: `Check out this property: ${property.title}`,
+              url: `${window.location.origin}/property/${property.id}`
+            });
+            toast.success('Property link shared successfully!');
+          } catch (urlShareError) {
+            // Final fallback to clipboard
+            fallbackToCopy();
+          }
+        });
+      } else {
+        // Fallback for browsers without Web Share API
+        fallbackToCopy();
+      }
     } catch (error) {
       console.error('Error sharing poster:', error);
-      toast.error('Failed to share poster');
+      fallbackToCopy();
+    }
+  };
+
+  const fallbackToCopy = () => {
+    try {
+      const propertyUrl = `${window.location.origin}/property/${property.id}`;
+      navigator.clipboard.writeText(propertyUrl);
+      toast.success('Property link copied to clipboard!');
+    } catch (clipboardError) {
+      toast.error('Unable to share. Please copy the link manually.');
     }
   };
 
@@ -296,67 +331,77 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           Generate Poster
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-4xl h-[95vh] max-h-[95vh] overflow-hidden p-0">
+      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] overflow-hidden p-0 sm:w-[90vw]">
         <div className="flex flex-col h-full">
-          <DialogHeader className="px-4 py-3 border-b shrink-0">
-            <DialogTitle className="text-center text-lg">Property Poster Generator</DialogTitle>
-            <DialogDescription className="text-center text-sm">
-              Generate a professional poster for your property listing with Tuleeto branding
+          <DialogHeader className="px-3 py-2 border-b shrink-0 sm:px-4 sm:py-3">
+            <DialogTitle className="text-center text-base sm:text-lg">Property Poster Generator</DialogTitle>
+            <DialogDescription className="text-center text-xs sm:text-sm px-2">
+              Generate a professional poster for your property listing
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* Button controls - Mobile optimized */}
-              <div className="flex justify-center items-center gap-2 flex-wrap">
+              <div className="flex justify-center items-center gap-2 flex-wrap px-2">
                 <Button 
                   onClick={generatePoster} 
                   disabled={isGenerating}
-                  className="gap-2 min-w-[120px]"
+                  className="gap-2 min-w-[110px] text-xs sm:text-sm"
                   size="sm"
                 >
                   {isGenerating ? 'Generating...' : 'Generate Poster'}
                 </Button>
                 
                 {posterGenerated && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 sm:gap-2 flex-wrap justify-center">
                     <Button 
                       onClick={downloadPoster}
                       variant="outline"
-                      className="gap-2 min-w-[100px]"
+                      className="gap-1 min-w-[80px] text-xs sm:text-sm px-2 sm:px-3"
                       size="sm"
                     >
-                      <Download className="h-4 w-4" />
-                      <span className="text-xs sm:text-sm">Download</span>
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>Download</span>
                     </Button>
                     
                     <Button 
                       onClick={sharePoster}
                       variant="outline"
-                      className="gap-2 min-w-[80px]"
+                      className="gap-1 min-w-[70px] text-xs sm:text-sm px-2 sm:px-3"
                       size="sm"
                     >
-                      <Share2 className="h-4 w-4" />
-                      <span className="text-xs sm:text-sm">Share</span>
+                      <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>Share</span>
                     </Button>
                   </div>
                 )}
               </div>
               
               {/* Canvas container - Mobile optimized */}
-              <div className="flex justify-center w-full">
-                <div className="w-full max-w-md sm:max-w-lg">
+              <div className="flex justify-center w-full px-2">
+                <div className="w-full max-w-[280px] sm:max-w-md">
                   <canvas
                     ref={canvasRef}
-                    className="border border-border rounded-lg shadow shadow-muted w-full h-auto"
+                    className="border border-border rounded-lg shadow shadow-muted w-full h-auto bg-white"
                     style={{ 
                       maxWidth: '100%',
                       height: 'auto',
-                      aspectRatio: '2/3'
+                      aspectRatio: '2/3',
+                      display: 'block'
                     }}
                   />
                 </div>
               </div>
+              
+              {/* Mobile-specific instructions */}
+              {posterGenerated && (
+                <div className="text-center px-4 py-2 bg-muted/50 rounded-lg mx-2 sm:mx-4">
+                  <p className="text-xs text-muted-foreground">
+                    Tap Download to save or Share to send via WhatsApp/Social media
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
