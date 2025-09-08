@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Download, Share2, Image as ImageIcon } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 
@@ -22,7 +21,6 @@ interface PropertyPosterProps {
 export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [posterGenerated, setPosterGenerated] = useState(false);
 
   const generatePoster = async () => {
     if (!canvasRef.current) return;
@@ -224,9 +222,7 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           ctx.fillStyle = '#6b7280';
           ctx.fillText('Your Trusted Property Partner', canvas.width / 2, currentY + logoSize + 45);
           
-          setPosterGenerated(true);
           setIsGenerating(false);
-          toast.success('Property poster generated successfully!');
         };
         logoImg.onerror = () => {
           // Fallback without logo
@@ -239,9 +235,7 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           ctx.fillStyle = '#6b7280';
           ctx.fillText('Your Trusted Property Partner', canvas.width / 2, currentY + 50);
           
-          setPosterGenerated(true);
           setIsGenerating(false);
-          toast.success('Property poster generated successfully!');
         };
         logoImg.src = '/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png';
       };
@@ -254,18 +248,26 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
     }
   };
 
-  const downloadPoster = () => {
-    if (!canvasRef.current || !posterGenerated) return;
+  const generateAndDownloadPoster = async () => {
+    if (!canvasRef.current) return;
     
-    const link = document.createElement('a');
-    link.download = `property-poster-${property.id}.png`;
-    link.href = canvasRef.current.toDataURL();
-    link.click();
-    toast.success('Poster downloaded successfully!');
+    setIsGenerating(true);
+    await generatePoster();
+    
+    // After generation is complete, automatically download
+    setTimeout(() => {
+      if (canvasRef.current) {
+        const link = document.createElement('a');
+        link.download = `property-poster-${property.id}.png`;
+        link.href = canvasRef.current.toDataURL();
+        link.click();
+        toast.success('Poster downloaded successfully!');
+      }
+    }, 500); // Small delay to ensure canvas is ready
   };
 
   const sharePoster = async () => {
-    if (!canvasRef.current || !posterGenerated) return;
+    if (!canvasRef.current) return;
 
     try {
       // Check if Web Share API is supported and can handle files
@@ -324,90 +326,23 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <ImageIcon className="h-4 w-4" />
-          Generate Poster
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="w-[98vw] max-w-md h-[95vh] max-h-[95vh] overflow-hidden p-0">
-        <div className="flex flex-col h-full">
-          <DialogHeader className="px-2 py-2 border-b shrink-0 sm:px-3 sm:py-3">
-            <DialogTitle className="text-center text-sm sm:text-base">Property Poster Generator</DialogTitle>
-            <DialogDescription className="text-center text-xs px-1 sm:px-2">
-              Generate a professional poster for your property listing
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto p-1 sm:p-3">
-            <div className="space-y-2 sm:space-y-3">
-              {/* Button controls - Mobile optimized */}
-              <div className="flex flex-col items-center gap-2 px-1">
-                <Button 
-                  onClick={generatePoster} 
-                  disabled={isGenerating}
-                  className="gap-2 w-full max-w-[200px] text-xs"
-                  size="sm"
-                >
-                  {isGenerating ? 'Generating...' : 'Generate Poster'}
-                </Button>
-                
-                {posterGenerated && (
-                  <div className="flex gap-2 w-full max-w-[280px] justify-center">
-                    <Button 
-                      onClick={downloadPoster}
-                      variant="outline"
-                      className="gap-1 flex-1 text-xs px-2"
-                      size="sm"
-                    >
-                      <Download className="h-3 w-3" />
-                      <span className="hidden xs:inline">Download</span>
-                      <span className="xs:hidden">DL</span>
-                    </Button>
-                    
-                    <Button 
-                      onClick={sharePoster}
-                      variant="outline"
-                      className="gap-1 flex-1 text-xs px-2"
-                      size="sm"
-                    >
-                      <Share2 className="h-3 w-3" />
-                      <span className="hidden xs:inline">Share</span>
-                      <span className="xs:hidden">SH</span>
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              {/* Canvas container - Mobile optimized */}
-              <div className="flex justify-center w-full px-1">
-                <div className="w-full max-w-[260px] sm:max-w-sm">
-                  <canvas
-                    ref={canvasRef}
-                    className="border border-border rounded-lg shadow shadow-muted w-full h-auto bg-white"
-                    style={{ 
-                      maxWidth: '100%',
-                      height: 'auto',
-                      aspectRatio: '2/3',
-                      display: 'block'
-                    }}
-                  />
-                </div>
-              </div>
-              
-              {/* Mobile-specific instructions */}
-              {posterGenerated && (
-                <div className="text-center px-2 py-2 bg-muted/50 rounded-lg mx-1 text-wrap">
-                  <p className="text-xs text-muted-foreground leading-tight">
-                    Tap Download to save or Share to send via WhatsApp/Social media
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <div>
+      <Button 
+        onClick={generateAndDownloadPoster} 
+        disabled={isGenerating}
+        variant="outline" 
+        size="sm" 
+        className="gap-2"
+      >
+        <Download className="h-4 w-4" />
+        {isGenerating ? 'Generating PDF...' : 'Generate PDF'}
+      </Button>
+      
+      {/* Hidden canvas for generation */}
+      <canvas
+        ref={canvasRef}
+        style={{ display: 'none' }}
+      />
+    </div>
   );
 };
