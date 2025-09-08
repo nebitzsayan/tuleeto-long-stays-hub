@@ -49,12 +49,12 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
       ctx.textAlign = 'center';
       ctx.fillText('TO-LET', canvas.width / 2, 55);
 
-      // Property Title
+      // Property Title with better wrapping
       ctx.fillStyle = '#1f2937';
-      ctx.font = 'bold 28px Arial';
+      ctx.font = 'bold 26px Arial';
       const titleY = 130;
       const words = property.title.split(' ');
-      const maxWidth = canvas.width - 60;
+      const maxWidth = canvas.width - 80; // More padding
       let line = '';
       let lineY = titleY;
       
@@ -64,14 +64,14 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
         const testWidth = metrics.width;
         
         if (testWidth > maxWidth && i > 0) {
-          ctx.fillText(line, canvas.width / 2, lineY);
+          ctx.fillText(line.trim(), canvas.width / 2, lineY);
           line = words[i] + ' ';
-          lineY += 35;
+          lineY += 32;
         } else {
           line = testLine;
         }
       }
-      ctx.fillText(line, canvas.width / 2, lineY);
+      ctx.fillText(line.trim(), canvas.width / 2, lineY);
 
       // Rent Price
       ctx.fillStyle = '#f97316';
@@ -331,56 +331,58 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           Generate Poster
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] overflow-hidden p-0 sm:w-[90vw]">
+      <DialogContent className="w-[98vw] max-w-md h-[95vh] max-h-[95vh] overflow-hidden p-0">
         <div className="flex flex-col h-full">
-          <DialogHeader className="px-3 py-2 border-b shrink-0 sm:px-4 sm:py-3">
-            <DialogTitle className="text-center text-base sm:text-lg">Property Poster Generator</DialogTitle>
-            <DialogDescription className="text-center text-xs sm:text-sm px-2">
+          <DialogHeader className="px-2 py-2 border-b shrink-0 sm:px-3 sm:py-3">
+            <DialogTitle className="text-center text-sm sm:text-base">Property Poster Generator</DialogTitle>
+            <DialogDescription className="text-center text-xs px-1 sm:px-2">
               Generate a professional poster for your property listing
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto p-2 sm:p-4">
-            <div className="space-y-3 sm:space-y-4">
+          <div className="flex-1 overflow-y-auto p-1 sm:p-3">
+            <div className="space-y-2 sm:space-y-3">
               {/* Button controls - Mobile optimized */}
-              <div className="flex justify-center items-center gap-2 flex-wrap px-2">
+              <div className="flex flex-col items-center gap-2 px-1">
                 <Button 
                   onClick={generatePoster} 
                   disabled={isGenerating}
-                  className="gap-2 min-w-[110px] text-xs sm:text-sm"
+                  className="gap-2 w-full max-w-[200px] text-xs"
                   size="sm"
                 >
                   {isGenerating ? 'Generating...' : 'Generate Poster'}
                 </Button>
                 
                 {posterGenerated && (
-                  <div className="flex gap-1 sm:gap-2 flex-wrap justify-center">
+                  <div className="flex gap-2 w-full max-w-[280px] justify-center">
                     <Button 
                       onClick={downloadPoster}
                       variant="outline"
-                      className="gap-1 min-w-[80px] text-xs sm:text-sm px-2 sm:px-3"
+                      className="gap-1 flex-1 text-xs px-2"
                       size="sm"
                     >
-                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>Download</span>
+                      <Download className="h-3 w-3" />
+                      <span className="hidden xs:inline">Download</span>
+                      <span className="xs:hidden">DL</span>
                     </Button>
                     
                     <Button 
                       onClick={sharePoster}
                       variant="outline"
-                      className="gap-1 min-w-[70px] text-xs sm:text-sm px-2 sm:px-3"
+                      className="gap-1 flex-1 text-xs px-2"
                       size="sm"
                     >
-                      <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>Share</span>
+                      <Share2 className="h-3 w-3" />
+                      <span className="hidden xs:inline">Share</span>
+                      <span className="xs:hidden">SH</span>
                     </Button>
                   </div>
                 )}
               </div>
               
               {/* Canvas container - Mobile optimized */}
-              <div className="flex justify-center w-full px-2">
-                <div className="w-full max-w-[280px] sm:max-w-md">
+              <div className="flex justify-center w-full px-1">
+                <div className="w-full max-w-[260px] sm:max-w-sm">
                   <canvas
                     ref={canvasRef}
                     className="border border-border rounded-lg shadow shadow-muted w-full h-auto bg-white"
@@ -396,8 +398,8 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
               
               {/* Mobile-specific instructions */}
               {posterGenerated && (
-                <div className="text-center px-4 py-2 bg-muted/50 rounded-lg mx-2 sm:mx-4">
-                  <p className="text-xs text-muted-foreground">
+                <div className="text-center px-2 py-2 bg-muted/50 rounded-lg mx-1 text-wrap">
+                  <p className="text-xs text-muted-foreground leading-tight">
                     Tap Download to save or Share to send via WhatsApp/Social media
                   </p>
                 </div>
