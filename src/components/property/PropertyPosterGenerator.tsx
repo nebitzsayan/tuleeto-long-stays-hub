@@ -95,24 +95,69 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           const loadedImages = await Promise.all(imagePromises);
           
           if (loadedImages.length === 1) {
-            // Single image - full width
+            // Single image - maintain aspect ratio
             const img = loadedImages[0];
-            const imgWidth = 700;
-            const imgHeight = 300;
+            const maxWidth = 700;
+            const maxHeight = 300;
+            
+            // Calculate dimensions maintaining aspect ratio
+            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            let imgWidth = maxWidth;
+            let imgHeight = imgWidth / aspectRatio;
+            
+            // If height exceeds max, scale down based on height
+            if (imgHeight > maxHeight) {
+              imgHeight = maxHeight;
+              imgWidth = imgHeight * aspectRatio;
+            }
+            
             const imgX = (canvas.width - imgWidth) / 2;
             ctx.drawImage(img, imgX, currentY, imgWidth, imgHeight);
             currentY += imgHeight + 20;
           } else if (loadedImages.length === 2) {
-            // Two images side by side
-            const imgWidth = 340;
-            const imgHeight = 250;
+            // Two images side by side - maintain aspect ratio
+            const maxWidth = 340;
+            const maxHeight = 250;
             const spacing = 20;
-            const totalWidth = imgWidth * 2 + spacing;
+            
+            // Calculate dimensions for both images
+            const img1 = loadedImages[0];
+            const img2 = loadedImages[1];
+            
+            // Calculate first image dimensions
+            let img1AspectRatio = img1.naturalWidth / img1.naturalHeight;
+            let img1Width = maxWidth;
+            let img1Height = img1Width / img1AspectRatio;
+            
+            if (img1Height > maxHeight) {
+              img1Height = maxHeight;
+              img1Width = img1Height * img1AspectRatio;
+            }
+            
+            // Calculate second image dimensions
+            let img2AspectRatio = img2.naturalWidth / img2.naturalHeight;
+            let img2Width = maxWidth;
+            let img2Height = img2Width / img2AspectRatio;
+            
+            if (img2Height > maxHeight) {
+              img2Height = maxHeight;
+              img2Width = img2Height * img2AspectRatio;
+            }
+            
+            // Use the larger height for both images to align them properly
+            const finalHeight = Math.max(img1Height, img2Height);
+            
+            // Center the images horizontally
+            const totalWidth = img1Width + img2Width + spacing;
             const startX = (canvas.width - totalWidth) / 2;
             
-            ctx.drawImage(loadedImages[0], startX, currentY, imgWidth, imgHeight);
-            ctx.drawImage(loadedImages[1], startX + imgWidth + spacing, currentY, imgWidth, imgHeight);
-            currentY += imgHeight + 20;
+            // Draw images centered vertically within the final height
+            const img1Y = currentY + (finalHeight - img1Height) / 2;
+            const img2Y = currentY + (finalHeight - img2Height) / 2;
+            
+            ctx.drawImage(img1, startX, img1Y, img1Width, img1Height);
+            ctx.drawImage(img2, startX + img1Width + spacing, img2Y, img2Width, img2Height);
+            currentY += finalHeight + 20;
           }
         } catch (error) {
           console.error('Error loading images:', error);
