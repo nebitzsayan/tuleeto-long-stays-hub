@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
@@ -17,9 +17,28 @@ interface PropertyImageCarouselProps {
 
 const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageCarouselProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const imageRef = useRef<HTMLDivElement>(null);
+  
   const { imageList, handleImageError, handleImageLoad } = useImageHandling(images);
   const { isPreviewOpen, previewIndex, openPreview, closePreview } = useImagePreview();
   const isMobile = useMobileDetection();
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        prevImage();
+      } else if (e.key === 'ArrowRight') {
+        nextImage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   if (!imageList.length) {
     return (
@@ -30,31 +49,70 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
   }
 
   const nextImage = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     setCurrentImageIndex((prev) => (prev + 1) % imageList.length);
+    setTimeout(() => setIsTransitioning(false), 300);
   };
 
   const prevImage = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     setCurrentImageIndex((prev) => (prev - 1 + imageList.length) % imageList.length);
+    setTimeout(() => setIsTransitioning(false), 300);
   };
 
   const handleImageClick = () => {
     openPreview(currentImageIndex);
   };
 
+  // Touch handlers for swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && imageList.length > 1) {
+      nextImage();
+    }
+    if (isRightSwipe && imageList.length > 1) {
+      prevImage();
+    }
+  };
+
   return (
     <>
       <Card className={`relative overflow-hidden bg-gray-100 ${className}`}>
-        <div className="aspect-[4/3] relative group cursor-pointer" onClick={handleImageClick}>
+        <div 
+          ref={imageRef}
+          className="aspect-[4/3] relative group cursor-pointer" 
+          onClick={handleImageClick}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <img
             src={imageList[currentImageIndex]}
             alt={`${title} - Image ${currentImageIndex + 1}`}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+              isTransitioning ? 'opacity-80 scale-95' : 'opacity-100 scale-100'
+            }`}
             onLoad={() => handleImageLoad(currentImageIndex, imageList[currentImageIndex])}
             onError={() => handleImageError(currentImageIndex)}
           />
           
           {/* Overlay with expand icon */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
             <Button
               variant="secondary"
               size="sm"
@@ -71,25 +129,31 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
               <Button
                 variant="secondary"
                 size="icon"
-                className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8"
+                className={`absolute left-2 top-1/2 -translate-y-1/2 transition-opacity duration-300 h-10 w-10 z-10 ${
+                  isMobile ? 'opacity-70 hover:opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   prevImage();
                 }}
+                disabled={isTransitioning}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               
               <Button
                 variant="secondary"
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8"
+                className={`absolute right-2 top-1/2 -translate-y-1/2 transition-opacity duration-300 h-10 w-10 z-10 ${
+                  isMobile ? 'opacity-70 hover:opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   nextImage();
                 }}
+                disabled={isTransitioning}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </>
           )}
@@ -98,6 +162,13 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
           {imageList.length > 1 && (
             <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
               {currentImageIndex + 1} / {imageList.length}
+            </div>
+          )}
+
+          {/* Loading indicator */}
+          {isTransitioning && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
             </div>
           )}
         </div>
@@ -113,7 +184,11 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setCurrentImageIndex(index);
+                  if (!isTransitioning) {
+                    setIsTransitioning(true);
+                    setCurrentImageIndex(index);
+                    setTimeout(() => setIsTransitioning(false), 300);
+                  }
                 }}
               />
             ))}
