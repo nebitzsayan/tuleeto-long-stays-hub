@@ -41,7 +41,7 @@ const OwnerAvatar = ({
         }
         
         const { data, error } = await supabase
-          .from('profiles')
+          .from('public_profiles_safe')
           .select('avatar_url, full_name')
           .eq('id', ownerId)
           .single();

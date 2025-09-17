@@ -116,7 +116,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
       
       // Fetch profiles for review users
       const { data: reviewProfilesData, error: reviewProfilesError } = await supabase
-        .from('profiles')
+        .from('public_profiles_safe')
         .select('id, full_name, avatar_url')
         .in('id', reviewUserIds);
 
@@ -145,7 +145,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
       
       // Fetch profiles for all users (reviews + replies)
       const { data: allProfilesData, error: allProfilesError } = await supabase
-        .from('profiles')
+        .from('public_profiles_safe')
         .select('id, full_name, avatar_url')
         .in('id', allUserIds);
 
