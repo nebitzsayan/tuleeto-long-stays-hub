@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
 import { useImagePreview } from "@/hooks/useImagePreview";
@@ -22,11 +23,18 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
   const touchEndX = useRef<number>(0);
   const imageRef = useRef<HTMLDivElement>(null);
   
-  const { imageList, handleImageError, handleImageLoad } = useImageHandling(images);
+  const { 
+    imageList, 
+    handleImageError, 
+    handleImageLoad, 
+    startImageLoading, 
+    preloadAdjacentImages, 
+    isImageLoading 
+  } = useImageHandling(images);
   const { isPreviewOpen, previewIndex, openPreview, closePreview } = useImagePreview();
   const isMobile = useMobileDetection();
 
-  // Keyboard navigation
+  // Keyboard navigation and preloading
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
@@ -40,6 +48,13 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
+  // Preload adjacent images when current image changes
+  useEffect(() => {
+    if (imageList.length > 1) {
+      preloadAdjacentImages(currentImageIndex);
+    }
+  }, [currentImageIndex, imageList.length, preloadAdjacentImages]);
+
   if (!imageList.length) {
     return (
       <Card className={`aspect-[4/3] bg-gray-200 flex items-center justify-center ${className}`}>
@@ -51,14 +66,18 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
   const nextImage = () => {
     if (isTransitioning) return;
     setIsTransitioning(true);
-    setCurrentImageIndex((prev) => (prev + 1) % imageList.length);
+    const nextIndex = (currentImageIndex + 1) % imageList.length;
+    setCurrentImageIndex(nextIndex);
+    startImageLoading(nextIndex);
     setTimeout(() => setIsTransitioning(false), 300);
   };
 
   const prevImage = () => {
     if (isTransitioning) return;
     setIsTransitioning(true);
-    setCurrentImageIndex((prev) => (prev - 1 + imageList.length) % imageList.length);
+    const prevIndex = (currentImageIndex - 1 + imageList.length) % imageList.length;
+    setCurrentImageIndex(prevIndex);
+    startImageLoading(prevIndex);
     setTimeout(() => setIsTransitioning(false), 300);
   };
 
@@ -101,15 +120,24 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <img
-            src={imageList[currentImageIndex]}
-            alt={`${title} - Image ${currentImageIndex + 1}`}
-            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-              isTransitioning ? 'opacity-80 scale-95' : 'opacity-100 scale-100'
-            }`}
-            onLoad={() => handleImageLoad(currentImageIndex, imageList[currentImageIndex])}
-            onError={() => handleImageError(currentImageIndex)}
-          />
+          {isImageLoading(currentImageIndex) ? (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <Skeleton className="w-full h-full" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            </div>
+          ) : (
+            <img
+              src={imageList[currentImageIndex]}
+              alt={`${title} - Image ${currentImageIndex + 1}`}
+              className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+                isTransitioning ? 'opacity-80 scale-95' : 'opacity-100 scale-100'
+              }`}
+              onLoad={() => handleImageLoad(currentImageIndex, imageList[currentImageIndex])}
+              onError={() => handleImageError(currentImageIndex)}
+            />
+          )}
           
           {/* Overlay with expand icon */}
           <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
@@ -165,8 +193,8 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
             </div>
           )}
 
-          {/* Loading indicator */}
-          {isTransitioning && (
+          {/* Transition loading indicator */}
+          {(isTransitioning || isImageLoading(currentImageIndex)) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/10">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
             </div>
@@ -187,6 +215,7 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
                   if (!isTransitioning) {
                     setIsTransitioning(true);
                     setCurrentImageIndex(index);
+                    startImageLoading(index);
                     setTimeout(() => setIsTransitioning(false), 300);
                   }
                 }}
