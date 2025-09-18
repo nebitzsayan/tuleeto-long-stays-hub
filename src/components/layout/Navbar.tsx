@@ -17,7 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import Logo from "@/components/ui/logo";
 
 const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { user, userProfile, signOut } = useAuth();
   const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
@@ -75,9 +75,18 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full backdrop-blur-sm">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+                      <AvatarImage src={userProfile?.avatar_url || user.user_metadata?.avatar_url} alt={user.email} />
                       <AvatarFallback className="bg-tuleeto-orange text-white">
-                        {user.email?.[0]?.toUpperCase()}
+                        {userProfile?.full_name ? (
+                          userProfile.full_name
+                            .split(' ')
+                            .map((name: string) => name[0])
+                            .join('')
+                            .toUpperCase()
+                            .substring(0, 2)
+                        ) : (
+                          user.email?.[0]?.toUpperCase()
+                        )}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -85,7 +94,7 @@ const Navbar = () => {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.user_metadata?.full_name || 'User'}</p>
+                      <p className="text-sm font-medium leading-none">{userProfile?.full_name || user?.user_metadata?.full_name || 'User'}</p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
