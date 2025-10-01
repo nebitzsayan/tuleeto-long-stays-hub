@@ -15,12 +15,11 @@ import { PropertyType } from "@/components/property/PropertyListingCard";
 interface OwnerProfile {
   id: string;
   full_name: string;
-  email: string;
   avatar_url: string | null;
 }
 
 const OwnerProfilePage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { ownerId } = useParams<{ ownerId: string }>();
   const [owner, setOwner] = useState<OwnerProfile | null>(null);
   const [properties, setProperties] = useState<PropertyType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,19 +27,21 @@ const OwnerProfilePage = () => {
   
   useEffect(() => {
     const fetchOwnerData = async () => {
-      if (!id) return;
+      if (!ownerId) return;
       
       try {
         setLoading(true);
         
-        // Fetch owner profile
+        // Fetch owner profile from public_profiles_safe
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
+          .from('public_profiles_safe')
           .select('*')
-          .eq('id', id)
-          .single();
+          .eq('id', ownerId)
+          .maybeSingle();
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Error fetching owner profile:", profileError);
+        }
         
         if (profileData) {
           setOwner(profileData);
@@ -50,7 +51,7 @@ const OwnerProfilePage = () => {
         const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
           .select('*')
-          .eq('owner_id', id);
+          .eq('owner_id', ownerId);
           
         if (propertiesError) throw propertiesError;
         
@@ -81,7 +82,7 @@ const OwnerProfilePage = () => {
     };
     
     fetchOwnerData();
-  }, [id]);
+  }, [ownerId]);
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -118,19 +119,9 @@ const OwnerProfilePage = () => {
                       
                       <Separator className="my-4" />
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {user && (
-                          <div className="flex items-center text-gray-600">
-                            <Mail className="h-4 w-4 mr-2 text-tuleeto-orange" />
-                            <span>{owner.email}</span>
-                          </div>
-                        )}
-                        
-                        {/* Property count */}
-                        <div className="flex items-center text-gray-600">
-                          <MapPin className="h-4 w-4 mr-2 text-tuleeto-orange" />
-                          <span>{properties.length} {properties.length === 1 ? 'Property' : 'Properties'} Listed</span>
-                        </div>
+                      <div className="flex items-center text-gray-600">
+                        <MapPin className="h-4 w-4 mr-2 text-tuleeto-orange" />
+                        <span>{properties.length} {properties.length === 1 ? 'Property' : 'Properties'} Listed</span>
                       </div>
                     </div>
                   </div>

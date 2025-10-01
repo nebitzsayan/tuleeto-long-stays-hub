@@ -8,7 +8,7 @@ export const getPropertyById = async (id: string): Promise<Property> => {
     .from('properties')
     .select(`
       *,
-      profiles!properties_owner_id_fkey (
+      public_profiles_safe!properties_owner_id_fkey (
         full_name
       )
     `)
@@ -58,7 +58,7 @@ export const getPropertyById = async (id: string): Promise<Property> => {
   }
 
   // Handle profile data - it could be null or an object
-  const profileData = data.profiles as any;
+  const profileData = data.public_profiles_safe as any;
   const ownerName = profileData?.full_name || 'Unknown';
   const ownerEmail = ''; // Email no longer accessible through public API for security
 
@@ -94,7 +94,7 @@ export const getAllProperties = async (): Promise<Property[]> => {
     .from('properties')
     .select(`
       *,
-      profiles!properties_owner_id_fkey (
+      public_profiles_safe!properties_owner_id_fkey (
         full_name
       )
     `)
@@ -136,7 +136,7 @@ export const getAllProperties = async (): Promise<Property[]> => {
     }
 
     // Handle profile data - it could be null or an object
-    const profileData = item.profiles as any;
+    const profileData = item.public_profiles_safe as any;
     const ownerName = profileData?.full_name || 'Unknown';
     const ownerEmail = ''; // Email no longer accessible through public API for security
 
