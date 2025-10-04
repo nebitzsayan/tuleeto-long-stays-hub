@@ -1,24 +1,26 @@
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
-import AuthPage from './pages/AuthPage';
-import ListingsPage from './pages/ListingsPage';
-import PropertyDetailPage from './pages/PropertyDetailPage';
-import OwnerProfilePage from './pages/OwnerProfilePage';
-import ListPropertyPage from './pages/ListPropertyPage';
-import EditPropertyPage from './pages/EditPropertyPage';
-import MyPropertiesPage from './pages/MyPropertiesPage';
-import ProfilePage from './pages/ProfilePage';
-import AdminPanel from './pages/AdminPanel';
-import TermsOfServicePage from './pages/TermsOfServicePage';
-import NotFound from './pages/NotFound';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import WishlistPage from "./pages/WishlistPage";
+
+// Lazy load non-critical routes to improve initial load time
+const AuthPage = lazy(() => import('./pages/AuthPage'));
+const ListingsPage = lazy(() => import('./pages/ListingsPage'));
+const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
+const OwnerProfilePage = lazy(() => import('./pages/OwnerProfilePage'));
+const ListPropertyPage = lazy(() => import('./pages/ListPropertyPage'));
+const EditPropertyPage = lazy(() => import('./pages/EditPropertyPage'));
+const MyPropertiesPage = lazy(() => import('./pages/MyPropertiesPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
+const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
 
@@ -28,45 +30,51 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <div className="App">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/listings" element={<ListingsPage />} />
-              <Route path="/property/:id" element={<PropertyDetailPage />} />
-              <Route path="/owner/:ownerId" element={<OwnerProfilePage />} />
-              <Route path="/list-property" element={
-                <ProtectedRoute>
-                  <ListPropertyPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/edit-property/:id" element={
-                <ProtectedRoute>
-                  <EditPropertyPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/my-properties" element={
-                <ProtectedRoute>
-                  <MyPropertiesPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } />
-              <Route path="/wishlist" element={
-                <ProtectedRoute>
-                  <WishlistPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <AdminRoute>
-                  <AdminPanel />
-                </AdminRoute>
-              } />
-              <Route path="/terms" element={<TermsOfServicePage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tuleeto-orange"></div>
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/listings" element={<ListingsPage />} />
+                <Route path="/property/:id" element={<PropertyDetailPage />} />
+                <Route path="/owner/:ownerId" element={<OwnerProfilePage />} />
+                <Route path="/list-property" element={
+                  <ProtectedRoute>
+                    <ListPropertyPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/edit-property/:id" element={
+                  <ProtectedRoute>
+                    <EditPropertyPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/my-properties" element={
+                  <ProtectedRoute>
+                    <MyPropertiesPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/wishlist" element={
+                  <ProtectedRoute>
+                    <WishlistPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminPanel />
+                  </AdminRoute>
+                } />
+                <Route path="/terms" element={<TermsOfServicePage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
             <Toaster />
           </div>
         </AuthProvider>
