@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      payment_records: {
+        Row: {
+          created_at: string
+          electricity_amount: number | null
+          electricity_paid: boolean | null
+          electricity_paid_date: string | null
+          id: string
+          month: number
+          other_charges: number | null
+          other_charges_description: string | null
+          remarks: string | null
+          rent_amount: number | null
+          rent_paid: boolean | null
+          rent_paid_date: string | null
+          tenant_id: string
+          updated_at: string
+          water_amount: number | null
+          water_paid: boolean | null
+          water_paid_date: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          electricity_amount?: number | null
+          electricity_paid?: boolean | null
+          electricity_paid_date?: string | null
+          id?: string
+          month: number
+          other_charges?: number | null
+          other_charges_description?: string | null
+          remarks?: string | null
+          rent_amount?: number | null
+          rent_paid?: boolean | null
+          rent_paid_date?: string | null
+          tenant_id: string
+          updated_at?: string
+          water_amount?: number | null
+          water_paid?: boolean | null
+          water_paid_date?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string
+          electricity_amount?: number | null
+          electricity_paid?: boolean | null
+          electricity_paid_date?: string | null
+          id?: string
+          month?: number
+          other_charges?: number | null
+          other_charges_description?: string | null
+          remarks?: string | null
+          rent_amount?: number | null
+          rent_paid?: boolean | null
+          rent_paid_date?: string | null
+          tenant_id?: string
+          updated_at?: string
+          water_amount?: number | null
+          water_paid?: boolean | null
+          water_paid_date?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -232,6 +303,72 @@ export type Database = {
             columns: ["review_id"]
             isOneToOne: false
             referencedRelation: "property_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          monthly_rent: number
+          move_in_date: string
+          move_out_date: string | null
+          name: string
+          notes: string | null
+          phone: string
+          property_id: string
+          room_number: string | null
+          security_deposit: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_rent: number
+          move_in_date: string
+          move_out_date?: string | null
+          name: string
+          notes?: string | null
+          phone: string
+          property_id: string
+          room_number?: string | null
+          security_deposit?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_rent?: number
+          move_in_date?: string
+          move_out_date?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          property_id?: string
+          room_number?: string | null
+          security_deposit?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_public_view"
             referencedColumns: ["id"]
           },
         ]
