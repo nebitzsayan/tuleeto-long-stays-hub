@@ -20,6 +20,8 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+const TenantsPage = lazy(() => import('./pages/TenantsPage'));
+const PaymentDashboardPage = lazy(() => import('./pages/PaymentDashboardPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
@@ -54,6 +56,21 @@ function App() {
                 <Route path="/my-properties" element={
                   <ProtectedRoute>
                     <MyPropertiesPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/properties/:propertyId/tenants" element={
+                  <ProtectedRoute>
+                    <TenantsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/properties/:propertyId/payments" element={
+                  <ProtectedRoute>
+                    <PaymentDashboardPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/properties/:propertyId/payments/:tenantId" element={
+                  <ProtectedRoute>
+                    <PaymentDashboardPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/profile" element={

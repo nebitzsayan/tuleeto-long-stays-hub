@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, Edit } from "lucide-react";
+import { Plus, Loader2, Edit, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -163,17 +163,32 @@ const MyPropertiesPage = () => {
                     onDelete={showDeleteConfirmation}
                     showOwnerControls={false}
                   />
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="absolute top-2 left-2 bg-white hover:bg-gray-100 h-8 w-8 p-0 z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditProperty(property.id);
-                    }}
-                  >
-                    <Edit className="h-3 w-3 md:h-4 md:w-4" />
-                  </Button>
+                  <div className="absolute top-2 left-2 flex gap-2 z-10">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white hover:bg-gray-100 h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditProperty(property.id);
+                      }}
+                      title="Edit Property"
+                    >
+                      <Edit className="h-3 w-3 md:h-4 md:w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white hover:bg-gray-100 h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/properties/${property.id}/tenants`);
+                      }}
+                      title="Manage Tenants"
+                    >
+                      <Users className="h-3 w-3 md:h-4 md:w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
