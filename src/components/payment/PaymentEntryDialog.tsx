@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PaymentRecord, Tenant } from "@/types";
+import { Calendar } from "lucide-react";
 
 interface PaymentEntryDialogProps {
   open: boolean;
@@ -35,6 +36,8 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
       rent_paid: false,
       rent_amount: "",
       rent_paid_date: "",
+      electricity_units: "0",
+      cost_per_unit: "11",
       electricity_paid: false,
       electricity_amount: "",
       electricity_paid_date: "",
@@ -50,6 +53,20 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
   const rentPaid = watch("rent_paid");
   const electricityPaid = watch("electricity_paid");
   const waterPaid = watch("water_paid");
+  const electricityUnits = watch("electricity_units");
+  const costPerUnit = watch("cost_per_unit");
+  const rentAmount = watch("rent_amount");
+  const electricityAmount = watch("electricity_amount");
+  const waterAmount = watch("water_amount");
+  const otherCharges = watch("other_charges");
+
+  // Auto-calculate electricity amount
+  useEffect(() => {
+    const units = parseFloat(electricityUnits) || 0;
+    const rate = parseFloat(costPerUnit) || 0;
+    const calculatedAmount = units * rate;
+    setValue("electricity_amount", calculatedAmount.toString());
+  }, [electricityUnits, costPerUnit, setValue]);
 
   useEffect(() => {
     if (record) {
@@ -60,6 +77,8 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
         rent_paid: record.rent_paid,
         rent_amount: record.rent_amount.toString(),
         rent_paid_date: record.rent_paid_date || "",
+        electricity_units: ((record as any).electricity_units || 0).toString(),
+        cost_per_unit: ((record as any).cost_per_unit || 11).toString(),
         electricity_paid: record.electricity_paid,
         electricity_amount: record.electricity_amount.toString(),
         electricity_paid_date: record.electricity_paid_date || "",
@@ -68,7 +87,7 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
         water_paid_date: record.water_paid_date || "",
         other_charges: record.other_charges.toString(),
         other_charges_description: record.other_charges_description || "",
-        remarks: record.remarks || "",
+        remarks: (record as any).remarks || "",
       });
     } else {
       const tenant = tenants.find(t => t.id === defaultTenantId);
@@ -79,6 +98,8 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
         rent_paid: false,
         rent_amount: tenant?.monthly_rent.toString() || "",
         rent_paid_date: "",
+        electricity_units: "0",
+        cost_per_unit: "11",
         electricity_paid: false,
         electricity_amount: "",
         electricity_paid_date: "",
@@ -98,6 +119,8 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
       month: parseInt(data.month),
       year: parseInt(data.year),
       rent_amount: parseFloat(data.rent_amount) || 0,
+      electricity_units: parseFloat(data.electricity_units) || 0,
+      cost_per_unit: parseFloat(data.cost_per_unit) || 0,
       electricity_amount: parseFloat(data.electricity_amount) || 0,
       water_amount: parseFloat(data.water_amount) || 0,
       other_charges: parseFloat(data.other_charges) || 0,
@@ -109,41 +132,61 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
     });
   };
 
+  const getTenantInfo = () => {
+    return tenants.find(t => t.id === watch("tenant_id"));
+  };
+
+  const total = (parseFloat(rentAmount) || 0) + (parseFloat(electricityAmount) || 0) + (parseFloat(waterAmount) || 0) + (parseFloat(otherCharges) || 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{record ? "Edit Payment Record" : "Add Payment Record"}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            {record ? "Edit Payment Record" : "Add Payment Record"}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2 col-span-3">
-              <Label htmlFor="tenant_id">Tenant *</Label>
-              <Select
-                value={watch("tenant_id")}
-                onValueChange={(value) => {
-                  setValue("tenant_id", value);
-                  const tenant = tenants.find(t => t.id === value);
-                  if (tenant) {
-                    setValue("rent_amount", tenant.monthly_rent.toString());
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select tenant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tenants.filter(t => t.is_active).map((tenant) => (
-                    <SelectItem key={tenant.id} value={tenant.id}>
-                      {tenant.name} {tenant.room_number && `(${tenant.room_number})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Tenant Info Section */}
+          <div className="bg-muted/50 p-4 rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 space-y-2">
+                <Label className="text-sm text-muted-foreground">Tenant</Label>
+                <Select
+                  value={watch("tenant_id")}
+                  onValueChange={(value) => {
+                    setValue("tenant_id", value);
+                    const tenant = tenants.find(t => t.id === value);
+                    if (tenant) {
+                      setValue("rent_amount", tenant.monthly_rent.toString());
+                    }
+                  }}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select tenant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tenants.filter(t => t.is_active).map((tenant) => (
+                      <SelectItem key={tenant.id} value={tenant.id}>
+                        {tenant.name} {tenant.room_number && `(Room: ${tenant.room_number})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {getTenantInfo() && (
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Phone</Label>
+                  <div className="font-medium mt-2">{getTenantInfo()?.phone}</div>
+                </div>
+              )}
             </div>
+          </div>
 
+          {/* Period Section */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="month">Month *</Label>
+              <Label>Month</Label>
               <Select value={watch("month").toString()} onValueChange={(value) => setValue("month", parseInt(value))}>
                 <SelectTrigger>
                   <SelectValue />
@@ -159,7 +202,7 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="year">Year *</Label>
+              <Label>Year</Label>
               <Select value={watch("year").toString()} onValueChange={(value) => setValue("year", parseInt(value))}>
                 <SelectTrigger>
                   <SelectValue />
@@ -175,97 +218,190 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
             </div>
           </div>
 
-          <div className="space-y-4 border rounded-lg p-4">
-            <h3 className="font-semibold">Rent</h3>
-            <div className="grid grid-cols-3 gap-4">
+          {/* Payment Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Rent */}
+            <div className="border-2 p-4 rounded-lg space-y-3 hover:border-primary/50 transition-colors">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                💰 Rent
+              </h3>
               <div className="space-y-2">
-                <Label htmlFor="rent_amount">Amount</Label>
-                <Input id="rent_amount" type="number" step="0.01" {...register("rent_amount")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rent_paid_date">Paid Date</Label>
-                <Input id="rent_paid_date" type="date" {...register("rent_paid_date")} />
-              </div>
-              <div className="flex items-center space-x-2 pt-8">
-                <Checkbox
-                  id="rent_paid"
-                  checked={rentPaid}
-                  onCheckedChange={(checked) => setValue("rent_paid", checked as boolean)}
+                <Label>Amount (₹)</Label>
+                <Input 
+                  type="number" 
+                  step="0.01"
+                  {...register("rent_amount")}
+                  className="text-lg font-medium"
                 />
-                <Label htmlFor="rent_paid">Paid</Label>
               </div>
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="rent_paid"
+                    checked={rentPaid}
+                    onCheckedChange={(checked) => setValue("rent_paid", checked as boolean)}
+                  />
+                  <Label htmlFor="rent_paid" className="cursor-pointer font-medium">Mark as Paid</Label>
+                </div>
+              </div>
+              {rentPaid && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" /> Payment Date
+                  </Label>
+                  <Input 
+                    type="date" 
+                    {...register("rent_paid_date")}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Electricity */}
+            <div className="border-2 p-4 rounded-lg space-y-3 hover:border-primary/50 transition-colors">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                ⚡ Electricity
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Units</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    {...register("electricity_units")}
+                    placeholder="Enter units"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cost/Unit (₹)</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    {...register("cost_per_unit")}
+                    placeholder="Per unit cost"
+                  />
+                </div>
+              </div>
+              <div className="bg-primary/10 p-2 rounded text-center">
+                <span className="text-sm text-muted-foreground">Bill Amount: </span>
+                <span className="text-lg font-bold">₹{(parseFloat(electricityAmount) || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="electricity_paid"
+                    checked={electricityPaid}
+                    onCheckedChange={(checked) => setValue("electricity_paid", checked as boolean)}
+                  />
+                  <Label htmlFor="electricity_paid" className="cursor-pointer font-medium">Mark as Paid</Label>
+                </div>
+              </div>
+              {electricityPaid && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" /> Payment Date
+                  </Label>
+                  <Input 
+                    type="date" 
+                    {...register("electricity_paid_date")}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="space-y-4 border rounded-lg p-4">
-            <h3 className="font-semibold">Electricity</h3>
-            <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Water */}
+            <div className="border-2 p-4 rounded-lg space-y-3 hover:border-primary/50 transition-colors">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                💧 Water
+              </h3>
               <div className="space-y-2">
-                <Label htmlFor="electricity_amount">Amount</Label>
-                <Input id="electricity_amount" type="number" step="0.01" {...register("electricity_amount")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="electricity_paid_date">Paid Date</Label>
-                <Input id="electricity_paid_date" type="date" {...register("electricity_paid_date")} />
-              </div>
-              <div className="flex items-center space-x-2 pt-8">
-                <Checkbox
-                  id="electricity_paid"
-                  checked={electricityPaid}
-                  onCheckedChange={(checked) => setValue("electricity_paid", checked as boolean)}
+                <Label>Amount (₹)</Label>
+                <Input 
+                  type="number" 
+                  step="0.01"
+                  {...register("water_amount")}
+                  className="text-lg font-medium"
                 />
-                <Label htmlFor="electricity_paid">Paid</Label>
               </div>
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="water_paid"
+                    checked={waterPaid}
+                    onCheckedChange={(checked) => setValue("water_paid", checked as boolean)}
+                  />
+                  <Label htmlFor="water_paid" className="cursor-pointer font-medium">Mark as Paid</Label>
+                </div>
+              </div>
+              {waterPaid && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" /> Payment Date
+                  </Label>
+                  <Input 
+                    type="date" 
+                    {...register("water_paid_date")}
+                  />
+                </div>
+              )}
             </div>
-          </div>
 
-          <div className="space-y-4 border rounded-lg p-4">
-            <h3 className="font-semibold">Water</h3>
-            <div className="grid grid-cols-3 gap-4">
+            {/* Other Charges */}
+            <div className="border-2 p-4 rounded-lg space-y-3 hover:border-primary/50 transition-colors">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                📝 Other Charges
+              </h3>
               <div className="space-y-2">
-                <Label htmlFor="water_amount">Amount</Label>
-                <Input id="water_amount" type="number" step="0.01" {...register("water_amount")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="water_paid_date">Paid Date</Label>
-                <Input id="water_paid_date" type="date" {...register("water_paid_date")} />
-              </div>
-              <div className="flex items-center space-x-2 pt-8">
-                <Checkbox
-                  id="water_paid"
-                  checked={waterPaid}
-                  onCheckedChange={(checked) => setValue("water_paid", checked as boolean)}
+                <Label>Description</Label>
+                <Input 
+                  {...register("other_charges_description")}
+                  placeholder="e.g., Maintenance, Parking"
                 />
-                <Label htmlFor="water_paid">Paid</Label>
+              </div>
+              <div className="space-y-2">
+                <Label>Amount (₹)</Label>
+                <Input 
+                  type="number" 
+                  step="0.01"
+                  {...register("other_charges")}
+                  className="text-lg font-medium"
+                />
               </div>
             </div>
           </div>
 
-          <div className="space-y-4 border rounded-lg p-4">
-            <h3 className="font-semibold">Other Charges</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="other_charges">Amount</Label>
-                <Input id="other_charges" type="number" step="0.01" {...register("other_charges")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="other_charges_description">Description</Label>
-                <Input id="other_charges_description" {...register("other_charges_description")} />
-              </div>
-            </div>
-          </div>
-
+          {/* Remarks */}
           <div className="space-y-2">
-            <Label htmlFor="remarks">Remarks</Label>
-            <Textarea id="remarks" {...register("remarks")} rows={2} />
+            <Label>Remarks / Notes</Label>
+            <Textarea 
+              {...register("remarks")}
+              placeholder="Add any additional notes here..."
+              rows={3}
+            />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {/* Total Summary */}
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg border-2 border-primary/20">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-semibold">Total Amount:</span>
+              <span className="text-3xl font-bold text-primary">₹{total.toLocaleString()}</span>
+            </div>
+            <div className="mt-3 text-sm text-muted-foreground flex flex-wrap gap-4 justify-between">
+              <span>Rent: ₹{(parseFloat(rentAmount) || 0).toLocaleString()}</span>
+              <span>Electricity: ₹{(parseFloat(electricityAmount) || 0).toLocaleString()}</span>
+              <span>Water: ₹{(parseFloat(waterAmount) || 0).toLocaleString()}</span>
+              {(parseFloat(otherCharges) || 0) > 0 && <span>Other: ₹{(parseFloat(otherCharges) || 0).toLocaleString()}</span>}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="lg">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save"}
+            <Button type="submit" size="lg" className="min-w-[150px]" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : (record ? "Update Record" : "Save Record")}
             </Button>
           </div>
         </form>

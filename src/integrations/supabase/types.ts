@@ -16,10 +16,12 @@ export type Database = {
     Tables: {
       payment_records: {
         Row: {
+          cost_per_unit: number | null
           created_at: string
           electricity_amount: number | null
           electricity_paid: boolean | null
           electricity_paid_date: string | null
+          electricity_units: number | null
           id: string
           month: number
           other_charges: number | null
@@ -36,10 +38,12 @@ export type Database = {
           year: number
         }
         Insert: {
+          cost_per_unit?: number | null
           created_at?: string
           electricity_amount?: number | null
           electricity_paid?: boolean | null
           electricity_paid_date?: string | null
+          electricity_units?: number | null
           id?: string
           month: number
           other_charges?: number | null
@@ -56,10 +60,12 @@ export type Database = {
           year: number
         }
         Update: {
+          cost_per_unit?: number | null
           created_at?: string
           electricity_amount?: number | null
           electricity_paid?: boolean | null
           electricity_paid_date?: string | null
+          electricity_units?: number | null
           id?: string
           month?: number
           other_charges?: number | null

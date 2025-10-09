@@ -42,26 +42,27 @@ export default function PaymentDashboardPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container mx-auto px-4 py-8 max-w-[1600px]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => navigate(tenantId ? `/properties/${propertyId}/tenants` : "/my-properties")}
+              className="shrink-0"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 {selectedTenant ? `${selectedTenant.name}'s Payments` : "Payment Dashboard"}
               </h1>
-              <p className="text-muted-foreground">Track monthly rent and utility payments</p>
+              <p className="text-muted-foreground mt-1">Track monthly rent and utility payments</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {records.length > 0 && (
-              <Button variant="outline" onClick={handleExport}>
+              <Button variant="outline" onClick={handleExport} size="lg">
                 <Download className="mr-2 h-4 w-4" />
                 Export to Excel
               </Button>
@@ -69,30 +70,30 @@ export default function PaymentDashboardPage() {
             <Button onClick={() => {
               setEditingRecord(null);
               setDialogOpen(true);
-            }}>
+            }} size="lg">
               <Plus className="mr-2 h-4 w-4" />
               Add Payment Record
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Collected</CardDescription>
-              <CardTitle className="text-2xl">₹{totalPaid.toLocaleString()}</CardTitle>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <CardDescription className="text-sm font-medium">Total Collected</CardDescription>
+              <CardTitle className="text-3xl font-bold text-green-600">₹{totalPaid.toLocaleString()}</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Records</CardDescription>
-              <CardTitle className="text-2xl">{records.length}</CardTitle>
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <CardDescription className="text-sm font-medium">Total Records</CardDescription>
+              <CardTitle className="text-3xl font-bold text-blue-600">{records.length}</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Pending Payments</CardDescription>
-              <CardTitle className="text-2xl text-orange-500">{pendingCount}</CardTitle>
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <CardDescription className="text-sm font-medium">Pending Payments</CardDescription>
+              <CardTitle className="text-3xl font-bold text-orange-600">{pendingCount}</CardTitle>
             </CardHeader>
           </Card>
         </div>

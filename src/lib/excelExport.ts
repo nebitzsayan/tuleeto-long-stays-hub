@@ -1,73 +1,63 @@
 import * as XLSX from "xlsx";
 import { PaymentRecord, Tenant } from "@/types";
 
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 export function exportPaymentRecordsToExcel(
   records: PaymentRecord[],
   tenants: Tenant[],
   fileName: string = "payment_records.xlsx"
 ) {
-  // Create a map for quick tenant lookup
   const tenantMap = new Map(tenants.map((t) => [t.id, t]));
 
-  // Transform data for Excel
-  const excelData = records.map((record) => {
+  // Transform data to match the Excel format provided by user
+  const excelData = records.map((record, index) => {
     const tenant = tenantMap.get(record.tenant_id);
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
+    const total = record.rent_amount + record.electricity_amount + record.water_amount + record.other_charges;
+    const allPaid = record.rent_paid && record.electricity_paid && record.water_paid;
+    const electricityUnits = (record as any).electricity_units || 0;
+    const costPerUnit = (record as any).cost_per_unit || 0;
+    const remarks = (record as any).remarks || "";
 
     return {
-      "Tenant Name": tenant?.name || "Unknown",
-      "Room Number": tenant?.room_number || "N/A",
-      "Phone": tenant?.phone || "N/A",
-      "Month": monthNames[record.month - 1],
-      "Year": record.year,
-      "Rent Paid": record.rent_paid ? "Yes" : "No",
-      "Rent Amount": record.rent_amount,
-      "Rent Paid Date": record.rent_paid_date || "N/A",
-      "Electricity Paid": record.electricity_paid ? "Yes" : "No",
-      "Electricity Amount": record.electricity_amount,
-      "Electricity Paid Date": record.electricity_paid_date || "N/A",
-      "Water Paid": record.water_paid ? "Yes" : "No",
-      "Water Amount": record.water_amount,
-      "Water Paid Date": record.water_paid_date || "N/A",
-      "Other Charges": record.other_charges,
-      "Other Charges Description": record.other_charges_description || "N/A",
-      "Total Amount": 
-        record.rent_amount + 
-        record.electricity_amount + 
-        record.water_amount + 
-        record.other_charges,
-      "Remarks": record.remarks || "N/A",
+      "S.No": index + 1,
+      "Name": tenant?.name || "Unknown",
+      "Phone No.": tenant?.phone || "",
+      "Month": `${monthNames[record.month - 1]} ${record.year}`,
+      "Rent (₹)": record.rent_amount,
+      "Electricity Units": electricityUnits,
+      "Cost per Unit (₹)": costPerUnit,
+      "Electricity Bill (₹)": record.electricity_amount,
+      "Water Bill (₹)": record.water_amount,
+      "Total (Rent + Elec + Water)": total,
+      "Paid/Unpaid": allPaid ? "Paid" : "Unpaid",
+      "Payment Date": record.rent_paid_date || "",
+      "Remarks": remarks
     };
   });
 
   // Create worksheet
   const worksheet = XLSX.utils.json_to_sheet(excelData);
 
-  // Set column widths
-  const columnWidths = [
-    { wch: 20 }, // Tenant Name
-    { wch: 12 }, // Room Number
+  // Set column widths for better readability
+  worksheet["!cols"] = [
+    { wch: 6 },  // S.No
+    { wch: 20 }, // Name
     { wch: 15 }, // Phone
-    { wch: 12 }, // Month
-    { wch: 8 },  // Year
-    { wch: 10 }, // Rent Paid
-    { wch: 12 }, // Rent Amount
-    { wch: 15 }, // Rent Paid Date
-    { wch: 15 }, // Electricity Paid
-    { wch: 15 }, // Electricity Amount
-    { wch: 18 }, // Electricity Paid Date
-    { wch: 12 }, // Water Paid
-    { wch: 12 }, // Water Amount
-    { wch: 15 }, // Water Paid Date
-    { wch: 15 }, // Other Charges
-    { wch: 25 }, // Other Charges Description
-    { wch: 15 }, // Total Amount
-    { wch: 30 }, // Remarks
+    { wch: 15 }, // Month
+    { wch: 12 }, // Rent
+    { wch: 15 }, // Electricity Units
+    { wch: 15 }, // Cost per Unit
+    { wch: 18 }, // Electricity Bill
+    { wch: 15 }, // Water Bill
+    { wch: 22 }, // Total
+    { wch: 12 }, // Paid/Unpaid
+    { wch: 15 }, // Payment Date
+    { wch: 30 }  // Remarks
   ];
-  worksheet["!cols"] = columnWidths;
 
   // Create workbook
   const workbook = XLSX.utils.book_new();
