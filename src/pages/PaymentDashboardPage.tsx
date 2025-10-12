@@ -42,7 +42,7 @@ export default function PaymentDashboardPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 max-w-[1600px]">
+      <div className="container mx-auto px-4 pt-20 pb-8 max-w-[1600px]">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
             <Button 
@@ -78,28 +78,36 @@ export default function PaymentDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-gradient-to-br from-green-50 to-white">
             <CardHeader className="pb-3">
-              <CardDescription className="text-sm font-medium">Total Collected</CardDescription>
-              <CardTitle className="text-3xl font-bold text-green-600">₹{totalPaid.toLocaleString()}</CardTitle>
+              <CardDescription className="text-sm font-semibold text-green-700">Total Collected</CardDescription>
+              <CardTitle className="text-4xl font-bold text-green-600">₹{totalPaid.toLocaleString()}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-gradient-to-br from-blue-50 to-white">
             <CardHeader className="pb-3">
-              <CardDescription className="text-sm font-medium">Total Records</CardDescription>
-              <CardTitle className="text-3xl font-bold text-blue-600">{records.length}</CardTitle>
+              <CardDescription className="text-sm font-semibold text-blue-700">Total Records</CardDescription>
+              <CardTitle className="text-4xl font-bold text-blue-600">{records.length}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-gradient-to-br from-orange-50 to-white">
             <CardHeader className="pb-3">
-              <CardDescription className="text-sm font-medium">Pending Payments</CardDescription>
-              <CardTitle className="text-3xl font-bold text-orange-600">{pendingCount}</CardTitle>
+              <CardDescription className="text-sm font-semibold text-orange-700">Pending Payments</CardDescription>
+              <CardTitle className="text-4xl font-bold text-orange-600">{pendingCount}</CardTitle>
             </CardHeader>
           </Card>
         </div>
 
         {loading ? (
-          <div className="text-center py-12">Loading payment records...</div>
+          <Card>
+            <CardContent className="py-12">
+              <div className="animate-pulse space-y-4">
+                <div className="h-8 bg-muted rounded w-full"></div>
+                <div className="h-8 bg-muted rounded w-full"></div>
+                <div className="h-8 bg-muted rounded w-full"></div>
+              </div>
+            </CardContent>
+          </Card>
         ) : records.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">

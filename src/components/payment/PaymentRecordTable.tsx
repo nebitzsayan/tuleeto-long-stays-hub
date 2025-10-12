@@ -1,5 +1,6 @@
 import { PaymentRecord, Tenant } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Phone, CheckCircle2, XCircle, Calendar } from "lucide-react";
@@ -21,11 +22,12 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
   const tenantMap = new Map(tenants.map(t => [t.id, t]));
 
   return (
-    <div className="rounded-lg border-2 overflow-hidden shadow-sm">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
+    <div className="rounded-lg border-2 overflow-hidden shadow-lg">
+      <ScrollArea className="w-full">
+        <div className="min-w-[1400px]">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background z-10">
+              <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:bg-muted/50 border-b-2">
               <TableHead className="font-bold">S.No</TableHead>
               <TableHead className="font-bold">Tenant</TableHead>
               <TableHead className="font-bold">Phone</TableHead>
@@ -59,7 +61,10 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
                 const remarks = (record as any).remarks || "";
 
                 return (
-                  <TableRow key={record.id} className="hover:bg-muted/30">
+                  <TableRow 
+                    key={record.id} 
+                    className={`hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-muted/10' : ''}`}
+                  >
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
@@ -181,9 +186,10 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
                 );
               })
             )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableBody>
+          </Table>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

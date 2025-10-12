@@ -14,16 +14,19 @@ interface TenantCardProps {
 
 export function TenantCard({ tenant, onEdit, onDelete, onViewPayments }: TenantCardProps) {
   return (
-    <Card className={!tenant.is_active ? "opacity-60" : ""}>
-      <CardHeader className="pb-3">
+    <Card className={`transition-all hover:shadow-lg hover:border-primary/50 ${!tenant.is_active ? "opacity-60" : ""}`}>
+      <CardHeader className="pb-3 bg-gradient-to-br from-muted/30 to-transparent">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg">{tenant.name}</CardTitle>
-          <Badge variant={tenant.is_active ? "default" : "secondary"}>
+          <CardTitle className="text-xl font-bold">{tenant.name}</CardTitle>
+          <Badge 
+            variant={tenant.is_active ? "default" : "secondary"}
+            className="px-3 py-1"
+          >
             {tenant.is_active ? "Active" : "Inactive"}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <div className="space-y-2 text-sm">
           {tenant.room_number && (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -43,28 +46,47 @@ export function TenantCard({ tenant, onEdit, onDelete, onViewPayments }: TenantC
           )}
         </div>
 
-        <div className="pt-2 border-t">
-          <div className="text-sm space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Monthly Rent:</span>
-              <span className="font-semibold">₹{tenant.monthly_rent.toLocaleString()}</span>
+        <div className="pt-3 border-t-2 border-dashed">
+          <div className="text-sm space-y-2">
+            <div className="flex justify-between items-center p-2 rounded bg-green-50">
+              <span className="text-muted-foreground font-medium">Monthly Rent:</span>
+              <span className="font-bold text-green-700 text-lg">₹{tenant.monthly_rent.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Move In:</span>
-              <span>{format(new Date(tenant.move_in_date), "MMM dd, yyyy")}</span>
+            <div className="flex justify-between items-center p-2 rounded bg-muted/30">
+              <span className="text-muted-foreground font-medium">Move In:</span>
+              <span className="font-semibold">{format(new Date(tenant.move_in_date), "MMM dd, yyyy")}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-2 pt-2">
-          <Button size="sm" variant="outline" className="flex-1" onClick={onViewPayments}>
+        <div className="flex gap-2 pt-3">
+          <Button 
+            size="sm" 
+            variant="default" 
+            className="flex-1 font-semibold" 
+            onClick={onViewPayments}
+          >
             <Receipt className="h-4 w-4 mr-1" />
-            Payments
+            View Payments
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onEdit(tenant)}>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => onEdit(tenant)}
+            className="hover:bg-primary/10"
+          >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onDelete(tenant.id)}>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => {
+              if (confirm(`Delete tenant ${tenant.name}?`)) {
+                onDelete(tenant.id);
+              }
+            }}
+            className="hover:bg-destructive/10 hover:text-destructive"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

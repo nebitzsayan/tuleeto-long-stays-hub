@@ -25,28 +25,38 @@ export default function TenantsPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container mx-auto px-4 pt-20 pb-8 max-w-7xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/my-properties")}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate("/my-properties")}
+              className="shrink-0"
+            >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Manage Tenants</h1>
-              <p className="text-muted-foreground">Add and manage your property tenants</p>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Manage Tenants
+              </h1>
+              <p className="text-muted-foreground mt-1">Add and manage your property tenants</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {tenants.length > 0 && (
-              <Button variant="outline" onClick={handleExport}>
+              <Button variant="outline" onClick={handleExport} size="lg">
                 <Download className="mr-2 h-4 w-4" />
                 Export to Excel
               </Button>
             )}
-            <Button onClick={() => {
-              setEditingTenant(null);
-              setDialogOpen(true);
-            }}>
+            <Button 
+              onClick={() => {
+                setEditingTenant(null);
+                setDialogOpen(true);
+              }}
+              size="lg"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Tenant
             </Button>
@@ -54,7 +64,20 @@ export default function TenantsPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12">Loading tenants...</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-6 bg-muted rounded w-3/4"></div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="h-4 bg-muted rounded w-full"></div>
+                  <div className="h-4 bg-muted rounded w-2/3"></div>
+                  <div className="h-10 bg-muted rounded w-full"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : tenants.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
