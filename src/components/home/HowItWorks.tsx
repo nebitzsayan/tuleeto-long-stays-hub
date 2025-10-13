@@ -1,5 +1,5 @@
 
-import { Search, FileText, MessageCircle } from "lucide-react";
+import { Search, FileText, MessageCircle, Users, FileSpreadsheet, Image, Home } from "lucide-react";
 
 const steps = [
   {
@@ -19,6 +19,30 @@ const steps = [
     title: "Move In With Confidence",
     description:
       "Complete the rental agreement and prepare to move into your new long-term home with peace of mind."
+  },
+  {
+    icon: <Home className="h-12 w-12 text-tuleeto-orange" />,
+    title: "Manage Multiple Properties",
+    description:
+      "Easily manage all your rental properties in one place. Track tenants, payments, and property details with a single dashboard."
+  },
+  {
+    icon: <Users className="h-12 w-12 text-tuleeto-orange" />,
+    title: "Tenant Payment Management",
+    description:
+      "Track rent, electricity, water bills, and other charges. Mark payments as paid/unpaid and maintain complete payment history."
+  },
+  {
+    icon: <FileSpreadsheet className="h-12 w-12 text-tuleeto-orange" />,
+    title: "Excel Export Support",
+    description:
+      "Export all tenant and payment data to Excel spreadsheets with one click for easy reporting and record-keeping."
+  },
+  {
+    icon: <Image className="h-12 w-12 text-tuleeto-orange" />,
+    title: "Built-in Poster Generation",
+    description:
+      "Create professional property advertisement posters instantly with QR codes and property details for easy sharing."
   }
 ];
 
@@ -33,7 +57,7 @@ const HowItWorks = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {steps.map((step, index) => (
             <div 
               key={index}
