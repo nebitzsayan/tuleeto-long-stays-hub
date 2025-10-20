@@ -33,6 +33,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
+        console.warn('Admin check failed - this may indicate RPC function is missing or user lacks permissions', error);
         await logSecurityEvent('admin_check_error', { 
           userId: user.id,
           error: error 

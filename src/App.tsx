@@ -100,14 +100,15 @@ function App() {
                         <AdminSidebar />
                         <main className="flex-1 p-8 bg-background">
                           <Routes>
-                            <Route path="/" element={<Dashboard />} />
-                            <Route path="/users" element={<UsersManagement />} />
-                            <Route path="/properties" element={<PropertiesManagement />} />
-                            <Route path="/tenants" element={<TenantsManagement />} />
-                            <Route path="/payments" element={<PaymentsManagement />} />
-                            <Route path="/reviews" element={<ReviewsManagement />} />
-                            <Route path="/settings" element={<Settings />} />
-                            <Route path="/logs" element={<AuditLogs />} />
+                            <Route index element={<Dashboard />} />
+                            <Route path="users" element={<UsersManagement />} />
+                            <Route path="properties" element={<PropertiesManagement />} />
+                            <Route path="tenants" element={<TenantsManagement />} />
+                            <Route path="payments" element={<PaymentsManagement />} />
+                            <Route path="reviews" element={<ReviewsManagement />} />
+                            <Route path="settings" element={<Settings />} />
+                            <Route path="logs" element={<AuditLogs />} />
+                            <Route path="*" element={<Dashboard />} />
                           </Routes>
                         </main>
                       </div>
