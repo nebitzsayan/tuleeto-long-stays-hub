@@ -7,6 +7,8 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
 // Lazy load non-critical routes to improve initial load time
 const AuthPage = lazy(() => import('./pages/AuthPage'));
@@ -18,6 +20,14 @@ const EditPropertyPage = lazy(() => import('./pages/EditPropertyPage'));
 const MyPropertiesPage = lazy(() => import('./pages/MyPropertiesPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const UsersManagement = lazy(() => import('./pages/admin/UsersManagement'));
+const PropertiesManagement = lazy(() => import('./pages/admin/PropertiesManagement'));
+const TenantsManagement = lazy(() => import('./pages/admin/TenantsManagement'));
+const PaymentsManagement = lazy(() => import('./pages/admin/PaymentsManagement'));
+const ReviewsManagement = lazy(() => import('./pages/admin/ReviewsManagement'));
+const Settings = lazy(() => import('./pages/admin/Settings'));
+const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const TenantsPage = lazy(() => import('./pages/TenantsPage'));
@@ -83,9 +93,25 @@ function App() {
                     <WishlistPage />
                   </ProtectedRoute>
                 } />
-                <Route path="/admin" element={
+                <Route path="/admin/*" element={
                   <AdminRoute>
-                    <AdminPanel />
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AdminSidebar />
+                        <main className="flex-1 p-8 bg-background">
+                          <Routes>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/users" element={<UsersManagement />} />
+                            <Route path="/properties" element={<PropertiesManagement />} />
+                            <Route path="/tenants" element={<TenantsManagement />} />
+                            <Route path="/payments" element={<PaymentsManagement />} />
+                            <Route path="/reviews" element={<ReviewsManagement />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/logs" element={<AuditLogs />} />
+                          </Routes>
+                        </main>
+                      </div>
+                    </SidebarProvider>
                   </AdminRoute>
                 } />
                 <Route path="/terms" element={<TermsOfServicePage />} />

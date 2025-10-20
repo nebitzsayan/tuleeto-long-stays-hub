@@ -14,6 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_records: {
         Row: {
           cost_per_unit: number | null
@@ -94,24 +146,33 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          is_banned: boolean | null
+          last_login: string | null
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          is_banned?: boolean | null
+          last_login?: string | null
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          is_banned?: boolean | null
+          last_login?: string | null
         }
         Relationships: []
       }
@@ -126,14 +187,18 @@ export type Database = {
           created_at: string
           description: string
           features: string[] | null
+          flag_reason: string | null
           id: string
           images: string[]
+          is_featured: boolean | null
+          is_flagged: boolean | null
           is_public: boolean | null
           location: string
           owner_id: string
           price: number
           title: string
           type: string
+          view_count: number | null
         }
         Insert: {
           area: number
@@ -145,14 +210,18 @@ export type Database = {
           created_at?: string
           description: string
           features?: string[] | null
+          flag_reason?: string | null
           id?: string
           images: string[]
+          is_featured?: boolean | null
+          is_flagged?: boolean | null
           is_public?: boolean | null
           location: string
           owner_id: string
           price: number
           title: string
           type: string
+          view_count?: number | null
         }
         Update: {
           area?: number
@@ -164,14 +233,18 @@ export type Database = {
           created_at?: string
           description?: string
           features?: string[] | null
+          flag_reason?: string | null
           id?: string
           images?: string[]
+          is_featured?: boolean | null
+          is_flagged?: boolean | null
           is_public?: boolean | null
           location?: string
           owner_id?: string
           price?: number
           title?: string
           type?: string
+          view_count?: number | null
         }
         Relationships: [
           {
@@ -199,25 +272,37 @@ export type Database = {
       }
       property_reviews: {
         Row: {
+          admin_response: string | null
           comment: string | null
           created_at: string
+          flag_reason: string | null
           id: string
+          is_approved: boolean | null
+          is_flagged: boolean | null
           property_id: string
           rating: number
           user_id: string
         }
         Insert: {
+          admin_response?: string | null
           comment?: string | null
           created_at?: string
+          flag_reason?: string | null
           id?: string
+          is_approved?: boolean | null
+          is_flagged?: boolean | null
           property_id: string
           rating: number
           user_id: string
         }
         Update: {
+          admin_response?: string | null
           comment?: string | null
           created_at?: string
+          flag_reason?: string | null
           id?: string
+          is_approved?: boolean | null
+          is_flagged?: boolean | null
           property_id?: string
           rating?: number
           user_id?: string
@@ -587,6 +672,15 @@ export type Database = {
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          _action_type: string
+          _details?: Json
+          _target_id?: string
+          _target_type?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
