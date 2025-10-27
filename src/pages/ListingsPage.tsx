@@ -8,6 +8,9 @@ import PropertyListingCard, { PropertyType } from "@/components/property/Propert
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import SEO from "@/components/seo/SEO";
+import { ItemListSchema, BreadcrumbSchema } from "@/components/seo/StructuredData";
+import { generateListingsSEO } from "@/lib/seo";
 
 const ListingsPage = () => {
   const [searchParams] = useSearchParams();
@@ -107,8 +110,16 @@ const ListingsPage = () => {
     setFilteredProperties(filtered);
   }, [searchParams, allProperties]);
   
+  const location = searchParams.get('search') || searchParams.get('location') || '';
+  
   return (
     <div className="flex flex-col min-h-screen">
+      <SEO {...generateListingsSEO(searchParams)} />
+      <ItemListSchema properties={filteredProperties} location={location} />
+      <BreadcrumbSchema items={[
+        { name: 'Home', url: 'https://tuleeto.com/' },
+        { name: location ? `${location} Rentals` : 'All Rentals' }
+      ]} />
       <Navbar />
       
       <main className="flex-grow pt-16 md:pt-24 px-4 md:px-4 bg-tuleeto-off-white">

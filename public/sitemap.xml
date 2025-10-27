@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://tuleeto.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Listings page -->
+  <url>
+    <loc>https://tuleeto.com/listings</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Install page -->
+  <url>
+    <loc>https://tuleeto.com/install</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <!-- Terms of Service -->
+  <url>
+    <loc>https://tuleeto.com/terms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  
+  <!-- Note: Property pages should be added dynamically through a build script -->
+  <!-- This is a basic sitemap. For production, generate dynamically with all property URLs -->
+</urlset>

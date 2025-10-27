@@ -17,6 +17,9 @@ import OwnerAvatar from "@/components/profile/OwnerAvatar";
 import PropertyContactInfo from "@/components/property/PropertyContactInfo";
 import { PropertyPosterGenerator } from "@/components/property/PropertyPosterGenerator";
 import { useAuth } from "@/contexts/AuthContext";
+import SEO from "@/components/seo/SEO";
+import { ProductSchema, BreadcrumbSchema } from "@/components/seo/StructuredData";
+import { generatePropertySEO } from "@/lib/seo";
 
 const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -73,6 +76,18 @@ const PropertyDetailPage = () => {
 
   return (
     <MainLayout className="pt-24 pb-16 bg-gray-50">
+      {property && (
+        <>
+          <SEO {...generatePropertySEO(property)} />
+          <ProductSchema property={property} />
+          <BreadcrumbSchema items={[
+            { name: 'Home', url: 'https://tuleeto.com/' },
+            { name: 'Listings', url: 'https://tuleeto.com/listings' },
+            { name: property.location, url: `https://tuleeto.com/listings?location=${encodeURIComponent(property.location)}` },
+            { name: property.title }
+          ]} />
+        </>
+      )}
       <div className="container max-w-6xl mx-auto px-4">
         {property && (
           <div className="space-y-8">

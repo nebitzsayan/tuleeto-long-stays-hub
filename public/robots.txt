@@ -12,3 +12,13 @@ Allow: /
 
 User-agent: *
 Allow: /
+Allow: /listings
+Allow: /property/
+
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
+Disallow: /my-properties
+Disallow: /list-property
+
+Sitemap: https://tuleeto.com/sitemap.xml

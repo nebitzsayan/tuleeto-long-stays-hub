@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,19 +12,57 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, LogOut, User, Heart } from "lucide-react";
+import { Home, LogOut, User, Heart, Download } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Logo from "@/components/ui/logo";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 const Navbar = () => {
   const { user, userProfile, signOut } = useAuth();
   const isMobile = useIsMobile();
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstall, setShowInstall] = useState(false);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    // Show install on iOS even without the event
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS && !isStandalone) {
+      setShowInstall(true);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   const handleSignOut = async () => {
     try {
       await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
+    }
+  };
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+      setShowInstall(false);
     }
   };
 
@@ -66,6 +104,17 @@ const Navbar = () => {
                 <Heart className="h-4 w-4" />
                 Wishlist
               </Link>
+            )}
+            {showInstall && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleInstallClick}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Install App
+              </Button>
             )}
           </div>
 

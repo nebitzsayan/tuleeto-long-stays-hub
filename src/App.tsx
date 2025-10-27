@@ -9,6 +9,8 @@ import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { HelmetProvider } from 'react-helmet-async';
+import InstallPrompt from './components/pwa/InstallPrompt';
 
 // Lazy load non-critical routes to improve initial load time
 const AuthPage = lazy(() => import('./pages/AuthPage'));
@@ -32,6 +34,7 @@ const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const TenantsPage = lazy(() => import('./pages/TenantsPage'));
 const PaymentDashboardPage = lazy(() => import('./pages/PaymentDashboardPage'));
+const InstallPage = lazy(() => import('./pages/InstallPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
@@ -39,14 +42,16 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <div className="App">
-            <Suspense fallback={
-              <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tuleeto-orange"></div>
-              </div>
-            }>
+      <HelmetProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <div className="App">
+              <InstallPrompt />
+              <Suspense fallback={
+                <div className="flex items-center justify-center min-h-screen">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tuleeto-orange"></div>
+                </div>
+              }>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<AuthPage />} />
@@ -116,6 +121,7 @@ function App() {
                   </AdminRoute>
                 } />
                 <Route path="/terms" element={<TermsOfServicePage />} />
+                <Route path="/install" element={<InstallPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
@@ -123,6 +129,7 @@ function App() {
           </div>
         </AuthProvider>
       </BrowserRouter>
+      </HelmetProvider>
     </QueryClientProvider>
   );
 }
