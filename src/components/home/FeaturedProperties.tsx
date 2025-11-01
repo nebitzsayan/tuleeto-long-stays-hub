@@ -7,11 +7,14 @@ import { PropertyType } from "@/components/property/PropertyListingCard";
 import { Loader2 } from "lucide-react";
 import PropertyListingCard from "@/components/property/PropertyListingCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocationContext } from "@/contexts/LocationContext";
+import { calculateDistance } from "@/lib/geoUtils";
 
 const FeaturedProperties = () => {
   const [properties, setProperties] = useState<PropertyType[]>([]);
   const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
+  const { coordinates, city, permissionStatus } = useLocationContext();
   
   useEffect(() => {
     const fetchProperties = async () => {
@@ -61,11 +64,34 @@ const FeaturedProperties = () => {
               contact_phone: prop.contact_phone || "",
               average_rating: averageRating,
               review_count: reviewCount,
-              is_public: prop.is_public !== false
+              is_public: prop.is_public !== false,
+              coordinates: prop.coordinates
             };
           }));
           
-          setProperties(formattedProperties);
+          // If user granted location and we have coordinates, sort by distance
+          let finalProperties = formattedProperties;
+          if (permissionStatus === 'granted' && coordinates) {
+            const propertiesWithCoords = formattedProperties.filter(p => p.coordinates);
+            
+            if (propertiesWithCoords.length > 0) {
+              const propertiesWithDistance = propertiesWithCoords.map(prop => {
+                const propCoords = JSON.parse(prop.coordinates as string);
+                const distance = calculateDistance(coordinates, {
+                  lat: propCoords.lat,
+                  lng: propCoords.lng
+                });
+                return { ...prop, distance };
+              });
+              
+              // Sort by distance and take closest 4
+              finalProperties = propertiesWithDistance
+                .sort((a, b) => a.distance! - b.distance!)
+                .slice(0, 4);
+            }
+          }
+          
+          setProperties(finalProperties);
         }
       } catch (error: any) {
         console.error("Error fetching featured properties:", error);
@@ -75,15 +101,21 @@ const FeaturedProperties = () => {
     };
     
     fetchProperties();
-  }, []);
+  }, [coordinates, permissionStatus]);
 
   return (
     <section className="py-12 px-4 bg-tuleeto-off-white">
       <div className="container max-w-7xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Rentals</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            {permissionStatus === 'granted' && city 
+              ? `Properties Near You in ${city}` 
+              : 'Featured Rentals'}
+          </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Discover our handpicked selection of premium long-term rentals
+            {permissionStatus === 'granted' && city
+              ? `Discover rental properties closest to your location`
+              : `Discover our handpicked selection of premium long-term rentals`}
           </p>
         </div>
 

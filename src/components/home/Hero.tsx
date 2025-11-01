@@ -1,16 +1,32 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useLocationContext } from "@/contexts/LocationContext";
 
 const Hero = () => {
   const [location, setLocation] = useState("");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { city, permissionStatus, isLoading, requestLocation } = useLocationContext();
+
+  // Auto-request location permission on mount
+  useEffect(() => {
+    if (permissionStatus === 'prompt') {
+      requestLocation();
+    }
+  }, []);
+
+  // Pre-fill search box with detected city
+  useEffect(() => {
+    if (city && permissionStatus === 'granted') {
+      setLocation(city);
+    }
+  }, [city, permissionStatus]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +67,19 @@ const Hero = () => {
         <div className="bg-white rounded-lg shadow-xl p-3 md:p-6 mx-auto max-w-3xl w-full">
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-2 md:gap-4">
             <div className="flex-grow relative">
-              <MapPin className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+              {isLoading && (
+                <Loader2 className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-tuleeto-orange animate-spin" />
+              )}
+              {!isLoading && (
+                <MapPin className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+              )}
               <Input
                 type="text"
-                placeholder="Where do you want to live?"
+                placeholder={isLoading ? "Detecting location..." : "Where do you want to live?"}
                 className="pl-10 h-9 md:h-12 text-sm md:text-lg"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <Button 

@@ -11,6 +11,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { HelmetProvider } from 'react-helmet-async';
 import InstallPrompt from './components/pwa/InstallPrompt';
+import { LocationProvider } from './contexts/LocationContext';
 
 // Lazy load non-critical routes to improve initial load time
 const AuthPage = lazy(() => import('./pages/AuthPage'));
@@ -45,7 +46,8 @@ function App() {
       <HelmetProvider>
         <BrowserRouter>
           <AuthProvider>
-            <div className="App">
+            <LocationProvider>
+              <div className="App">
               <InstallPrompt />
               <Suspense fallback={
                 <div className="flex items-center justify-center min-h-screen">
@@ -125,8 +127,9 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-            <Toaster />
-          </div>
+              <Toaster />
+            </div>
+          </LocationProvider>
         </AuthProvider>
       </BrowserRouter>
       </HelmetProvider>
