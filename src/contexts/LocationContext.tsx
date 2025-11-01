@@ -15,8 +15,6 @@ interface LocationContextType extends LocationState {
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'tuleeto_location_permission_status';
-
 export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<LocationState>({
     coordinates: null,
@@ -30,12 +28,6 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     if (!('geolocation' in navigator)) {
       setState(prev => ({ ...prev, permissionStatus: 'unsupported' }));
-    } else {
-      // Check localStorage for saved permission status
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === 'denied') {
-        setState(prev => ({ ...prev, permissionStatus: 'denied' }));
-      }
     }
   }, []);
 
@@ -87,8 +79,6 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
         isLoading: false,
         error: null,
       });
-
-      localStorage.setItem(STORAGE_KEY, 'granted');
     } catch (error: any) {
       console.error('Geolocation error:', error);
       
@@ -101,10 +91,6 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
         isLoading: false,
         error: error.message || 'Unable to get location',
       });
-
-      if (permissionStatus === 'denied') {
-        localStorage.setItem(STORAGE_KEY, 'denied');
-      }
     }
   };
 
@@ -116,7 +102,6 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
       isLoading: false,
       error: null,
     });
-    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (

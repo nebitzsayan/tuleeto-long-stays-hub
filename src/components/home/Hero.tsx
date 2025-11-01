@@ -14,11 +14,9 @@ const Hero = () => {
   const isMobile = useIsMobile();
   const { city, permissionStatus, isLoading, requestLocation } = useLocationContext();
 
-  // Auto-request location permission on mount
+  // Auto-request location permission on every mount
   useEffect(() => {
-    if (permissionStatus === 'prompt') {
-      requestLocation();
-    }
+    requestLocation();
   }, []);
 
   // Pre-fill search box with detected city
