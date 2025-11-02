@@ -71,6 +71,8 @@ export interface PaymentRecord {
   electricity_paid: boolean;
   electricity_amount: number;
   electricity_paid_date?: string;
+  electricity_units?: number;
+  cost_per_unit?: number;
   water_paid: boolean;
   water_amount: number;
   water_paid_date?: string;

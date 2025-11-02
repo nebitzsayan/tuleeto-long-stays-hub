@@ -7,7 +7,8 @@ import { usePaymentRecords } from "@/hooks/usePaymentRecords";
 import { useTenants } from "@/hooks/useTenants";
 import { PaymentRecordTable } from "@/components/payment/PaymentRecordTable";
 import { PaymentEntryDialog } from "@/components/payment/PaymentEntryDialog";
-import { ArrowLeft, Plus, Download } from "lucide-react";
+import { BillGeneratorDialog } from "@/components/payment/BillGeneratorDialog";
+import { ArrowLeft, Plus, Download, FileText } from "lucide-react";
 import { exportPaymentRecordsToExcel } from "@/lib/excelExport";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types";
@@ -18,6 +19,7 @@ export default function PaymentDashboardPage() {
   const { records, loading, addOrUpdateRecord, deleteRecord } = usePaymentRecords(tenantId);
   const { tenants } = useTenants(propertyId);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [billDialogOpen, setBillDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
@@ -62,10 +64,16 @@ export default function PaymentDashboardPage() {
           </div>
           <div className="flex gap-2 flex-wrap">
             {records.length > 0 && (
-              <Button variant="outline" onClick={handleExport} size="lg">
-                <Download className="mr-2 h-4 w-4" />
-                Export to Excel
-              </Button>
+              <>
+                <Button variant="outline" onClick={handleExport} size="lg">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export to Excel
+                </Button>
+                <Button variant="secondary" onClick={() => setBillDialogOpen(true)} size="lg">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Create Bill for This Month
+                </Button>
+              </>
             )}
             <Button onClick={() => {
               setEditingRecord(null);
@@ -141,6 +149,13 @@ export default function PaymentDashboardPage() {
             setDialogOpen(false);
             setEditingRecord(null);
           }}
+        />
+
+        <BillGeneratorDialog
+          open={billDialogOpen}
+          onOpenChange={setBillDialogOpen}
+          records={records}
+          tenants={tenants}
         />
       </div>
     </MainLayout>
