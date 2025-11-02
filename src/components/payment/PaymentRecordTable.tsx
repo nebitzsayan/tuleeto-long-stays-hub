@@ -27,7 +27,7 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
       <ScrollArea className="w-full">
         <div className="min-w-[1400px]">
           <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
+            <TableHeader className="sticky top-0 bg-background z-30">
               <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:bg-muted/50 border-b-2">
               <TableHead className="font-bold">S.No</TableHead>
               <TableHead className="font-bold">Tenant</TableHead>
@@ -42,7 +42,7 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
               <TableHead className="font-bold text-center">Payment Status</TableHead>
               <TableHead className="font-bold text-center">Date</TableHead>
               <TableHead className="font-bold">Remarks</TableHead>
-              <TableHead className="font-bold text-right">Actions</TableHead>
+              <TableHead className="font-bold text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -164,19 +164,19 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
                         {remarks || "-"}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-10">
                       <TooltipProvider>
                         <div className="flex justify-end gap-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button 
-                                size="sm" 
+                                size="icon" 
                                 variant="default" 
                                 onClick={() => onEdit(record)} 
-                                className="h-9 px-3 gap-2"
+                                className="h-9 w-9 sm:w-auto sm:px-3"
                               >
                                 <Edit className="h-4 w-4" />
-                                <span className="hidden sm:inline">Edit</span>
+                                <span className="hidden sm:inline sm:ml-2">Edit</span>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -187,14 +187,14 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button 
-                                size="sm" 
+                                size="icon" 
                                 variant="destructive" 
                                 onClick={() => {
                                   if (confirm("Are you sure you want to delete this payment record?")) {
                                     onDelete(record.id);
                                   }
                                 }}
-                                className="h-9 w-9 p-0"
+                                className="h-9 w-9"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
