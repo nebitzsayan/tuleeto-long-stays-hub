@@ -11,7 +11,7 @@ interface AuthContextProps {
   userProfile: any;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (data: any) => Promise<void>;
@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signIn = async (email: string) => {
+  const signIn = async (email: string, password: string) => {
     if (!checkRateLimit('signIn', 5, 60000)) {
       const message = 'Too many sign-in requests. Please try again later.';
       console.warn(message);
@@ -133,7 +133,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       const sanitizedEmail = sanitizeInput(email);
-      const { error } = await supabase.auth.signInWithOtp({ email: sanitizedEmail });
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: sanitizedEmail,
+        password: password
+      });
 
       if (error) {
         console.error("Sign-in error:", error);
@@ -141,8 +144,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         alert(errorMessage);
         await logSecurityEvent('sign_in_failed', { email: sanitizedEmail, error: error.message });
       } else {
-        alert('Check your email for the magic link to sign in.');
-        await logSecurityEvent('sign_in_requested', { email: sanitizedEmail });
+        await logSecurityEvent('sign_in_successful', { email: sanitizedEmail });
+        navigate('/');
       }
     } catch (error: any) {
       console.error("Unexpected sign-in error:", error);
@@ -180,6 +183,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email: sanitizedEmail,
         password: password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: sanitizedFullName,
             phone: phone,

@@ -80,8 +80,7 @@ const AuthPage = () => {
 
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
-      await signIn(values.email);
-      navigate('/');
+      await signIn(values.email, values.password);
     } catch (error) {
       // Error is handled in the auth context
     }
