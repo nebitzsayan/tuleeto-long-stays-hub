@@ -36,6 +36,7 @@ const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const TenantsPage = lazy(() => import('./pages/TenantsPage'));
 const PaymentDashboardPage = lazy(() => import('./pages/PaymentDashboardPage'));
 const InstallPage = lazy(() => import('./pages/InstallPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/listings" element={<ListingsPage />} />
                 <Route path="/property/:id" element={<PropertyDetailPage />} />
                 <Route path="/owner/:ownerId" element={<OwnerProfilePage />} />

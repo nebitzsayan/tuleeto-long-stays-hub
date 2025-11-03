@@ -269,16 +269,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const resetPassword = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
       if (error) {
         console.error("Reset password error:", error);
         await logSecurityEvent('password_reset_failed', { email, error: error.message });
+        throw error;
       } else {
         await logSecurityEvent('password_reset_requested', { email });
       }
     } catch (error: any) {
       console.error("Unexpected reset password error:", error);
       await logSecurityEvent('password_reset_failed', { email, error: error.message });
+      throw error;
     }
   };
 
