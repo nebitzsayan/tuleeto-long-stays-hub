@@ -59,11 +59,11 @@ export function TenantCard({ tenant, onEdit, onDelete, onViewPayments }: TenantC
           </div>
         </div>
 
-        <div className="flex gap-2 pt-3">
+        <div className="flex flex-wrap gap-2 pt-3">
           <Button 
             size="sm" 
             variant="default" 
-            className="flex-1 font-semibold" 
+            className="flex-1 min-w-[140px] font-semibold" 
             onClick={onViewPayments}
           >
             <Receipt className="h-4 w-4 mr-1" />
@@ -73,9 +73,10 @@ export function TenantCard({ tenant, onEdit, onDelete, onViewPayments }: TenantC
             size="sm" 
             variant="outline" 
             onClick={() => onEdit(tenant)}
-            className="hover:bg-primary/10"
+            className="hover:bg-primary/10 h-9 w-9 sm:w-auto sm:px-3"
           >
             <Edit className="h-4 w-4" />
+            <span className="sr-only sm:not-sr-only sm:ml-1">Edit</span>
           </Button>
           <Button 
             size="sm" 
@@ -85,9 +86,10 @@ export function TenantCard({ tenant, onEdit, onDelete, onViewPayments }: TenantC
                 onDelete(tenant.id);
               }
             }}
-            className="hover:bg-destructive/10 hover:text-destructive"
+            className="hover:bg-destructive/10 hover:text-destructive h-9 w-9"
           >
             <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Delete</span>
           </Button>
         </div>
       </CardContent>

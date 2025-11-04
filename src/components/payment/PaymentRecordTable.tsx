@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Trash2, Phone, CheckCircle2, XCircle, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
@@ -22,11 +23,173 @@ const monthNames = [
 export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: PaymentRecordTableProps) {
   const tenantMap = new Map(tenants.map(t => [t.id, t]));
 
+  // Mobile Card Component
+  const MobilePaymentCard = ({ record, tenant, index }: { record: PaymentRecord; tenant?: Tenant; index: number }) => {
+    const total = record.rent_amount + record.electricity_amount + record.water_amount + record.other_charges;
+    const allPaid = record.rent_paid && record.electricity_paid && record.water_paid;
+    const electricityUnits = (record as any).electricity_units || 0;
+    const costPerUnit = (record as any).cost_per_unit || 0;
+    const remarks = (record as any).remarks || "";
+
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-muted/80 to-muted/50 pb-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-lg">{tenant?.name || "Unknown"}</CardTitle>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                {tenant?.room_number && <span>Room: {tenant.room_number}</span>}
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {tenant?.phone || "-"}
+                </span>
+              </div>
+            </div>
+            <Badge variant="secondary" className="text-xs">#{index + 1}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          {/* Period */}
+          <div className="flex items-center gap-2 text-sm font-medium pb-2 border-b">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>{monthNames[record.month - 1]} {record.year}</span>
+          </div>
+
+          {/* Payment Details */}
+          <div className="space-y-3">
+            {/* Rent */}
+            <div className="flex justify-between items-center p-2 rounded bg-muted/30">
+              <span className="text-sm font-medium">Rent</span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">₹{record.rent_amount.toLocaleString()}</span>
+                {record.rent_paid ? (
+                  <Badge variant="default" className="text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Paid
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="text-xs">
+                    <XCircle className="h-3 w-3 mr-1" /> Pending
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Electricity */}
+            <div className="flex justify-between items-center p-2 rounded bg-muted/30">
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Electricity</span>
+                {electricityUnits > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {electricityUnits} units × ₹{costPerUnit}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">₹{record.electricity_amount.toLocaleString()}</span>
+                {record.electricity_paid ? (
+                  <Badge variant="default" className="text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Paid
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="text-xs">
+                    <XCircle className="h-3 w-3 mr-1" /> Pending
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Water */}
+            <div className="flex justify-between items-center p-2 rounded bg-muted/30">
+              <span className="text-sm font-medium">Water</span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">₹{record.water_amount.toLocaleString()}</span>
+                {record.water_paid ? (
+                  <Badge variant="default" className="text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Paid
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="text-xs">
+                    <XCircle className="h-3 w-3 mr-1" /> Pending
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Other Charges */}
+            {record.other_charges > 0 && (
+              <div className="flex justify-between items-center p-2 rounded bg-muted/30">
+                <span className="text-sm font-medium">Other</span>
+                <span className="font-semibold">₹{record.other_charges.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Total */}
+          <div className="flex justify-between items-center p-3 rounded bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary/20">
+            <span className="font-semibold">Total Amount</span>
+            <span className="text-xl font-bold text-primary">₹{total.toLocaleString()}</span>
+          </div>
+
+          {/* Status Badge */}
+          <div className="flex justify-center">
+            {allPaid ? (
+              <Badge variant="default" className="gap-1">
+                <CheckCircle2 className="h-4 w-4" /> All Paid
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="gap-1">
+                <XCircle className="h-4 w-4" /> Partial Payment
+              </Badge>
+            )}
+          </div>
+
+          {/* Remarks */}
+          {remarks && (
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">Remarks:</span> {remarks}
+              </p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-2">
+            <Button 
+              size="sm" 
+              variant="default" 
+              onClick={() => onEdit(record)} 
+              className="flex-1"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button 
+              size="sm" 
+              variant="destructive" 
+              onClick={() => {
+                if (confirm("Are you sure you want to delete this payment record?")) {
+                  onDelete(record.id);
+                }
+              }}
+              className="flex-1"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <div className="rounded-lg border-2 overflow-hidden shadow-lg">
-      <ScrollArea className="w-full">
-        <div className="min-w-[1400px]">
-          <Table>
+    <div>
+      {/* Desktop Table - hidden on mobile */}
+      <div className="hidden md:block rounded-lg border-2 overflow-hidden shadow-lg">
+        <ScrollArea className="w-full">
+          <div className="min-w-[1400px]">
+            <Table>
             <TableHeader className="sticky top-0 bg-background z-30">
               <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:bg-muted/50 border-b-2">
               <TableHead className="font-bold">S.No</TableHead>
@@ -214,6 +377,30 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
           </Table>
         </div>
       </ScrollArea>
+      </div>
+
+      {/* Mobile Cards - hidden on desktop */}
+      <div className="block md:hidden space-y-4">
+        {records.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              No payment records found
+            </CardContent>
+          </Card>
+        ) : (
+          records.map((record, index) => {
+            const tenant = tenantMap.get(record.tenant_id);
+            return (
+              <MobilePaymentCard 
+                key={record.id}
+                record={record}
+                tenant={tenant}
+                index={index}
+              />
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

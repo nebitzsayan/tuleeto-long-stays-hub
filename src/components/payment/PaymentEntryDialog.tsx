@@ -140,13 +140,13 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-full sm:max-w-2xl md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-xl sm:text-2xl font-bold">
             {record ? "Edit Payment Record" : "Add Payment Record"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6 p-4 sm:p-6">
           {/* Tenant Info Section */}
           <div className="bg-muted/50 p-4 rounded-lg border">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -184,7 +184,7 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
           </div>
 
           {/* Period Section */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Month</Label>
               <Select value={watch("month").toString()} onValueChange={(value) => setValue("month", parseInt(value))}>
@@ -262,7 +262,7 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 ⚡ Electricity
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Units</Label>
                   <Input 
@@ -383,12 +383,12 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
           </div>
 
           {/* Total Summary */}
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg border-2 border-primary/20">
-            <div className="flex justify-between items-center">
-              <span className="text-xl font-semibold">Total Amount:</span>
-              <span className="text-3xl font-bold text-primary">₹{total.toLocaleString()}</span>
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 sm:p-6 rounded-lg border-2 border-primary/20">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <span className="text-lg sm:text-xl font-semibold">Total Amount:</span>
+              <span className="text-2xl sm:text-3xl font-bold text-primary">₹{total.toLocaleString()}</span>
             </div>
-            <div className="mt-3 text-sm text-muted-foreground flex flex-wrap gap-4 justify-between">
+            <div className="mt-3 text-sm text-muted-foreground flex flex-wrap gap-2 sm:gap-4 justify-between">
               <span>Rent: ₹{(parseFloat(rentAmount) || 0).toLocaleString()}</span>
               <span>Electricity: ₹{(parseFloat(electricityAmount) || 0).toLocaleString()}</span>
               <span>Water: ₹{(parseFloat(waterAmount) || 0).toLocaleString()}</span>
@@ -396,11 +396,11 @@ export function PaymentEntryDialog({ open, onOpenChange, record, tenants, defaul
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="lg">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="lg" className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" size="lg" className="min-w-[150px]" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="w-full sm:w-auto sm:min-w-[150px]" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : (record ? "Update Record" : "Save Record")}
             </Button>
           </div>
