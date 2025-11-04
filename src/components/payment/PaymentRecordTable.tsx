@@ -144,14 +144,6 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
             )}
           </div>
 
-          {/* Remarks */}
-          {remarks && (
-            <div className="pt-2 border-t">
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium">Remarks:</span> {remarks}
-              </p>
-            </div>
-          )}
 
           {/* Actions */}
           <div className="flex gap-2 pt-2">
@@ -188,7 +180,7 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
       {/* Desktop Table - hidden on mobile */}
       <div className="hidden md:block rounded-lg border-2 overflow-hidden shadow-lg">
         <ScrollArea className="w-full">
-          <div className="min-w-[1400px]">
+          <div className="min-w-[1200px]">
             <Table>
             <TableHeader className="sticky top-0 bg-background z-30">
               <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:bg-muted/50 border-b-2">
@@ -204,14 +196,13 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
               <TableHead className="font-bold text-right">Total (₹)</TableHead>
               <TableHead className="font-bold text-center">Payment Status</TableHead>
               <TableHead className="font-bold text-center">Date</TableHead>
-              <TableHead className="font-bold">Remarks</TableHead>
-              <TableHead className="font-bold text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-20">Actions</TableHead>
+              <TableHead className="font-bold text-right sticky right-0 bg-background z-20 min-w-[120px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {records.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   No payment records found
                 </TableCell>
               </TableRow>
@@ -322,12 +313,7 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
                         {!record.rent_paid && <span className="text-muted-foreground">-</span>}
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-[150px]">
-                      <div className="text-xs text-muted-foreground truncate" title={remarks}>
-                        {remarks || "-"}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-10">
+                    <TableCell className="text-right sticky right-0 bg-background z-10 min-w-[120px]">
                       <TooltipProvider>
                         <div className="flex justify-end gap-2">
                           <Tooltip>
