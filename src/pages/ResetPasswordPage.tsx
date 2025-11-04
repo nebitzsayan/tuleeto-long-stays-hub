@@ -41,13 +41,27 @@ const ResetPasswordPage = () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
       const type = hashParams.get('type');
+      const error = hashParams.get('error');
+      const errorDescription = hashParams.get('error_description');
 
+      // Check for error parameters from Supabase
+      if (error) {
+        setIsValidToken(false);
+        const message = errorDescription 
+          ? decodeURIComponent(errorDescription.replace(/\+/g, ' '))
+          : 'Invalid or expired reset link';
+        toast.error(message);
+        setTimeout(() => navigate('/auth'), 3000);
+        return;
+      }
+
+      // Check for valid recovery token
       if (accessToken && type === 'recovery') {
         setIsValidToken(true);
       } else {
         setIsValidToken(false);
-        toast.error('Invalid or expired reset link');
-        setTimeout(() => navigate('/auth'), 2000);
+        toast.error('Invalid or expired reset link. Please request a new one.');
+        setTimeout(() => navigate('/auth'), 3000);
       }
     };
 
