@@ -20,196 +20,312 @@ export const BillCanvas = ({ record, tenant, billNumber, billDate }: BillCanvasP
 
   return (
     <div 
-      className="w-[800px] bg-white text-gray-900 font-sans"
+      className="w-[800px] bg-white text-gray-900"
       style={{ 
         padding: '40px',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: 'Georgia, "Times New Roman", serif'
       }}
     >
       {/* Header */}
       <div 
-        className="text-center mb-8 py-6 rounded-lg"
+        className="text-center mb-8 pb-6"
         style={{
-          background: 'linear-gradient(135deg, #FF8C42 0%, #FF6B2C 100%)',
+          borderBottom: '2px solid #000'
         }}
       >
-        <h1 className="text-4xl font-bold text-white mb-1">tuleeto.in</h1>
-        <p className="text-white/90 text-sm">Property Management Platform</p>
+        <h1 style={{
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: '#000',
+          letterSpacing: '1px',
+          textTransform: 'uppercase',
+          marginBottom: '4px'
+        }}>
+          Tuleeto Property Services
+        </h1>
+        <p style={{
+          fontSize: '12px',
+          color: '#666',
+          fontFamily: 'Georgia, "Times New Roman", serif'
+        }}>
+          Property Management Platform | www.tuleeto.in
+        </p>
       </div>
 
-      {/* Bill Title */}
-      <div className="text-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">RENT BILL</h2>
-        <div className="flex justify-between text-sm text-gray-600 max-w-md mx-auto">
-          <div>
-            <span className="font-semibold">Bill No:</span> {billNumber}
-          </div>
-          <div>
-            <span className="font-semibold">Date:</span> {billDate}
-          </div>
+      {/* Bill Title & Invoice Details */}
+      <div className="text-center mb-6 pb-4" style={{ borderBottom: '1px solid #ddd' }}>
+        <h2 style={{
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#000',
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          marginBottom: '12px'
+        }}>
+          Rent Invoice
+        </h2>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-around',
+          fontSize: '13px',
+          color: '#333',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          maxWidth: '500px',
+          margin: '0 auto',
+          paddingTop: '8px',
+          borderTop: '1px dashed #999'
+        }}>
+          <div><strong>Invoice No:</strong> {billNumber}</div>
+          <div><strong>Date:</strong> {billDate}</div>
+          <div><strong>Period:</strong> {getMonthName(record.month)} {record.year}</div>
         </div>
       </div>
 
       {/* Tenant Details */}
-      <div className="mb-6 p-4 border-2 border-gray-200 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
-          TENANT DETAILS
+      <div className="mb-6 pb-4" style={{ borderBottom: '1px solid #ddd' }}>
+        <h3 style={{
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#000',
+          textTransform: 'uppercase',
+          marginBottom: '12px',
+          letterSpacing: '1px'
+        }}>
+          Bill To:
         </h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex">
-            <span className="font-semibold w-24">Name:</span>
-            <span className="text-gray-700">{tenant.name}</span>
-          </div>
-          {tenant.room_number && (
-            <div className="flex">
-              <span className="font-semibold w-24">Room:</span>
-              <span className="text-gray-700">{tenant.room_number}</span>
-            </div>
-          )}
-          <div className="flex">
-            <span className="font-semibold w-24">Phone:</span>
-            <span className="text-gray-700">{tenant.phone}</span>
-          </div>
-          {tenant.email && (
-            <div className="flex">
-              <span className="font-semibold w-24">Email:</span>
-              <span className="text-gray-700">{tenant.email}</span>
-            </div>
-          )}
+        <div style={{
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '14px',
+          lineHeight: '1.8',
+          color: '#333'
+        }}>
+          <div><strong>Name:</strong> {tenant.name}</div>
+          {tenant.room_number && <div><strong>Room:</strong> {tenant.room_number}</div>}
+          <div><strong>Phone:</strong> {tenant.phone}</div>
+          {tenant.email && <div><strong>Email:</strong> {tenant.email}</div>}
         </div>
       </div>
 
-      {/* Billing Period */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">BILLING PERIOD</h3>
-        <p className="text-gray-700 text-base">
-          {getMonthName(record.month)} {record.year}
-        </p>
-      </div>
-
-      {/* Payment Details */}
-      <div className="mb-6 p-4 border-2 border-gray-200 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-          PAYMENT DETAILS
+      {/* Payment Details - Invoice Style */}
+      <div className="mb-6">
+        <h3 style={{
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#000',
+          textTransform: 'uppercase',
+          marginBottom: '12px',
+          paddingBottom: '8px',
+          borderBottom: '2px solid #000',
+          letterSpacing: '1px'
+        }}>
+          Itemized Charges
         </h3>
 
-        {/* Rent */}
-        <div className="mb-4 p-3 bg-blue-50 rounded">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-gray-800">🏠 Room Rent</span>
-            <span className="text-xl font-bold text-gray-800">₹ {record.rent_amount.toLocaleString()}</span>
+        {/* Table Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          padding: '8px 0',
+          borderBottom: '1px dashed #999',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '13px',
+          fontWeight: 'bold',
+          color: '#333'
+        }}>
+          <span style={{ flex: '3' }}>Description</span>
+          <span style={{ flex: '1', textAlign: 'right' }}>Qty</span>
+          <span style={{ flex: '1', textAlign: 'right' }}>Amount</span>
+        </div>
+
+        {/* Rent Item */}
+        <div style={{ marginTop: '12px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: '14px',
+            color: '#000',
+            padding: '4px 0'
+          }}>
+            <span style={{ flex: '3', fontWeight: '600' }}>Room Rent</span>
+            <span style={{ flex: '1', textAlign: 'right' }}>1</span>
+            <span style={{ flex: '1', textAlign: 'right', fontWeight: '600' }}>₹ {record.rent_amount.toLocaleString()}</span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              {record.rent_paid ? (
-                <>
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span className="text-green-700 font-medium">Paid</span>
-                </>
-              ) : (
-                <>
-                  <X className="h-4 w-4 text-red-600" />
-                  <span className="text-red-700 font-medium">Unpaid</span>
-                </>
-              )}
-            </div>
-            {record.rent_paid && record.rent_paid_date && (
-              <span className="text-gray-600">Date: {new Date(record.rent_paid_date).toLocaleDateString()}</span>
+          <div style={{
+            fontSize: '12px',
+            color: record.rent_paid ? '#2d5016' : '#7f1d1d',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            paddingLeft: '8px',
+            paddingBottom: '8px'
+          }}>
+            {record.rent_paid ? (
+              <>✓ PAID {record.rent_paid_date && `on ${new Date(record.rent_paid_date).toLocaleDateString('en-IN')}`}</>
+            ) : (
+              <>✗ UNPAID</>
             )}
           </div>
         </div>
 
-        {/* Electricity */}
-        <div className="mb-4 p-3 bg-yellow-50 rounded">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-gray-800">⚡ Electricity Bill</span>
-            <span className="text-xl font-bold text-gray-800">₹ {record.electricity_amount.toLocaleString()}</span>
+        {/* Electricity Item */}
+        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #ddd' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: '14px',
+            color: '#000',
+            padding: '4px 0'
+          }}>
+            <span style={{ flex: '3', fontWeight: '600' }}>Electricity Bill</span>
+            <span style={{ flex: '1', textAlign: 'right' }}>{record.electricity_units || 0}</span>
+            <span style={{ flex: '1', textAlign: 'right', fontWeight: '600' }}>₹ {record.electricity_amount.toLocaleString()}</span>
           </div>
-          <div className="text-sm text-gray-600 mb-2">
-            <span>Units Consumed: {record.electricity_units || 0}</span>
-            <span className="mx-2">•</span>
-            <span>Rate per Unit: ₹{record.cost_per_unit || 11}</span>
+          <div style={{
+            fontSize: '11px',
+            color: '#666',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            paddingLeft: '8px',
+            marginTop: '2px'
+          }}>
+            ({record.electricity_units || 0} units @ ₹{record.cost_per_unit || 11}/unit)
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              {record.electricity_paid ? (
-                <>
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span className="text-green-700 font-medium">Paid</span>
-                </>
-              ) : (
-                <>
-                  <X className="h-4 w-4 text-red-600" />
-                  <span className="text-red-700 font-medium">Unpaid</span>
-                </>
-              )}
-            </div>
-            {record.electricity_paid && record.electricity_paid_date && (
-              <span className="text-gray-600">Date: {new Date(record.electricity_paid_date).toLocaleDateString()}</span>
+          <div style={{
+            fontSize: '12px',
+            color: record.electricity_paid ? '#2d5016' : '#7f1d1d',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            paddingLeft: '8px',
+            paddingBottom: '8px'
+          }}>
+            {record.electricity_paid ? (
+              <>✓ PAID {record.electricity_paid_date && `on ${new Date(record.electricity_paid_date).toLocaleDateString('en-IN')}`}</>
+            ) : (
+              <>✗ UNPAID</>
             )}
           </div>
         </div>
 
-        {/* Water */}
-        <div className="mb-4 p-3 bg-cyan-50 rounded">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-gray-800">💧 Water Charges</span>
-            <span className="text-xl font-bold text-gray-800">₹ {record.water_amount.toLocaleString()}</span>
+        {/* Water Item */}
+        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #ddd' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: '14px',
+            color: '#000',
+            padding: '4px 0'
+          }}>
+            <span style={{ flex: '3', fontWeight: '600' }}>Water Charges</span>
+            <span style={{ flex: '1', textAlign: 'right' }}>1</span>
+            <span style={{ flex: '1', textAlign: 'right', fontWeight: '600' }}>₹ {record.water_amount.toLocaleString()}</span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              {record.water_paid ? (
-                <>
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span className="text-green-700 font-medium">Paid</span>
-                </>
-              ) : (
-                <>
-                  <X className="h-4 w-4 text-red-600" />
-                  <span className="text-red-700 font-medium">Unpaid</span>
-                </>
-              )}
-            </div>
-            {record.water_paid && record.water_paid_date && (
-              <span className="text-gray-600">Date: {new Date(record.water_paid_date).toLocaleDateString()}</span>
+          <div style={{
+            fontSize: '12px',
+            color: record.water_paid ? '#2d5016' : '#7f1d1d',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            paddingLeft: '8px',
+            paddingBottom: '8px'
+          }}>
+            {record.water_paid ? (
+              <>✓ PAID {record.water_paid_date && `on ${new Date(record.water_paid_date).toLocaleDateString('en-IN')}`}</>
+            ) : (
+              <>✗ UNPAID</>
             )}
           </div>
         </div>
 
         {/* Other Charges */}
         {record.other_charges > 0 && (
-          <div className="mb-4 p-3 bg-purple-50 rounded">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-semibold text-gray-800">📝 Other Charges</span>
-              <span className="text-xl font-bold text-gray-800">₹ {record.other_charges.toLocaleString()}</span>
+          <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #ddd' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontSize: '14px',
+              color: '#000',
+              padding: '4px 0'
+            }}>
+              <span style={{ flex: '3', fontWeight: '600' }}>Other Charges</span>
+              <span style={{ flex: '1', textAlign: 'right' }}>1</span>
+              <span style={{ flex: '1', textAlign: 'right', fontWeight: '600' }}>₹ {record.other_charges.toLocaleString()}</span>
             </div>
             {record.other_charges_description && (
-              <p className="text-sm text-gray-600">{record.other_charges_description}</p>
+              <div style={{
+                fontSize: '11px',
+                color: '#666',
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                paddingLeft: '8px',
+                paddingBottom: '8px'
+              }}>
+                {record.other_charges_description}
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Grand Total */}
-      <div 
-        className="mb-6 p-4 rounded-lg"
-        style={{
-          background: 'linear-gradient(135deg, #FF8C42 0%, #FF6B2C 100%)',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-2xl font-bold text-white">GRAND TOTAL</span>
-          <span className="text-3xl font-bold text-white">₹ {total.toLocaleString()}</span>
+      {/* Grand Total Section */}
+      <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '2px solid #000' }}>
+        {/* Subtotal */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '15px',
+          padding: '8px 0',
+          color: '#333'
+        }}>
+          <span>Subtotal:</span>
+          <span>₹ {total.toLocaleString()}</span>
         </div>
+
+        {/* Grand Total */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '20px',
+          fontWeight: 'bold',
+          padding: '12px 0',
+          borderTop: '2px double #000',
+          borderBottom: '2px double #000',
+          color: '#000'
+        }}>
+          <span>GRAND TOTAL:</span>
+          <span>₹ {total.toLocaleString()}</span>
+        </div>
+
+        {/* Payment Summary */}
         {pendingTotal > 0 && (
-          <div className="mt-3 pt-3 border-t border-white/30 text-white text-sm">
-            <div className="flex justify-between">
-              <span>Paid Amount:</span>
-              <span className="font-semibold">₹ {paidTotal.toLocaleString()}</span>
+          <div style={{
+            marginTop: '16px',
+            padding: '12px',
+            border: '1px solid #ddd',
+            backgroundColor: '#f9f9f9',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: '13px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '4px 0',
+              color: '#2d5016'
+            }}>
+              <span>Amount Paid:</span>
+              <span style={{ fontWeight: '600' }}>₹ {paidTotal.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between mt-1">
-              <span>Pending Amount:</span>
-              <span className="font-semibold">₹ {pendingTotal.toLocaleString()}</span>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '4px 0',
+              color: '#7f1d1d',
+              fontWeight: 'bold'
+            }}>
+              <span>Balance Due:</span>
+              <span>₹ {pendingTotal.toLocaleString()}</span>
             </div>
           </div>
         )}
@@ -217,16 +333,37 @@ export const BillCanvas = ({ record, tenant, billNumber, billDate }: BillCanvasP
 
       {/* Remarks */}
       {record.remarks && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2">Remarks:</h3>
-          <p className="text-sm text-gray-700">{record.remarks}</p>
+        <div style={{
+          marginTop: '24px',
+          padding: '12px',
+          border: '1px solid #ddd',
+          backgroundColor: '#fafafa',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '12px',
+          color: '#333'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase' }}>Remarks:</div>
+          <div>{record.remarks}</div>
         </div>
       )}
 
       {/* Footer */}
-      <div className="text-center pt-6 border-t-2 border-gray-200">
-        <p className="text-gray-600 mb-1">Thank you!</p>
-        <p className="text-sm text-gray-500">Visit us at <span className="font-semibold" style={{ color: '#FF8C42' }}>tuleeto.in</span></p>
+      <div style={{
+        marginTop: '32px',
+        paddingTop: '16px',
+        borderTop: '1px solid #ddd',
+        textAlign: 'center',
+        fontFamily: 'Georgia, "Times New Roman", serif'
+      }}>
+        <p style={{ fontSize: '14px', color: '#000', fontWeight: '600', marginBottom: '8px' }}>
+          Thank you for your payment!
+        </p>
+        <p style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
+          This is a computer-generated invoice
+        </p>
+        <p style={{ fontSize: '11px', color: '#666' }}>
+          For queries, contact us at <strong>tuleeto.in</strong> or email <strong>contact@tuleeto.in</strong>
+        </p>
       </div>
     </div>
   );
