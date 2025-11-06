@@ -89,6 +89,10 @@ const FeaturedProperties = () => {
                 .sort((a, b) => a.distance! - b.distance!)
                 .slice(0, 4);
             }
+          } else {
+            // For users who denied location, show random properties on each refresh
+            const shuffled = [...formattedProperties].sort(() => Math.random() - 0.5);
+            finalProperties = shuffled.slice(0, 4);
           }
           
           setProperties(finalProperties);

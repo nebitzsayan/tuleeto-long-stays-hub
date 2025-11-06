@@ -24,10 +24,13 @@ export const LocationProvider: React.FC<{ children: ReactNode }> = ({ children }
     error: null,
   });
 
-  // Check if geolocation is supported
+  // Check if geolocation is supported and auto-request on every page load
   useEffect(() => {
     if (!('geolocation' in navigator)) {
       setState(prev => ({ ...prev, permissionStatus: 'unsupported' }));
+    } else {
+      // Auto-request location on every page load/refresh
+      requestLocation();
     }
   }, []);
 
