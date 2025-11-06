@@ -42,7 +42,7 @@ export const BillCanvas = ({ record, tenant, billNumber, billDate }: BillCanvasP
           textTransform: 'uppercase',
           marginBottom: '4px'
         }}>
-          Tuleeto Property Services
+          Tuleeto Rental
         </h1>
         <p style={{
           fontSize: '12px',
@@ -155,19 +155,6 @@ export const BillCanvas = ({ record, tenant, billNumber, billDate }: BillCanvasP
             <span style={{ flex: '1', textAlign: 'right' }}>1</span>
             <span style={{ flex: '1', textAlign: 'right', fontWeight: '600' }}>₹ {record.rent_amount.toLocaleString()}</span>
           </div>
-          <div style={{
-            fontSize: '12px',
-            color: record.rent_paid ? '#2d5016' : '#7f1d1d',
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            paddingLeft: '8px',
-            paddingBottom: '8px'
-          }}>
-            {record.rent_paid ? (
-              <>✓ PAID {record.rent_paid_date && `on ${new Date(record.rent_paid_date).toLocaleDateString('en-IN')}`}</>
-            ) : (
-              <>✗ UNPAID</>
-            )}
-          </div>
         </div>
 
         {/* Electricity Item */}
@@ -193,19 +180,6 @@ export const BillCanvas = ({ record, tenant, billNumber, billDate }: BillCanvasP
           }}>
             ({record.electricity_units || 0} units @ ₹{record.cost_per_unit || 11}/unit)
           </div>
-          <div style={{
-            fontSize: '12px',
-            color: record.electricity_paid ? '#2d5016' : '#7f1d1d',
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            paddingLeft: '8px',
-            paddingBottom: '8px'
-          }}>
-            {record.electricity_paid ? (
-              <>✓ PAID {record.electricity_paid_date && `on ${new Date(record.electricity_paid_date).toLocaleDateString('en-IN')}`}</>
-            ) : (
-              <>✗ UNPAID</>
-            )}
-          </div>
         </div>
 
         {/* Water Item */}
@@ -221,19 +195,6 @@ export const BillCanvas = ({ record, tenant, billNumber, billDate }: BillCanvasP
             <span style={{ flex: '3', fontWeight: '600' }}>Water Charges</span>
             <span style={{ flex: '1', textAlign: 'right' }}>1</span>
             <span style={{ flex: '1', textAlign: 'right', fontWeight: '600' }}>₹ {record.water_amount.toLocaleString()}</span>
-          </div>
-          <div style={{
-            fontSize: '12px',
-            color: record.water_paid ? '#2d5016' : '#7f1d1d',
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            paddingLeft: '8px',
-            paddingBottom: '8px'
-          }}>
-            {record.water_paid ? (
-              <>✓ PAID {record.water_paid_date && `on ${new Date(record.water_paid_date).toLocaleDateString('en-IN')}`}</>
-            ) : (
-              <>✗ UNPAID</>
-            )}
           </div>
         </div>
 
@@ -298,37 +259,6 @@ export const BillCanvas = ({ record, tenant, billNumber, billDate }: BillCanvasP
           <span>₹ {total.toLocaleString()}</span>
         </div>
 
-        {/* Payment Summary */}
-        {pendingTotal > 0 && (
-          <div style={{
-            marginTop: '16px',
-            padding: '12px',
-            border: '1px solid #ddd',
-            backgroundColor: '#f9f9f9',
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: '13px'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '4px 0',
-              color: '#2d5016'
-            }}>
-              <span>Amount Paid:</span>
-              <span style={{ fontWeight: '600' }}>₹ {paidTotal.toLocaleString()}</span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '4px 0',
-              color: '#7f1d1d',
-              fontWeight: 'bold'
-            }}>
-              <span>Balance Due:</span>
-              <span>₹ {pendingTotal.toLocaleString()}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Remarks */}
