@@ -21,12 +21,16 @@ const FeaturedProperties = () => {
       try {
         setLoading(true);
         
+        // Fetch more properties if location is denied (for randomness)
+        // Otherwise fetch limited set for distance sorting
+        const limit = permissionStatus === 'granted' && coordinates ? 20 : 50;
+        
         // First get properties
         const { data: propertiesData, error: propertiesError } = await supabase
           .from('properties')
           .select('*')
           .eq('is_public', true)
-          .limit(4);
+          .limit(limit);
         
         if (propertiesError) throw propertiesError;
         
