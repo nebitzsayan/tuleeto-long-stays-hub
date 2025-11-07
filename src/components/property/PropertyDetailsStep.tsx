@@ -33,9 +33,15 @@ export const PropertyDetailsStep = ({ form }: PropertyDetailsStepProps) => {
               <SelectContent>
                 <SelectItem value="Apartment">Apartment</SelectItem>
                 <SelectItem value="House">House</SelectItem>
-                <SelectItem value="Condo">Condo</SelectItem>
                 <SelectItem value="Studio">Studio</SelectItem>
                 <SelectItem value="Townhouse">Townhouse</SelectItem>
+                <SelectItem value="Villa">Villa</SelectItem>
+                <SelectItem value="Flat">Flat</SelectItem>
+                <SelectItem value="Shop">Shop</SelectItem>
+                <SelectItem value="Showroom">Showroom</SelectItem>
+                <SelectItem value="Godown">Godown</SelectItem>
+                <SelectItem value="Office">Office</SelectItem>
+                <SelectItem value="Warehouse">Warehouse</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
