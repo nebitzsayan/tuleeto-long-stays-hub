@@ -5,20 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Search, IndianRupee } from "lucide-react";
+import { Search, IndianRupee, MapPin, Loader2 } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocationContext } from "@/contexts/LocationContext";
+import { toast } from "sonner";
 
 const PropertyFilter = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { city, coordinates, requestLocation, isLoading: locationLoading } = useLocationContext();
   
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [minPrice, setMinPrice] = useState(Number(searchParams.get("minPrice")) || 500);
   const [maxPrice, setMaxPrice] = useState(Number(searchParams.get("maxPrice")) || 150000);
   const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") || "");
   const [propertyType, setPropertyType] = useState(searchParams.get("type") || "");
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   // Update form values when URL params change
   useEffect(() => {
@@ -28,6 +32,35 @@ const PropertyFilter = () => {
     setBedrooms(searchParams.get("bedrooms") || "");
     setPropertyType(searchParams.get("type") || "");
   }, [searchParams]);
+
+  // Update search term when city changes from location
+  useEffect(() => {
+    if (city && isFetchingLocation) {
+      setSearchTerm(city);
+      setIsFetchingLocation(false);
+    }
+  }, [city, isFetchingLocation]);
+
+  const handleLocationClick = async () => {
+    setIsFetchingLocation(true);
+    toast.info("Fetching your location...");
+    
+    try {
+      await requestLocation();
+      // Wait a moment for the location to be set
+      setTimeout(() => {
+        if (city) {
+          toast.success(`Location found: ${city}`);
+        } else {
+          toast.error("Could not determine your location");
+          setIsFetchingLocation(false);
+        }
+      }, 1000);
+    } catch (error) {
+      toast.error("Failed to get location. Please enable location permissions.");
+      setIsFetchingLocation(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,14 +82,27 @@ const PropertyFilter = () => {
     <div className="bg-white p-2 md:p-4 rounded-lg shadow-md mb-3 md:mb-6">
       <form onSubmit={handleSearch}>
         <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-2 md:mb-4">
-          <div className="flex-grow">
+          <div className="flex-grow relative">
             <Input
               type="text"
               placeholder="Search by location or property title"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-9 md:h-12"
+              className="h-9 md:h-12 pr-10"
             />
+            <button
+              type="button"
+              onClick={handleLocationClick}
+              disabled={locationLoading || isFetchingLocation}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Use my location"
+            >
+              {locationLoading || isFetchingLocation ? (
+                <Loader2 className="h-4 w-4 text-tuleeto-orange animate-spin" />
+              ) : (
+                <MapPin className="h-4 w-4 text-tuleeto-orange" />
+              )}
+            </button>
           </div>
           <Button 
             type="submit" 
