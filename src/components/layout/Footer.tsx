@@ -12,14 +12,11 @@ const Footer = () => {
             <Logo className="mb-2" />
           </div>
 
-          {/* Terms of Service Link */}
-          <div>
-            <Link 
-              to="/terms" 
-              className="text-tuleeto-orange hover:text-tuleeto-orange-dark transition-colors duration-200 font-medium"
-            >
-              Terms of Service
-            </Link>
+          {/* Navigation Links */}
+          <div className="flex gap-6 flex-wrap justify-center">
+            <Link to="/about" className="text-gray-700 hover:text-tuleeto-orange transition-colors">About</Link>
+            <Link to="/listings" className="text-gray-700 hover:text-tuleeto-orange transition-colors">Browse Properties</Link>
+            <Link to="/terms" className="text-gray-700 hover:text-tuleeto-orange transition-colors">Terms of Service</Link>
           </div>
         </div>
 

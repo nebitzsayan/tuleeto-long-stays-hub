@@ -1,3 +1,7 @@
+# Force HTTPS and non-www redirect
+http://tuleeto.space/* https://tuleeto.space/:splat 301!
+http://www.tuleeto.space/* https://tuleeto.space/:splat 301!
+https://www.tuleeto.space/* https://tuleeto.space/:splat 301!
 
 # Redirect all routes to index.html for client-side routing
 # These redirects work with Netlify, Vercel, Cloudflare Pages, and other hosts

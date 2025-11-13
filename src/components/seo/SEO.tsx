@@ -12,8 +12,8 @@ const SEO = ({
   canonicalUrl,
   noindex = false,
 }: SEOComponentProps) => {
-  const currentUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : 'https://tuleeto.com');
-  const fullOgImage = ogImage?.startsWith('http') ? ogImage : `https://tuleeto.com${ogImage}`;
+  const currentUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : 'https://tuleeto.space');
+  const fullOgImage = ogImage?.startsWith('http') ? ogImage : `https://tuleeto.space${ogImage}`;
 
   return (
     <Helmet>

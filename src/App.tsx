@@ -37,6 +37,7 @@ const TenantsPage = lazy(() => import('./pages/TenantsPage'));
 const PaymentDashboardPage = lazy(() => import('./pages/PaymentDashboardPage'));
 const InstallPage = lazy(() => import('./pages/InstallPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient();
@@ -125,6 +126,7 @@ function App() {
                   </AdminRoute>
                 } />
                 <Route path="/terms" element={<TermsOfServicePage />} />
+                <Route path="/about" element={<AboutPage />} />
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

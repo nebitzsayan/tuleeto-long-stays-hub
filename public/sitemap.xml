@@ -4,7 +4,7 @@
   
   <!-- Homepage - Maximum Priority -->
   <url>
-    <loc>https://tuleeto.com/</loc>
+    <loc>https://tuleeto.space/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -12,15 +12,23 @@
   
   <!-- Listings page - High Priority -->
   <url>
-    <loc>https://tuleeto.com/listings</loc>
+    <loc>https://tuleeto.space/listings</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   
+  <!-- About Page -->
+  <url>
+    <loc>https://tuleeto.space/about</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
   <!-- Install PWA page -->
   <url>
-    <loc>https://tuleeto.com/install</loc>
+    <loc>https://tuleeto.space/install</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -28,7 +36,7 @@
   
   <!-- Terms of Service -->
   <url>
-    <loc>https://tuleeto.com/terms</loc>
+    <loc>https://tuleeto.space/terms</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
@@ -36,56 +44,114 @@
   
   <!-- Location-based listing pages -->
   <url>
-    <loc>https://tuleeto.com/listings?search=Mumbai</loc>
+    <loc>https://tuleeto.space/listings?search=Mumbai</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://tuleeto.com/listings?search=Delhi</loc>
+    <loc>https://tuleeto.space/listings?search=Delhi</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://tuleeto.com/listings?search=Bangalore</loc>
+    <loc>https://tuleeto.space/listings?search=Bangalore</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://tuleeto.com/listings?search=Pune</loc>
+    <loc>https://tuleeto.space/listings?search=Hyderabad</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://tuleeto.com/listings?search=Kolkata</loc>
+    <loc>https://tuleeto.space/listings?search=Chennai</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://tuleeto.space/listings?search=Pune</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://tuleeto.space/listings?search=Kolkata</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://tuleeto.space/listings?search=Ahmedabad</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://tuleeto.space/listings?search=Jaipur</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://tuleeto.space/listings?search=Chandigarh</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <!-- Property type pages -->
   <url>
-    <loc>https://tuleeto.com/listings?type=Apartment</loc>
+    <loc>https://tuleeto.space/listings?type=Apartment</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://tuleeto.com/listings?type=House</loc>
+    <loc>https://tuleeto.space/listings?type=House</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://tuleeto.com/listings?type=Villa</loc>
+    <loc>https://tuleeto.space/listings?type=Villa</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://tuleeto.com/listings?type=Shop</loc>
+    <loc>https://tuleeto.space/listings?type=Shop</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://tuleeto.space/listings?type=Showroom</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://tuleeto.space/listings?type=Office</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>

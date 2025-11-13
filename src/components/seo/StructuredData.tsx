@@ -3,8 +3,8 @@ import { Helmet } from "react-helmet-async";
 // Organization Schema - Primary entity for brand authority
 export const OrganizationSchema = ({
   name = "Tuleeto",
-  url = "https://tuleeto.com",
-  logo = "https://tuleeto.com/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png"
+  url = "https://tuleeto.space",
+  logo = "https://tuleeto.space/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png"
 }: {
   name?: string;
   url?: string;
@@ -12,21 +12,22 @@ export const OrganizationSchema = ({
 }) => {
   const schema = {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": ["Organization", "LocalBusiness"],
     "name": "Tuleeto",
-    "url": "https://tuleeto.com",
+    "url": "https://tuleeto.space",
     "alternateName": ["Tuleeto Official", "Tuleeto Rentals", "Tuleeto India"],
     "logo": logo,
-    "description": "Tuleeto is a modern digital rental marketplace connecting tenants and property owners across India. Discover, book, and list residential and commercial properties with ease.",
-    "foundingDate": "2024",
+    "description": "Tuleeto is a modern rental platform connecting tenants and property owners through a secure, AI-ready web application. Discover apartments, houses, and commercial spaces across India with verified listings and direct owner contact.",
+    "foundingDate": "2025-01-01",
     "founder": {
       "@type": "Person",
-      "name": "Tuleeto Team"
+      "name": "Sayan Kumar Gayen"
     },
     "sameAs": [
-      "https://www.facebook.com/tuleeto",
+      "https://facebook.com/tuleeto",
       "https://twitter.com/tuleeto",
-      "https://www.linkedin.com/company/tuleeto"
+      "https://linkedin.com/company/tuleeto",
+      "https://instagram.com/tuleeto"
     ],
     "address": {
       "@type": "PostalAddress",
@@ -51,7 +52,7 @@ export const OrganizationSchema = ({
 
 // WebSite Schema for sitelinks search box
 export const WebSiteSchema = ({
-  url = "https://tuleeto.com",
+  url = "https://tuleeto.space",
   name = "Tuleeto"
 }: {
   url?: string;
@@ -67,7 +68,7 @@ export const WebSiteSchema = ({
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": "https://tuleeto.com/listings?search={search_term_string}"
+        "urlTemplate": "https://tuleeto.space/listings?search={search_term_string}"
       },
       "query-input": "required name=search_term_string"
     }
@@ -90,8 +91,8 @@ interface RealEstateAgentSchemaProps {
 
 export const RealEstateAgentSchema = ({
   name = "Tuleeto",
-  url = "https://tuleeto.com",
-  logo = "https://tuleeto.com/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png"
+  url = "https://tuleeto.space",
+  logo = "https://tuleeto.space/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png"
 }: RealEstateAgentSchemaProps) => {
   const schema = {
     "@context": "https://schema.org",
@@ -141,7 +142,7 @@ export const ProductSchema = ({ property }: ProductSchemaProps) => {
       "price": property.price,
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock",
-      "url": `https://tuleeto.com/property/${property.id}`,
+      "url": `https://tuleeto.space/property/${property.id}`,
       "priceValidUntil": new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0]
     }
   };
@@ -215,7 +216,7 @@ export const ItemListSchema = ({ properties, location }: ItemListSchemaProps) =>
       "item": {
         "@type": "Product",
         "name": property.title || `${property.bedrooms} BHK ${property.type}`,
-        "url": `https://tuleeto.com/property/${property.id}`,
+        "url": `https://tuleeto.space/property/${property.id}`,
         "image": property.images?.[0] || "",
         "offers": {
           "@type": "Offer",

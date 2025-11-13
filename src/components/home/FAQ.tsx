@@ -9,35 +9,59 @@ import FAQSchema from "@/components/seo/FAQSchema";
 const faqs = [
   {
     question: "What is Tuleeto?",
-    answer: "Tuleeto is a modern rental platform connecting tenants and property owners through a secure, AI-ready web application. We help you discover, book, and list residential and commercial properties across India."
+    answer: "Tuleeto is a modern rental platform connecting tenants and property owners through a secure, AI-ready web application. Founded by Sayan Kumar Gayen in 2025, Tuleeto operates across India to help people discover apartments, houses, and commercial spaces with verified listings and direct owner contact - no brokerage fees."
   },
   {
     question: "How does Tuleeto work?",
-    answer: "Tuleeto allows property owners to list their properties for free, while tenants can browse verified listings, filter by location and preferences, and directly contact owners. Our platform ensures transparency and ease of communication between both parties."
+    answer: "Tuleeto connects property owners and tenants directly. Owners can list their properties for free, and tenants can browse, filter, and contact owners directly through the platform without any brokerage fees."
+  },
+  {
+    question: "How is Tuleeto different from other rental platforms?",
+    answer: "Tuleeto eliminates middlemen and brokerage fees by enabling direct communication between property owners and tenants. We offer a modern, AI-ready platform with verified listings, comprehensive property details, photos, reviews, and an easy-to-use interface designed for the Indian rental market."
+  },
+  {
+    question: "Who founded Tuleeto?",
+    answer: "Tuleeto was founded by Sayan Kumar Gayen in 2025 with the vision to create a transparent, modern rental marketplace that connects property owners and tenants directly across India."
+  },
+  {
+    question: "Where does Tuleeto operate?",
+    answer: "Tuleeto operates across India, with properties available in major cities including Mumbai, Delhi, Bangalore, Hyderabad, Chennai, Pune, Kolkata, Ahmedabad, Jaipur, Chandigarh, and many more locations."
   },
   {
     question: "Is Tuleeto free to use?",
-    answer: "Yes, Tuleeto is completely free for both property seekers and owners. You can browse listings, contact owners, and list your properties without any charges."
+    answer: "Yes! Creating an account on Tuleeto is free. Listing properties is free for owners, and browsing properties is free for tenants. There are no hidden fees or brokerage charges."
   },
   {
-    question: "What types of properties can I find on Tuleeto?",
-    answer: "Tuleeto offers a wide range of properties including apartments, houses, villas, PG accommodations, hostels, commercial spaces like shops, showrooms, offices, godowns, and warehouses across India."
+    question: "Is it free to list my property?",
+    answer: "Yes! Listing your property on Tuleeto is completely free. You can add photos, descriptions, and all property details at no cost."
   },
   {
     question: "How do I list my property on Tuleeto?",
-    answer: "Simply create an account, click on 'List Property', fill in your property details, upload photos, and publish your listing. Your property will be visible to thousands of potential tenants immediately."
+    answer: "Create a free account, click on 'List Property' in your dashboard, fill in your property details, upload photos, and publish. Your listing will be visible to thousands of potential tenants immediately."
   },
   {
-    question: "Are the property listings verified?",
-    answer: "We encourage direct owner listings and provide tools for users to verify property authenticity. Tenants can contact owners directly, view detailed photos, and check reviews before making decisions."
+    question: "How do I contact property owners on Tuleeto?",
+    answer: "Once you create a free account and log in, you'll be able to see owner contact information and reach out directly to discuss the property."
   },
   {
-    question: "Can I search for properties by location?",
-    answer: "Yes, Tuleeto offers powerful location-based search. You can use your current location to find nearby properties or search by city, area, or landmark. Our system shows properties sorted by distance from your location."
+    question: "Are the properties verified?",
+    answer: "We encourage property owners to provide accurate information and photos. Users can also leave reviews and ratings to help maintain quality standards."
   },
   {
-    question: "How do I contact property owners?",
-    answer: "Each property listing displays the owner's contact information. You can directly call or message the owner through the provided contact details on the property page."
+    question: "What types of properties can I find?",
+    answer: "Tuleeto offers a wide range of properties including apartments, houses, villas, PGs, hostels, shops, showrooms, offices, godowns, and warehouses across India."
+  },
+  {
+    question: "Do I need to pay any brokerage?",
+    answer: "No! Tuleeto eliminates brokerage fees by connecting owners and tenants directly. All communication happens between you and the property owner."
+  },
+  {
+    question: "Can I save properties for later?",
+    answer: "Yes, you can add properties to your wishlist by clicking the heart icon. Your wishlist is saved to your account for easy access."
+  },
+  {
+    question: "How do I manage my listed properties?",
+    answer: "After listing a property, you can manage it from your dashboard. You can edit details, add photos, toggle visibility, and track tenant inquiries."
   }
 ];
 

@@ -32,7 +32,7 @@ export const generatePropertySEO = (property: any): SEOProps => {
     keywords: `${bhk}for rent ${location}, ${property.type} rental ${location}, rent ${property.type} ${location}, long term rental ${location}, Tuleeto ${location}`,
     ogImage: property.images?.[0] || defaultSEO.ogImage,
     ogType: "product.rental",
-    canonicalUrl: `https://tuleeto.com/property/${property.id}`,
+    canonicalUrl: `https://tuleeto.space/property/${property.id}`,
   };
 };
 

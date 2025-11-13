@@ -68,4 +68,4 @@ Disallow: /payment-dashboard
 Disallow: /reset-password
 
 # Sitemap location
-Sitemap: https://tuleeto.com/sitemap.xml
+Sitemap: https://tuleeto.space/sitemap.xml

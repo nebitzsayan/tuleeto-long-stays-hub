@@ -117,14 +117,18 @@ const ListingsPage = () => {
       <SEO {...generateListingsSEO(searchParams)} />
       <ItemListSchema properties={filteredProperties} location={location} />
       <BreadcrumbSchema items={[
-        { name: 'Home', url: 'https://tuleeto.com/' },
+        { name: 'Home', url: 'https://tuleeto.space/' },
         { name: location ? `${location} Rentals` : 'All Rentals' }
       ]} />
       <Navbar />
       
       <main className="flex-grow pt-16 md:pt-24 px-4 md:px-4 bg-tuleeto-off-white">
         <div className="container max-w-7xl mx-auto">
-          <h1 className="text-xl md:text-4xl font-bold mb-3 md:mb-6">Available Rentals</h1>
+          <h1 className="text-xl md:text-4xl font-bold mb-3 md:mb-6 text-foreground">
+            Rental Properties on Tuleeto
+            {location && ` | ${location}`}
+            {searchParams.get('type') && ` | ${searchParams.get('type')}s`}
+          </h1>
           
           <PropertyFilter />
           

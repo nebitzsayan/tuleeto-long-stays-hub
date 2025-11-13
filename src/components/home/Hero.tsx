@@ -45,7 +45,7 @@ const Hero = () => {
             <AspectRatio ratio={1} className="w-full">
               <img 
                 src="/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" 
-                alt="Person searching for home" 
+                alt="Tuleeto - Modern Rental Platform for Homes and Properties in India" 
                 className="w-full h-full object-contain"
                 width="320"
                 height="320"
@@ -56,10 +56,10 @@ const Hero = () => {
         </div>
         
         <h1 className="text-xl md:text-6xl font-bold mb-2 md:mb-6 text-gray-800">
-          Tuleeto: Find Your Perfect <span className="text-tuleeto-orange">Rental Home</span>
+          Tuleeto - Find Your Perfect Rental Home in India
         </h1>
-        <p className="text-sm md:text-2xl text-gray-600 mb-4 md:mb-12">
-          Discover properties for extended stays and make them your home
+        <p className="text-sm md:text-xl text-gray-700 mb-4 md:mb-8 max-w-3xl mx-auto leading-relaxed">
+          <strong>Tuleeto</strong> is a modern rental platform connecting tenants and property owners through a secure, AI-ready web application. Discover apartments, houses, and commercial spaces across India with verified listings and direct owner contact.
         </p>
 
         <div className="bg-white rounded-lg shadow-xl p-3 md:p-6 mx-auto max-w-3xl w-full">
