@@ -1,7 +1,24 @@
+# Tuleeto.com - Official Robots.txt
+# Allow all major search engines and AI crawlers
+
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 0
 
 User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
 Allow: /
 
 User-agent: Twitterbot
@@ -10,15 +27,45 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: ia_archiver
+Allow: /
+
+# AI and LLM Crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
 User-agent: *
 Allow: /
 Allow: /listings
 Allow: /property/
+Allow: /install
 
+# Disallow private and user-specific pages
 Disallow: /admin
 Disallow: /auth
 Disallow: /profile
 Disallow: /my-properties
 Disallow: /list-property
+Disallow: /edit-property
+Disallow: /wishlist
+Disallow: /tenants
+Disallow: /payment-dashboard
+Disallow: /reset-password
 
+# Sitemap location
 Sitemap: https://tuleeto.com/sitemap.xml

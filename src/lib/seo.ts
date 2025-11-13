@@ -9,9 +9,9 @@ export interface SEOProps {
 }
 
 export const defaultSEO: SEOProps = {
-  title: "Tuleeto - Find Long-Term Rental Houses, Apartments & Flats in India",
-  description: "Discover your perfect long-term rental home on Tuleeto. Browse thousands of apartments, houses, and flats for rent across India. Verified owners, fair prices, easy booking.",
-  keywords: "rental house India, long term rental, apartment for rent, flat for rent, house for rent, Tuleeto, rent property, PG, hostel",
+  title: "Tuleeto | Official Rental Platform for Modern Homes and Properties in India",
+  description: "Tuleeto is a digital rental marketplace to discover, book, and list properties across India. Find apartments, houses, shops, and commercial spaces. Direct owner contact, verified listings, no brokerage.",
+  keywords: "Tuleeto, Tuleeto India, rental house India, long term rental, apartment for rent, flat for rent, house for rent, rent property, PG, hostel, commercial property, shop for rent, showroom, office space",
   ogImage: "/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png",
   ogType: "website",
 };

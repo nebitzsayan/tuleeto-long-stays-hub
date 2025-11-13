@@ -2,21 +2,24 @@
 import Hero from "@/components/home/Hero";
 import FeaturedProperties from "@/components/home/FeaturedProperties";
 import HowItWorks from "@/components/home/HowItWorks";
+import FAQ from "@/components/home/FAQ";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SEO from "@/components/seo/SEO";
-import { RealEstateAgentSchema } from "@/components/seo/StructuredData";
+import { OrganizationSchema, WebSiteSchema } from "@/components/seo/StructuredData";
 
 const Index = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <SEO />
-      <RealEstateAgentSchema />
+      <OrganizationSchema />
+      <WebSiteSchema />
       <Navbar />
       <main className="flex-grow">
         <Hero />
         <FeaturedProperties />
         <HowItWorks />
+        <FAQ />
       </main>
       <Footer />
     </div>

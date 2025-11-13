@@ -56,7 +56,7 @@ const Hero = () => {
         </div>
         
         <h1 className="text-xl md:text-6xl font-bold mb-2 md:mb-6 text-gray-800">
-          Find Your Perfect <span className="text-tuleeto-orange">Long-Term Home</span>
+          Tuleeto: Find Your Perfect <span className="text-tuleeto-orange">Rental Home</span>
         </h1>
         <p className="text-sm md:text-2xl text-gray-600 mb-4 md:mb-12">
           Discover properties for extended stays and make them your home

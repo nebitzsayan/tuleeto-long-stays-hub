@@ -1,5 +1,87 @@
 import { Helmet } from "react-helmet-async";
 
+// Organization Schema - Primary entity for brand authority
+export const OrganizationSchema = ({
+  name = "Tuleeto",
+  url = "https://tuleeto.com",
+  logo = "https://tuleeto.com/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png"
+}: {
+  name?: string;
+  url?: string;
+  logo?: string;
+}) => {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Tuleeto",
+    "url": "https://tuleeto.com",
+    "alternateName": ["Tuleeto Official", "Tuleeto Rentals", "Tuleeto India"],
+    "logo": logo,
+    "description": "Tuleeto is a modern digital rental marketplace connecting tenants and property owners across India. Discover, book, and list residential and commercial properties with ease.",
+    "foundingDate": "2024",
+    "founder": {
+      "@type": "Person",
+      "name": "Tuleeto Team"
+    },
+    "sameAs": [
+      "https://www.facebook.com/tuleeto",
+      "https://twitter.com/tuleeto",
+      "https://www.linkedin.com/company/tuleeto"
+    ],
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "IN",
+      "addressRegion": "India"
+    },
+    "areaServed": {
+      "@type": "Country",
+      "name": "India"
+    },
+    "slogan": "Find Your Perfect Rental Home"
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    </Helmet>
+  );
+};
+
+// WebSite Schema for sitelinks search box
+export const WebSiteSchema = ({
+  url = "https://tuleeto.com",
+  name = "Tuleeto"
+}: {
+  url?: string;
+  name?: string;
+}) => {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": name,
+    "url": url,
+    "description": "Tuleeto is a digital rental marketplace to discover, book, and list properties across India.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://tuleeto.com/listings?search={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    </Helmet>
+  );
+};
+
 interface RealEstateAgentSchemaProps {
   name?: string;
   url?: string;
@@ -9,7 +91,7 @@ interface RealEstateAgentSchemaProps {
 export const RealEstateAgentSchema = ({
   name = "Tuleeto",
   url = "https://tuleeto.com",
-  logo = "https://tuleeto.com/logo.png"
+  logo = "https://tuleeto.com/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png"
 }: RealEstateAgentSchemaProps) => {
   const schema = {
     "@context": "https://schema.org",
