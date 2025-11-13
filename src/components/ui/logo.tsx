@@ -13,6 +13,9 @@ const Logo = ({ className = "", showText = true }: LogoProps) => {
         src="/images-resources/d5b8b33e-0c09-4345-8859-4dc176bc39a3.png"
         alt="Tuleeto Logo" 
         className="h-8 w-auto"
+        width="32"
+        height="32"
+        decoding="async"
       />
       {showText && <span className="text-xl md:text-2xl font-bold text-tuleeto-orange">Tuleeto</span>}
     </Link>

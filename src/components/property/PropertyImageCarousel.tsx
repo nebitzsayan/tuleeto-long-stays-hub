@@ -130,10 +130,14 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
           ) : (
             <img
               src={imageList[currentImageIndex]}
-              alt={`${title} - Image ${currentImageIndex + 1}`}
+              alt={`${title} - Image ${currentImageIndex + 1} - Rental property on Tuleeto`}
               className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
                 isTransitioning ? 'opacity-80 scale-95' : 'opacity-100 scale-100'
               }`}
+              loading="lazy"
+              decoding="async"
+              width="800"
+              height="600"
               onLoad={() => handleImageLoad(currentImageIndex, imageList[currentImageIndex])}
               onError={() => handleImageError(currentImageIndex)}
             />

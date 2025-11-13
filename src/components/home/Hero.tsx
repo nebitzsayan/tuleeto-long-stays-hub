@@ -45,11 +45,12 @@ const Hero = () => {
             <AspectRatio ratio={1} className="w-full">
               <img 
                 src="/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" 
-                alt="Tuleeto - Modern Rental Platform for Homes and Properties in India" 
+                alt="Person searching for home" 
                 className="w-full h-full object-contain"
                 width="320"
                 height="320"
                 fetchPriority="high"
+                decoding="async"
               />
             </AspectRatio>
           </div>
