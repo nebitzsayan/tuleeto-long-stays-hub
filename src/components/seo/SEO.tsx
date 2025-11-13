@@ -47,10 +47,13 @@ const SEO = ({
       <meta property="og:image:height" content="630" />
       
       {/* Additional SEO tags */}
-      <meta name="author" content="Tuleeto" />
+      <meta name="author" content="Sayan Kumar Gayen" />
       <meta name="language" content="English" />
       <meta name="revisit-after" content="7 days" />
       <meta name="distribution" content="global" />
+      <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+      <meta name="geo.region" content="IN" />
+      <meta name="geo.placename" content="India" />
     </Helmet>
   );
 };

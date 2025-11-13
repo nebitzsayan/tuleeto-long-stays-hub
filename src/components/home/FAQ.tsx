@@ -67,7 +67,7 @@ const faqs = [
 
 const FAQ = () => {
   return (
-    <section className="py-16 bg-muted/30">
+    <section className="sr-only" aria-hidden="true">
       <FAQSchema faqs={faqs} />
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">

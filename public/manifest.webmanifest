@@ -1,0 +1,42 @@
+{
+  "name": "Tuleeto - Official Rental Platform for Homes & Properties in India",
+  "short_name": "Tuleeto",
+  "description": "Tuleeto is India's modern rental marketplace. Find apartments, houses, villas, shops & offices. Direct owner contact, no brokerage.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "lifestyle", "utilities"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "scope": "/",
+  "screenshots": [
+    {
+      "src": "/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png",
+      "sizes": "1920x1920",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}

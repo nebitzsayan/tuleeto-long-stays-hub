@@ -59,7 +59,7 @@ const Hero = () => {
         <h1 className="text-xl md:text-6xl font-bold mb-2 md:mb-6 text-gray-800">
           Tuleeto - Find Your Perfect Rental Home in India
         </h1>
-        <p className="text-sm md:text-xl text-gray-700 mb-4 md:mb-8 max-w-3xl mx-auto leading-relaxed">
+        <p className="sr-only">
           <strong>Tuleeto</strong> is a modern rental platform connecting tenants and property owners through a secure, AI-ready web application. Discover apartments, houses, and commercial spaces across India with verified listings and direct owner contact.
         </p>
 
