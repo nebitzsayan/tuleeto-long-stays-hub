@@ -33,26 +33,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadSession = async () => {
-      try {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+    let mounted = true;
+    
+    // Set up auth state listener FIRST (before checking session)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (mounted) {
           setSession(session);
-          setUser(session?.user || null);
-        });
+          setUser(session?.user ?? null);
+        }
+      }
+    );
 
-        supabase.auth.onAuthStateChange(async (event, session) => {
-          setUser(session?.user || null);
-          setSession(session);
-        });
-      } catch (error) {
-        console.error("Authentication error:", error);
-        await logSecurityEvent('auth_context_error', { error });
-      } finally {
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
         setIsLoading(false);
       }
-    };
+    }).catch(async (error) => {
+      console.error("Authentication error:", error);
+      await logSecurityEvent('auth_context_error', { error });
+      if (mounted) {
+        setIsLoading(false);
+      }
+    });
 
-    loadSession();
+    // Cleanup subscription on unmount
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
