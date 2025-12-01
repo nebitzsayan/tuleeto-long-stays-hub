@@ -1,25 +1,84 @@
-# Tuleeto.com - Official Robots.txt
-# Allow all major search engines and AI crawlers
+# Tuleeto.space - Official Robots.txt
+# Modern Rental Platform for Homes & Properties in India
+# https://tuleeto.space
+
+# ===========================================
+# Major Search Engine Crawlers
+# ===========================================
 
 User-agent: Googlebot
 Allow: /
+Allow: /listings
+Allow: /property/
+Allow: /about
+Allow: /install
+Allow: /terms
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /auth
+Disallow: /profile
+Disallow: /my-properties
+Disallow: /list-property
+Disallow: /edit-property/*
+Disallow: /wishlist
+Disallow: /tenants
+Disallow: /payment-dashboard
+Disallow: /reset-password
+Disallow: /api/
+Disallow: /*?*modal
+Disallow: /*?*dialog
 Crawl-delay: 0
+
+User-agent: Googlebot-Image
+Allow: /images-resources/
+Allow: /pwa-192x192.png
+Allow: /pwa-512x512.png
+Disallow: /admin
 
 User-agent: Bingbot
 Allow: /
+Allow: /listings
+Allow: /property/
+Allow: /about
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /auth
+Disallow: /profile
+Disallow: /my-properties
+Disallow: /list-property
+Disallow: /edit-property/*
+Disallow: /wishlist
+Disallow: /tenants
+Disallow: /payment-dashboard
+Disallow: /reset-password
 Crawl-delay: 0
 
 User-agent: Slurp
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
+Disallow: /my-properties
 
 User-agent: DuckDuckBot
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
 
 User-agent: Baiduspider
 Allow: /
+Disallow: /admin
+Disallow: /auth
 
 User-agent: YandexBot
 Allow: /
+Disallow: /admin
+Disallow: /auth
+
+# ===========================================
+# Social Media Crawlers
+# ===========================================
 
 User-agent: Twitterbot
 Allow: /
@@ -30,33 +89,98 @@ Allow: /
 User-agent: LinkedInBot
 Allow: /
 
-User-agent: ia_archiver
+User-agent: Pinterest
 Allow: /
 
+User-agent: WhatsApp
+Allow: /
+
+# ===========================================
 # AI and LLM Crawlers
+# ===========================================
+
 User-agent: GPTBot
 Allow: /
+Allow: /listings
+Allow: /property/
+Allow: /about
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
+Disallow: /my-properties
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /auth
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /admin
+Disallow: /auth
 
 User-agent: CCBot
 Allow: /
+Disallow: /admin
+Disallow: /auth
 
 User-agent: anthropic-ai
 Allow: /
+Allow: /listings
+Allow: /property/
+Disallow: /admin
+Disallow: /auth
 
 User-agent: Claude-Web
 Allow: /
+Disallow: /admin
+Disallow: /auth
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /auth
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /auth
+
+User-agent: meta-externalagent
+Allow: /
+Disallow: /admin
+Disallow: /auth
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+Disallow: /admin
+Disallow: /auth
+
+# ===========================================
+# Archive Crawlers
+# ===========================================
+
+User-agent: ia_archiver
+Allow: /
+Disallow: /admin
+Disallow: /auth
+
+# ===========================================
+# Default Rules for All Other Bots
+# ===========================================
 
 User-agent: *
 Allow: /
 Allow: /listings
 Allow: /property/
+Allow: /about
 Allow: /install
-
-# Disallow private and user-specific pages
+Allow: /terms
 Disallow: /admin
+Disallow: /admin/*
 Disallow: /auth
 Disallow: /profile
 Disallow: /my-properties
@@ -66,6 +190,21 @@ Disallow: /wishlist
 Disallow: /tenants
 Disallow: /payment-dashboard
 Disallow: /reset-password
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /*?*page=
+Crawl-delay: 2
 
-# Sitemap location
+# ===========================================
+# Sitemap Location
+# ===========================================
+
 Sitemap: https://tuleeto.space/sitemap.xml
+
+# ===========================================
+# Host Directive
+# ===========================================
+
+Host: https://tuleeto.space
