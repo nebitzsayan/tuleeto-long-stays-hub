@@ -5,6 +5,7 @@ import HowItWorks from "@/components/home/HowItWorks";
 import ExploreCities from "@/components/home/ExploreCities";
 import BrowseByType from "@/components/home/BrowseByType";
 import FAQ from "@/components/home/FAQ";
+import OwnerCTA from "@/components/home/OwnerCTA";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SEO from "@/components/seo/SEO";
@@ -24,6 +25,7 @@ const Index = () => {
         <BrowseByType />
         <HowItWorks />
         <FAQ />
+        <OwnerCTA />
       </main>
       <Footer />
     </div>
