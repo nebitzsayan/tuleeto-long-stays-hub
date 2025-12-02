@@ -41,9 +41,9 @@ const OwnerCTA = () => {
             <Button
               asChild
               size="lg"
-              className="bg-white text-tuleeto-orange hover:bg-gray-50 text-lg md:text-xl px-8 md:px-12 py-6 md:py-8 h-auto rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 font-bold"
+              className="bg-white text-tuleeto-orange hover:bg-white/95 text-lg md:text-xl px-8 md:px-12 py-6 md:py-8 h-auto rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 font-bold"
             >
-              <Link to="/list-property">
+              <Link to="/list-property" className="flex items-center">
                 List Your Property
                 <ArrowRight className="ml-2 h-5 w-5 md:h-6 md:w-6" />
               </Link>

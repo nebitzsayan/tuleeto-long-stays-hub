@@ -23,9 +23,9 @@ const Index = () => {
         <FeaturedProperties />
         <ExploreCities />
         <BrowseByType />
+        <OwnerCTA />
         <HowItWorks />
         <FAQ />
-        <OwnerCTA />
       </main>
       <Footer />
     </div>

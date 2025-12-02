@@ -6,15 +6,17 @@ const Footer = () => {
   return (
     <footer className="bg-white text-gray-800 mt-auto border-t border-gray-200">
       <div className="container max-w-7xl mx-auto py-6 px-4">
-        <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-          {/* Brand */}
-          <div className="text-center md:text-left">
-            <Logo className="mb-2" />
+        <div className="flex flex-col md:flex-row items-start justify-between space-y-4 md:space-y-0 gap-8">
+          {/* Brand with Description */}
+          <div className="text-center md:text-left max-w-xs">
+            <Logo className="mb-3" />
+            <p className="text-sm text-gray-600 leading-relaxed">
+              India&apos;s trusted rental marketplace connecting property owners with verified tenants for apartments, houses, villas, and commercial spaces.
+            </p>
           </div>
 
           {/* Navigation Links */}
-          <div className="flex gap-6 flex-wrap justify-center">
-            <Link to="/about" className="text-gray-700 hover:text-tuleeto-orange transition-colors">About</Link>
+          <div className="flex gap-6 flex-wrap justify-center md:justify-end">
             <Link to="/listings" className="text-gray-700 hover:text-tuleeto-orange transition-colors">Browse Properties</Link>
             <Link to="/terms" className="text-gray-700 hover:text-tuleeto-orange transition-colors">Terms of Service</Link>
           </div>
