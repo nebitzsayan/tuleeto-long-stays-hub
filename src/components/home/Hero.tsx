@@ -19,12 +19,12 @@ const Hero = () => {
     requestLocation();
   }, []);
 
-  // Pre-fill search box with detected city
+  // Pre-fill search box with detected city (only depend on city)
   useEffect(() => {
-    if (city && permissionStatus === 'granted') {
+    if (city) {
       setLocation(city);
     }
-  }, [city, permissionStatus]);
+  }, [city]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,12 +70,12 @@ const Hero = () => {
                 <Loader2 className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-tuleeto-orange animate-spin" />
               )}
               {!isLoading && (
-                <MapPin className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                <MapPin className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400 cursor-pointer hover:text-tuleeto-orange transition-colors" onClick={requestLocation} />
               )}
               <Input
                 type="text"
                 placeholder={isLoading ? "Detecting location..." : "Where do you want to live?"}
-                className="pl-10 h-9 md:h-12 text-sm md:text-lg"
+                className="pl-10 pr-3 h-9 md:h-12 text-sm md:text-lg"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 disabled={isLoading}
