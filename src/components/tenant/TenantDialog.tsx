@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tenant } from "@/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TenantDialogProps {
   open: boolean;
@@ -17,6 +19,7 @@ interface TenantDialogProps {
 }
 
 export function TenantDialog({ open, onOpenChange, tenant, propertyId, onSave }: TenantDialogProps) {
+  const isMobile = useIsMobile();
   const { register, handleSubmit, reset, formState: { errors, isSubmitting }, setValue, watch } = useForm({
     defaultValues: {
       name: "",
@@ -76,82 +79,99 @@ export function TenantDialog({ open, onOpenChange, tenant, propertyId, onSave }:
     });
   };
 
+  const formContent = (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name *</Label>
+          <Input id="name" {...register("name", { required: "Name is required" })} />
+          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone *</Label>
+          <Input id="phone" {...register("phone", { required: "Phone is required" })} />
+          {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" {...register("email")} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="room_number">Room Number</Label>
+          <Input id="room_number" {...register("room_number")} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="move_in_date">Move In Date *</Label>
+          <Input id="move_in_date" type="date" {...register("move_in_date", { required: "Move in date is required" })} />
+          {errors.move_in_date && <p className="text-sm text-destructive">{errors.move_in_date.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="move_out_date">Move Out Date</Label>
+          <Input id="move_out_date" type="date" {...register("move_out_date")} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="monthly_rent">Monthly Rent *</Label>
+          <Input id="monthly_rent" type="number" step="0.01" {...register("monthly_rent", { required: "Monthly rent is required" })} />
+          {errors.monthly_rent && <p className="text-sm text-destructive">{errors.monthly_rent.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="security_deposit">Security Deposit</Label>
+          <Input id="security_deposit" type="number" step="0.01" {...register("security_deposit")} />
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="is_active"
+          checked={isActive}
+          onCheckedChange={(checked) => setValue("is_active", checked)}
+        />
+        <Label htmlFor="is_active">Active Tenant</Label>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" {...register("notes")} rows={3} />
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[95vh] overflow-y-auto p-4">
+          <SheetHeader className="mb-4">
+            <SheetTitle>{tenant ? "Edit Tenant" : "Add New Tenant"}</SheetTitle>
+          </SheetHeader>
+          {formContent}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full sm:max-w-md md:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>{tenant ? "Edit Tenant" : "Add New Tenant"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input id="name" {...register("name", { required: "Name is required" })} />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone *</Label>
-              <Input id="phone" {...register("phone", { required: "Phone is required" })} />
-              {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="room_number">Room Number</Label>
-              <Input id="room_number" {...register("room_number")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="move_in_date">Move In Date *</Label>
-              <Input id="move_in_date" type="date" {...register("move_in_date", { required: "Move in date is required" })} />
-              {errors.move_in_date && <p className="text-sm text-destructive">{errors.move_in_date.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="move_out_date">Move Out Date</Label>
-              <Input id="move_out_date" type="date" {...register("move_out_date")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="monthly_rent">Monthly Rent *</Label>
-              <Input id="monthly_rent" type="number" step="0.01" {...register("monthly_rent", { required: "Monthly rent is required" })} />
-              {errors.monthly_rent && <p className="text-sm text-destructive">{errors.monthly_rent.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="security_deposit">Security Deposit</Label>
-              <Input id="security_deposit" type="number" step="0.01" {...register("security_deposit")} />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is_active"
-              checked={isActive}
-              onCheckedChange={(checked) => setValue("is_active", checked)}
-            />
-            <Label htmlFor="is_active">Active Tenant</Label>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" {...register("notes")} rows={3} />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save"}
-            </Button>
-          </div>
-        </form>
+        {formContent}
       </DialogContent>
     </Dialog>
   );
