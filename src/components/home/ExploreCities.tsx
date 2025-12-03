@@ -3,14 +3,14 @@ import { MapPin } from "lucide-react";
 
 const cities = [
   { name: "Mumbai", emoji: "🏙️" },
-  { name: "Delhi", emoji: "🕌" },
+  { name: "Delhi", image: "/images-resources/delhi-city.png" },
   { name: "Bangalore", emoji: "💻" },
   { name: "Hyderabad", emoji: "🏰" },
   { name: "Chennai", emoji: "🌊" },
   { name: "Pune", emoji: "🎓" },
   { name: "Kolkata", emoji: "🎭" },
-  { name: "Ahmedabad", emoji: "🏛️" },
-  { name: "Jaipur", emoji: "👑" },
+  { name: "Jaipur", image: "/images-resources/jaipur-city.png" },
+  { name: "Puri", image: "/images-resources/puri-city.png" },
   { name: "Chandigarh", emoji: "🌳" },
 ];
 
@@ -32,12 +32,20 @@ const ExploreCities = () => {
             <Link
               key={city.name}
               to={`/listings?search=${city.name}`}
-              className="group relative overflow-hidden rounded-lg border border-border bg-card p-6 hover:shadow-lg transition-all duration-300 hover:scale-105"
+              className="group relative overflow-hidden rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-all duration-300 hover:scale-105"
             >
               <div className="flex flex-col items-center text-center space-y-3">
-                <span className="text-4xl" role="img" aria-label={city.name}>
-                  {city.emoji}
-                </span>
+                {city.image ? (
+                  <img 
+                    src={city.image} 
+                    alt={`${city.name} city`}
+                    className="w-16 h-16 object-contain"
+                  />
+                ) : (
+                  <span className="text-4xl" role="img" aria-label={city.name}>
+                    {city.emoji}
+                  </span>
+                )}
                 <div className="space-y-1">
                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     {city.name}

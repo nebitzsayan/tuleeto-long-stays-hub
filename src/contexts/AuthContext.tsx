@@ -41,6 +41,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
+          
+          // Clear URL hash after OAuth callback to remove access_token from URL
+          if (event === 'SIGNED_IN' && window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
         }
       }
     );

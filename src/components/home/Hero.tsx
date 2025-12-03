@@ -21,10 +21,11 @@ const Hero = () => {
 
   // Pre-fill search box with detected city (only depend on city)
   useEffect(() => {
-    if (city) {
+    console.log('Location detected:', { city, isLoading, permissionStatus });
+    if (city && !location) {
       setLocation(city);
     }
-  }, [city]);
+  }, [city, isLoading, permissionStatus]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
