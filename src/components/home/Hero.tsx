@@ -74,7 +74,7 @@ const Hero = () => {
               )}
               <Input
                 type="text"
-                placeholder={isLoading ? "Detecting location..." : "Where do you want to live?"}
+                placeholder={isLoading ? "Detecting location..." : city ? `Search ${city} property` : "Where do you want to live?"}
                 className="pl-10 pr-3 h-9 md:h-12 text-sm md:text-lg"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
