@@ -23,22 +23,21 @@ const InstallPrompt = () => {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(iOS);
 
-    // Check if user has dismissed the prompt before
-    const hasSeenPrompt = localStorage.getItem('pwa-install-dismissed');
-    
-    if (!isInStandaloneMode && !hasSeenPrompt) {
+    // Show prompt on every visit (no localStorage check)
+    if (!isInStandaloneMode) {
       // Listen for the beforeinstallprompt event
       const handleBeforeInstallPrompt = (e: Event) => {
         e.preventDefault();
         setDeferredPrompt(e as BeforeInstallPromptEvent);
-        setIsVisible(true);
+        // Delay showing prompt by 5 seconds
+        setTimeout(() => setIsVisible(true), 5000);
       };
 
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
       // Show iOS prompt after a delay
-      if (iOS && !isInStandaloneMode) {
-        setTimeout(() => setIsVisible(true), 3000);
+      if (iOS) {
+        setTimeout(() => setIsVisible(true), 5000);
       }
 
       return () => {
@@ -70,7 +69,7 @@ const InstallPrompt = () => {
 
   const handleDismiss = () => {
     setIsVisible(false);
-    localStorage.setItem('pwa-install-dismissed', 'true');
+    // Don't save to localStorage - show prompt on every visit
   };
 
   if (!isVisible || isStandalone) {

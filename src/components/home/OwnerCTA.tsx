@@ -27,8 +27,8 @@ const OwnerCTA = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {benefits.map((benefit, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <CheckCircle2 className="h-6 w-6 md:h-7 md:w-7 flex-shrink-0" />
-                  <span className="text-base md:text-lg lg:text-xl font-medium">
+                  <CheckCircle2 className="h-6 w-6 md:h-7 md:w-7 flex-shrink-0 text-white" />
+                  <span className="text-base md:text-lg lg:text-xl font-medium text-white">
                     {benefit}
                   </span>
                 </div>
