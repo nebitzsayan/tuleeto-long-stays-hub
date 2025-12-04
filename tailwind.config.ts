@@ -65,10 +65,13 @@ export default {
 					border: 'hsl(214.3 31.8% 91.4%)',
 					ring: 'hsl(24 96% 53%)'
 				},
-				tuleeto: {
+			tuleeto: {
 					orange: '#F97316',
 					'orange-light': '#FDBA74',
 					'orange-dark': '#C2410C',
+					blue: '#3B82F6',
+					'blue-light': '#93C5FD',
+					'blue-dark': '#1D4ED8',
 					white: '#FFFFFF',
 					'off-white': '#F3F4F6',
 					'gray-light': '#E5E7EB',
