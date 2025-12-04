@@ -28,6 +28,17 @@ const Navbar = () => {
   const isMobile = useIsMobile();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Track scroll position for navbar blur effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check initial scroll position
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -69,27 +80,31 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`fixed w-full top-0 z-50 backdrop-blur-md bg-white/20 border-b shadow-sm theme-transition ${
-      isRealEstate ? 'border-blue-200/30' : 'border-orange-200/30'
+    <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+      isScrolled 
+        ? `backdrop-blur-md bg-white/80 border-b shadow-sm ${isRealEstate ? 'border-blue-200/30' : 'border-orange-200/30'}`
+        : 'bg-transparent border-transparent'
     }`}>
-      <div 
-        className={`absolute inset-0 theme-transition ${
-          isRealEstate 
-            ? 'bg-gradient-to-r from-blue-50/40 via-white/30 to-blue-100/40'
-            : 'bg-gradient-to-r from-orange-50/40 via-white/30 to-orange-100/40'
-        }`}
-        style={{
-          backgroundImage: isRealEstate
-            ? `
-              radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(29, 78, 216, 0.03) 0%, transparent 50%)
-            `
-            : `
-              radial-gradient(circle at 25% 25%, rgba(251, 146, 60, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(249, 115, 22, 0.03) 0%, transparent 50%)
-            `
-        }}
-      />
+      {isScrolled && (
+        <div 
+          className={`absolute inset-0 theme-transition ${
+            isRealEstate 
+              ? 'bg-gradient-to-r from-blue-50/40 via-white/30 to-blue-100/40'
+              : 'bg-gradient-to-r from-orange-50/40 via-white/30 to-orange-100/40'
+          }`}
+          style={{
+            backgroundImage: isRealEstate
+              ? `
+                radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(29, 78, 216, 0.03) 0%, transparent 50%)
+              `
+              : `
+                radial-gradient(circle at 25% 25%, rgba(251, 146, 60, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(249, 115, 22, 0.03) 0%, transparent 50%)
+              `
+          }}
+        />
+      )}
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center">

@@ -41,11 +41,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          
-          // Clear URL hash after OAuth callback to remove access_token from URL
-          if (event === 'SIGNED_IN' && window.location.hash) {
-            window.history.replaceState(null, '', window.location.pathname);
-          }
         }
       }
     );
@@ -71,6 +66,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Clear OAuth hash from URL AFTER session is confirmed
+  useEffect(() => {
+    if (session && window.location.hash.includes('access_token')) {
+      // Defer clearing to ensure OAuth flow is complete
+      setTimeout(() => {
+        window.history.replaceState(null, '', window.location.pathname);
+      }, 100);
+    }
+  }, [session]);
 
   useEffect(() => {
     const fetchProfile = async () => {
