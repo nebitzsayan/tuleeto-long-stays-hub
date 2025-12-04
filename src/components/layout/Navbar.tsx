@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAppMode } from "@/contexts/AppModeContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, LogOut, User, Heart, Download } from "lucide-react";
+import { Home, LogOut, User, Heart, Download, Building2, Key } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Logo from "@/components/ui/logo";
 
@@ -23,6 +24,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 const Navbar = () => {
   const { user, userProfile, signOut } = useAuth();
+  const { mode, toggleMode, isRentals, isRealEstate } = useAppMode();
   const isMobile = useIsMobile();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
@@ -67,14 +69,25 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed w-full top-0 z-50 backdrop-blur-md bg-white/20 border-b border-orange-200/30 shadow-sm">
+    <nav className={`fixed w-full top-0 z-50 backdrop-blur-md bg-white/20 border-b shadow-sm theme-transition ${
+      isRealEstate ? 'border-blue-200/30' : 'border-orange-200/30'
+    }`}>
       <div 
-        className="absolute inset-0 bg-gradient-to-r from-orange-50/40 via-white/30 to-orange-100/40"
+        className={`absolute inset-0 theme-transition ${
+          isRealEstate 
+            ? 'bg-gradient-to-r from-blue-50/40 via-white/30 to-blue-100/40'
+            : 'bg-gradient-to-r from-orange-50/40 via-white/30 to-orange-100/40'
+        }`}
         style={{
-          backgroundImage: `
-            radial-gradient(circle at 25% 25%, rgba(251, 146, 60, 0.05) 0%, transparent 50%),
-            radial-gradient(circle at 75% 75%, rgba(249, 115, 22, 0.03) 0%, transparent 50%)
-          `
+          backgroundImage: isRealEstate
+            ? `
+              radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 75% 75%, rgba(29, 78, 216, 0.03) 0%, transparent 50%)
+            `
+            : `
+              radial-gradient(circle at 25% 25%, rgba(251, 146, 60, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 75% 75%, rgba(249, 115, 22, 0.03) 0%, transparent 50%)
+            `
         }}
       />
       <div className="container mx-auto px-4 relative z-10">
@@ -83,23 +96,59 @@ const Navbar = () => {
             <Logo />
           </Link>
 
+          {/* Mode Toggle Switch */}
+          <div className="hidden md:flex items-center">
+            <div className={`relative flex items-center p-1 rounded-full theme-transition ${
+              isRealEstate ? 'bg-blue-100/50' : 'bg-orange-100/50'
+            }`}>
+              <button
+                onClick={() => toggleMode()}
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  isRentals 
+                    ? 'bg-tuleeto-orange text-white shadow-md' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Key className="h-4 w-4" />
+                <span>Rentals</span>
+              </button>
+              <button
+                onClick={() => toggleMode()}
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  isRealEstate 
+                    ? 'bg-tuleeto-blue text-white shadow-md' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Building2 className="h-4 w-4" />
+                <span>Real Estate</span>
+              </button>
+            </div>
+          </div>
+
           <div className="hidden md:flex items-center space-x-6">
             <Link 
               to="/listings" 
-              className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md"
+              className={`text-gray-700 transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md ${
+                isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
+              }`}
             >
               Browse Properties
             </Link>
             <Link 
               to="/list-property" 
-              className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md"
+              className={`text-gray-700 transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md ${
+                isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
+              }`}
             >
               List Property
             </Link>
             {user && (
               <Link 
                 to="/wishlist" 
-                className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium flex items-center gap-2 backdrop-blur-sm px-3 py-2 rounded-md"
+                className={`text-gray-700 transition-colors font-medium flex items-center gap-2 backdrop-blur-sm px-3 py-2 rounded-md ${
+                  isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
+                }`}
               >
                 <Heart className="h-4 w-4" />
                 Wishlist
@@ -119,13 +168,27 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Mobile Mode Toggle */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={toggleMode}
+                className={`p-2 rounded-full transition-all duration-300 ${
+                  isRealEstate 
+                    ? 'bg-tuleeto-blue/10 text-tuleeto-blue' 
+                    : 'bg-tuleeto-orange/10 text-tuleeto-orange'
+                }`}
+              >
+                {isRealEstate ? <Building2 className="h-5 w-5" /> : <Key className="h-5 w-5" />}
+              </button>
+            </div>
+            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full backdrop-blur-sm">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={userProfile?.avatar_url || user.user_metadata?.avatar_url} alt={user.email} />
-                      <AvatarFallback className="bg-tuleeto-orange text-white">
+                      <AvatarFallback className={isRealEstate ? 'bg-tuleeto-blue text-white' : 'bg-tuleeto-orange text-white'}>
                         {userProfile?.full_name ? (
                           userProfile.full_name
                             .split(' ')
@@ -196,7 +259,9 @@ const Navbar = () => {
                 <Button 
                   variant="ghost" 
                   size={isMobile ? "sm" : "sm"}
-                  className="text-gray-700 hover:text-tuleeto-orange backdrop-blur-sm"
+                  className={`text-gray-700 backdrop-blur-sm ${
+                    isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
+                  }`}
                 >
                   Sign In
                 </Button>

@@ -5,15 +5,55 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormValues } from "./PropertyListingForm";
+import { useAppMode } from "@/contexts/AppModeContext";
+
+const rentalPropertyTypes = [
+  { value: "Apartment", label: "Apartment" },
+  { value: "House", label: "House" },
+  { value: "Studio", label: "Studio" },
+  { value: "Townhouse", label: "Townhouse" },
+  { value: "Villa", label: "Villa" },
+  { value: "Flat", label: "Flat" },
+  { value: "Shop", label: "Shop" },
+  { value: "Showroom", label: "Showroom" },
+  { value: "Godown", label: "Godown" },
+  { value: "Office", label: "Office" },
+  { value: "Warehouse", label: "Warehouse" },
+];
+
+const realEstatePropertyTypes = [
+  { value: "Land", label: "Land" },
+  { value: "Plot", label: "Plot" },
+  { value: "House", label: "House" },
+  { value: "Villa", label: "Villa" },
+  { value: "Apartment", label: "Apartment" },
+  { value: "Godown", label: "Godown" },
+  { value: "Shop", label: "Shop" },
+  { value: "Showroom", label: "Showroom" },
+  { value: "Commercial Space", label: "Commercial Space" },
+  { value: "Farm Land", label: "Farm Land" },
+];
 
 interface PropertyDetailsStepProps {
   form: UseFormReturn<FormValues>;
 }
 
 export const PropertyDetailsStep = ({ form }: PropertyDetailsStepProps) => {
+  const { isRealEstate, isRentals } = useAppMode();
+  const propertyTypes = isRealEstate ? realEstatePropertyTypes : rentalPropertyTypes;
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Property Details</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Property Details</h2>
+        <span className={`text-sm px-3 py-1 rounded-full font-medium ${
+          isRealEstate 
+            ? 'bg-tuleeto-blue/10 text-tuleeto-blue' 
+            : 'bg-tuleeto-orange/10 text-tuleeto-orange'
+        }`}>
+          {isRealEstate ? '🏡 For Sale' : '🏠 For Rent'}
+        </span>
+      </div>
       
       <FormField
         control={form.control}
@@ -31,17 +71,11 @@ export const PropertyDetailsStep = ({ form }: PropertyDetailsStepProps) => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="Apartment">Apartment</SelectItem>
-                <SelectItem value="House">House</SelectItem>
-                <SelectItem value="Studio">Studio</SelectItem>
-                <SelectItem value="Townhouse">Townhouse</SelectItem>
-                <SelectItem value="Villa">Villa</SelectItem>
-                <SelectItem value="Flat">Flat</SelectItem>
-                <SelectItem value="Shop">Shop</SelectItem>
-                <SelectItem value="Showroom">Showroom</SelectItem>
-                <SelectItem value="Godown">Godown</SelectItem>
-                <SelectItem value="Office">Office</SelectItem>
-                <SelectItem value="Warehouse">Warehouse</SelectItem>
+                {propertyTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FormMessage />
@@ -56,7 +90,13 @@ export const PropertyDetailsStep = ({ form }: PropertyDetailsStepProps) => {
           <FormItem>
             <FormLabel>Property Title</FormLabel>
             <FormControl>
-              <Input placeholder="e.g. Modern Downtown Apartment" {...field} />
+              <Input 
+                placeholder={isRealEstate 
+                  ? "e.g. Prime Location Plot for Sale" 
+                  : "e.g. Modern Downtown Apartment"
+                } 
+                {...field} 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -71,7 +111,10 @@ export const PropertyDetailsStep = ({ form }: PropertyDetailsStepProps) => {
             <FormLabel>Description</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder="Describe your property in detail..." 
+                placeholder={isRealEstate 
+                  ? "Describe the property details, land area, location advantages..." 
+                  : "Describe your property in detail..."
+                }
                 className="min-h-[120px]"
                 {...field} 
               />

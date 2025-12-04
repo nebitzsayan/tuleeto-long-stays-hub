@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import { AuthProvider } from './contexts/AuthContext';
+import { AppModeProvider } from './contexts/AppModeContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import { Toaster } from 'sonner';
@@ -48,8 +49,9 @@ function App() {
       <HelmetProvider>
         <BrowserRouter>
           <AuthProvider>
-            <LocationProvider>
-              <div className="App">
+            <AppModeProvider>
+              <LocationProvider>
+                <div className="App">
               <InstallPrompt />
               <Suspense fallback={
                 <div className="flex items-center justify-center min-h-screen">
@@ -131,9 +133,10 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-              <Toaster />
-            </div>
-          </LocationProvider>
+                <Toaster />
+              </div>
+            </LocationProvider>
+          </AppModeProvider>
         </AuthProvider>
       </BrowserRouter>
       </HelmetProvider>
