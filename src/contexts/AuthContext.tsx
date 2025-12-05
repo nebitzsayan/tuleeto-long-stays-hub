@@ -37,28 +37,49 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     // Set up auth state listener FIRST (before checking session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (event, currentSession) => {
         if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          
+          // Clear OAuth hash after successful sign in
+          if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
+            // Use setTimeout to ensure the auth flow completes first
+            setTimeout(() => {
+              window.history.replaceState(null, '', window.location.pathname);
+            }, 100);
+          }
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-      }
-    }).catch(async (error) => {
-      console.error("Authentication error:", error);
-      await logSecurityEvent('auth_context_error', { error });
-      if (mounted) {
-        setIsLoading(false);
-      }
-    });
+    // Check for OAuth callback with hash
+    const hasOAuthHash = window.location.hash.includes('access_token');
+    
+    if (hasOAuthHash) {
+      // For OAuth callbacks, let onAuthStateChange handle it
+      // Just set loading to false after a short delay
+      setTimeout(() => {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }, 1000);
+    } else {
+      // For normal page loads, check existing session
+      supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+        if (mounted) {
+          setSession(existingSession);
+          setUser(existingSession?.user ?? null);
+          setIsLoading(false);
+        }
+      }).catch(async (error) => {
+        console.error("Authentication error:", error);
+        await logSecurityEvent('auth_context_error', { error });
+        if (mounted) {
+          setIsLoading(false);
+        }
+      });
+    }
 
     // Cleanup subscription on unmount
     return () => {
@@ -66,16 +87,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       subscription.unsubscribe();
     };
   }, []);
-
-  // Clear OAuth hash from URL AFTER session is confirmed
-  useEffect(() => {
-    if (session && window.location.hash.includes('access_token')) {
-      // Defer clearing to ensure OAuth flow is complete
-      setTimeout(() => {
-        window.history.replaceState(null, '', window.location.pathname);
-      }, 100);
-    }
-  }, [session]);
 
   useEffect(() => {
     const fetchProfile = async () => {

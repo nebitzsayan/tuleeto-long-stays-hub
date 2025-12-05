@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAppMode } from "@/contexts/AppModeContext";
+import { useLocationContext } from "@/contexts/LocationContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,9 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, LogOut, User, Heart, Download, Building2, Key } from "lucide-react";
+import { Home, LogOut, User, Heart, Download, MapPin, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Logo from "@/components/ui/logo";
+import { toast } from "sonner";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -24,7 +25,8 @@ interface BeforeInstallPromptEvent extends Event {
 
 const Navbar = () => {
   const { user, userProfile, signOut } = useAuth();
-  const { mode, toggleMode, isRentals, isRealEstate } = useAppMode();
+  const { requestLocation, city, isLoading: locationLoading } = useLocationContext();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
@@ -79,29 +81,48 @@ const Navbar = () => {
     }
   };
 
+  const handleLocationClick = async () => {
+    toast.loading("Detecting your location...", { id: "location-detect" });
+    try {
+      await requestLocation();
+      toast.dismiss("location-detect");
+      // Navigate to listings with the detected city
+      if (city) {
+        toast.success(`Location detected: ${city}`);
+        navigate(`/listings?location=${encodeURIComponent(city)}`);
+      } else {
+        // If city detection takes a moment, wait and retry
+        setTimeout(() => {
+          const currentCity = city;
+          if (currentCity) {
+            toast.success(`Location detected: ${currentCity}`);
+            navigate(`/listings?location=${encodeURIComponent(currentCity)}`);
+          } else {
+            toast.success("Location detected! Showing nearby properties.");
+            navigate('/listings');
+          }
+        }, 500);
+      }
+    } catch (error) {
+      toast.dismiss("location-detect");
+      toast.error("Could not detect location. Please enable location access.");
+    }
+  };
+
   return (
     <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${
       isScrolled 
-        ? `backdrop-blur-md bg-white/80 border-b shadow-sm ${isRealEstate ? 'border-blue-200/30' : 'border-orange-200/30'}`
+        ? 'backdrop-blur-md bg-white/80 border-b border-orange-200/30 shadow-sm'
         : 'bg-transparent border-transparent'
     }`}>
       {isScrolled && (
         <div 
-          className={`absolute inset-0 theme-transition ${
-            isRealEstate 
-              ? 'bg-gradient-to-r from-blue-50/40 via-white/30 to-blue-100/40'
-              : 'bg-gradient-to-r from-orange-50/40 via-white/30 to-orange-100/40'
-          }`}
+          className="absolute inset-0"
           style={{
-            backgroundImage: isRealEstate
-              ? `
-                radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(29, 78, 216, 0.03) 0%, transparent 50%)
-              `
-              : `
-                radial-gradient(circle at 25% 25%, rgba(251, 146, 60, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(249, 115, 22, 0.03) 0%, transparent 50%)
-              `
+            backgroundImage: `
+              radial-gradient(circle at 25% 25%, rgba(251, 146, 60, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 75% 75%, rgba(249, 115, 22, 0.03) 0%, transparent 50%)
+            `
           }}
         />
       )}
@@ -111,59 +132,41 @@ const Navbar = () => {
             <Logo />
           </Link>
 
-          {/* Mode Toggle Switch */}
+          {/* Location Button */}
           <div className="hidden md:flex items-center">
-            <div className={`relative flex items-center p-1 rounded-full theme-transition ${
-              isRealEstate ? 'bg-blue-100/50' : 'bg-orange-100/50'
-            }`}>
-              <button
-                onClick={() => toggleMode()}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  isRentals 
-                    ? 'bg-tuleeto-orange text-white shadow-md' 
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <Key className="h-4 w-4" />
-                <span>Rentals</span>
-              </button>
-              <button
-                onClick={() => toggleMode()}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  isRealEstate 
-                    ? 'bg-tuleeto-blue text-white shadow-md' 
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <Building2 className="h-4 w-4" />
-                <span>Real Estate</span>
-              </button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLocationClick}
+              disabled={locationLoading}
+              className="flex items-center gap-2 border-tuleeto-orange/30 text-tuleeto-orange hover:bg-tuleeto-orange/10 hover:text-tuleeto-orange"
+            >
+              {locationLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MapPin className="h-4 w-4" />
+              )}
+              <span>{city || "Find Nearby"}</span>
+            </Button>
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
             <Link 
               to="/listings" 
-              className={`text-gray-700 transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md ${
-                isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
-              }`}
+              className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md"
             >
               Browse Properties
             </Link>
             <Link 
               to="/list-property" 
-              className={`text-gray-700 transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md ${
-                isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
-              }`}
+              className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md"
             >
               List Property
             </Link>
             {user && (
               <Link 
                 to="/wishlist" 
-                className={`text-gray-700 transition-colors font-medium flex items-center gap-2 backdrop-blur-sm px-3 py-2 rounded-md ${
-                  isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
-                }`}
+                className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium flex items-center gap-2 backdrop-blur-sm px-3 py-2 rounded-md"
               >
                 <Heart className="h-4 w-4" />
                 Wishlist
@@ -183,17 +186,18 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Mobile Mode Toggle */}
+            {/* Mobile Location Button */}
             <div className="md:hidden flex items-center">
               <button
-                onClick={toggleMode}
-                className={`p-2 rounded-full transition-all duration-300 ${
-                  isRealEstate 
-                    ? 'bg-tuleeto-blue/10 text-tuleeto-blue' 
-                    : 'bg-tuleeto-orange/10 text-tuleeto-orange'
-                }`}
+                onClick={handleLocationClick}
+                disabled={locationLoading}
+                className="p-2 rounded-full transition-all duration-300 bg-tuleeto-orange/10 text-tuleeto-orange"
               >
-                {isRealEstate ? <Building2 className="h-5 w-5" /> : <Key className="h-5 w-5" />}
+                {locationLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <MapPin className="h-5 w-5" />
+                )}
               </button>
             </div>
             
@@ -203,7 +207,7 @@ const Navbar = () => {
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full backdrop-blur-sm">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={userProfile?.avatar_url || user.user_metadata?.avatar_url} alt={user.email} />
-                      <AvatarFallback className={isRealEstate ? 'bg-tuleeto-blue text-white' : 'bg-tuleeto-orange text-white'}>
+                      <AvatarFallback className="bg-tuleeto-orange text-white">
                         {userProfile?.full_name ? (
                           userProfile.full_name
                             .split(' ')
@@ -274,9 +278,7 @@ const Navbar = () => {
                 <Button 
                   variant="ghost" 
                   size={isMobile ? "sm" : "sm"}
-                  className={`text-gray-700 backdrop-blur-sm ${
-                    isRealEstate ? 'hover:text-tuleeto-blue' : 'hover:text-tuleeto-orange'
-                  }`}
+                  className="text-gray-700 hover:text-tuleeto-orange backdrop-blur-sm"
                 >
                   Sign In
                 </Button>
