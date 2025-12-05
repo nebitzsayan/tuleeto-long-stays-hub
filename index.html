@@ -17,8 +17,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Primary Meta Tags -->
-    <title>Tuleeto | Official Rental Platform for Homes & Properties in India</title>
-    <meta name="title" content="Tuleeto | Official Rental Platform for Homes & Properties in India" />
+    <title>Tuleeto - India's Rental Platform for Homes & Properties</title>
+    <meta name="title" content="Tuleeto - India's Rental Platform for Homes & Properties" />
     <meta name="description" content="Tuleeto is India's modern rental marketplace. Find apartments, houses, villas, shops & offices. Direct owner contact, no brokerage. Founded by Sayan Kumar Gayen in 2025." />
     <meta name="keywords" content="Tuleeto, rental platform, property rental India, apartments for rent, houses for rent, no brokerage, direct owner contact, rental marketplace" />
     <meta name="author" content="Sayan Kumar Gayen" />
@@ -30,7 +30,7 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://tuleeto.space/" />
-    <meta property="og:title" content="Tuleeto | Official Rental Platform for Homes & Properties in India" />
+    <meta property="og:title" content="Tuleeto - India's Rental Platform for Homes & Properties" />
     <meta property="og:description" content="Tuleeto is India's modern rental marketplace. Find apartments, houses, villas, shops & offices. Direct owner contact, no brokerage." />
     <meta property="og:image" content="https://tuleeto.space/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" />
     <meta property="og:site_name" content="Tuleeto" />
@@ -39,7 +39,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://tuleeto.space/" />
-    <meta name="twitter:title" content="Tuleeto | Official Rental Platform for Homes & Properties in India" />
+    <meta name="twitter:title" content="Tuleeto - India's Rental Platform for Homes & Properties" />
     <meta name="twitter:description" content="Tuleeto is India's modern rental marketplace. Find apartments, houses, villas, shops & offices. Direct owner contact, no brokerage." />
     <meta name="twitter:image" content="https://tuleeto.space/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" />
     
@@ -80,6 +80,35 @@
         src: url('https://fonts.gstatic.com/s/productsans/v5/HYvgU2fE2nRJvZ5JFAumwegdm0LZdjqr5-oayXSOefg.woff2') format('woff2');
       }
     </style>
+    
+    <!-- WebSite Schema for Google Search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Tuleeto",
+      "alternateName": ["Tuleeto India", "Tuleeto Rentals"],
+      "url": "https://tuleeto.space",
+      "description": "India's modern rental marketplace for apartments, houses, villas, shops and offices",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://tuleeto.space/listings?location={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Tuleeto",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://tuleeto.space/pwa-192x192.png"
+        }
+      }
+    }
+    </script>
+    
     <script>
       // Auto dark mode detection
       if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {

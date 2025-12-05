@@ -11,14 +11,12 @@ import { toast } from "sonner";
 import SEO from "@/components/seo/SEO";
 import { ItemListSchema, BreadcrumbSchema } from "@/components/seo/StructuredData";
 import { generateListingsSEO } from "@/lib/seo";
-import { useAppMode } from "@/contexts/AppModeContext";
 
 const ListingsPage = () => {
   const [searchParams] = useSearchParams();
   const [allProperties, setAllProperties] = useState<PropertyType[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<PropertyType[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isRentals, isRealEstate } = useAppMode();
   
   // Fetch all properties
   useEffect(() => {
@@ -127,7 +125,7 @@ const ListingsPage = () => {
       <main className="flex-grow pt-16 md:pt-24 px-4 md:px-4 bg-tuleeto-off-white">
         <div className="container max-w-7xl mx-auto">
           <h1 className="text-xl md:text-4xl font-bold mb-3 md:mb-6 text-foreground">
-            {isRealEstate ? 'Properties for Sale' : 'Rental Properties'} on Tuleeto
+            Rental Properties on Tuleeto
             {location && ` | ${location}`}
             {searchParams.get('type') && ` | ${searchParams.get('type')}s`}
           </h1>
