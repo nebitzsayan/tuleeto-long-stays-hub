@@ -42,28 +42,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          // Clear OAuth hash after successful sign in
-          if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
-            // Use setTimeout to ensure the auth flow completes first
-            setTimeout(() => {
-              window.history.replaceState(null, '', window.location.pathname);
-            }, 100);
+          // For OAuth sign-in, clear hash after session is set
+          if (event === 'SIGNED_IN') {
+            setIsLoading(false);
           }
         }
       }
     );
 
-    // Check for OAuth callback with hash
-    const hasOAuthHash = window.location.hash.includes('access_token');
+    // Check for OAuth callback with hash - handle it explicitly
+    const hash = window.location.hash;
+    const hasOAuthCallback = hash.includes('access_token') || hash.includes('error');
     
-    if (hasOAuthHash) {
-      // For OAuth callbacks, let onAuthStateChange handle it
-      // Just set loading to false after a short delay
-      setTimeout(() => {
+    if (hasOAuthCallback) {
+      // Force session extraction from OAuth callback
+      supabase.auth.getSession().then(({ data: { session: oauthSession } }) => {
+        if (mounted) {
+          if (oauthSession) {
+            setSession(oauthSession);
+            setUser(oauthSession.user);
+            // Clear the hash from URL after successful auth
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+          setIsLoading(false);
+        }
+      }).catch(async (error) => {
+        console.error("OAuth callback error:", error);
+        await logSecurityEvent('oauth_callback_error', { error: error.message });
         if (mounted) {
           setIsLoading(false);
         }
-      }, 1000);
+      });
     } else {
       // For normal page loads, check existing session
       supabase.auth.getSession().then(({ data: { session: existingSession } }) => {

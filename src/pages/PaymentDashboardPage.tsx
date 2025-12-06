@@ -86,19 +86,19 @@ export default function PaymentDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-gradient-to-br from-green-50 to-white">
+          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-white">
             <CardHeader className="pb-3">
               <CardDescription className="text-sm font-semibold text-green-700">Total Collected</CardDescription>
               <CardTitle className="text-4xl font-bold text-green-600">₹{totalPaid.toLocaleString()}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-gradient-to-br from-blue-50 to-white">
+          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-white">
             <CardHeader className="pb-3">
               <CardDescription className="text-sm font-semibold text-blue-700">Total Records</CardDescription>
               <CardTitle className="text-4xl font-bold text-blue-600">{records.length}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-gradient-to-br from-orange-50 to-white">
+          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-white">
             <CardHeader className="pb-3">
               <CardDescription className="text-sm font-semibold text-orange-700">Pending Payments</CardDescription>
               <CardTitle className="text-4xl font-bold text-orange-600">{pendingCount}</CardTitle>

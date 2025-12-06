@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Loader2 } from "lucide-react";
@@ -8,8 +7,26 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useLocationContext } from "@/contexts/LocationContext";
 
+// Indian cities for autocomplete
+const indianCities = [
+  "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai",
+  "Pune", "Kolkata", "Jaipur", "Ahmedabad", "Chandigarh",
+  "Lucknow", "Surat", "Kochi", "Indore", "Bhopal",
+  "Nagpur", "Patna", "Vadodara", "Ghaziabad", "Ludhiana",
+  "Coimbatore", "Agra", "Madurai", "Nashik", "Faridabad",
+  "Meerut", "Rajkot", "Varanasi", "Srinagar", "Aurangabad",
+  "Dhanbad", "Amritsar", "Jodhpur", "Ranchi", "Raipur",
+  "Siliguri", "Guwahati", "Dehradun", "Mangalore", "Mysore",
+  "Bhubaneswar", "Puri", "Cuttack", "Vizag", "Visakhapatnam",
+  "Thiruvananthapuram", "Noida", "Gurgaon", "Thane", "Navi Mumbai"
+];
+
 const Hero = () => {
   const [location, setLocation] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredCities, setFilteredCities] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { city, permissionStatus, isLoading, requestLocation } = useLocationContext();
@@ -19,21 +36,56 @@ const Hero = () => {
     requestLocation();
   }, []);
 
-  // Pre-fill search box with detected city (only depend on city)
+  // Pre-fill search box with detected city
   useEffect(() => {
-    console.log('Location detected:', { city, isLoading, permissionStatus });
     if (city && !location) {
       setLocation(city);
     }
   }, [city, isLoading, permissionStatus]);
 
+  // Filter cities based on input
+  useEffect(() => {
+    if (location.length > 0) {
+      const filtered = indianCities.filter(c =>
+        c.toLowerCase().startsWith(location.toLowerCase())
+      );
+      setFilteredCities(filtered.slice(0, 6)); // Show max 6 suggestions
+    } else {
+      setFilteredCities([]);
+    }
+  }, [location]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        !inputRef.current?.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Navigate to listings page with search params
+    setShowSuggestions(false);
     navigate({
       pathname: '/listings',
       search: location ? `location=${encodeURIComponent(location)}` : ''
+    });
+  };
+
+  const handleCitySelect = (selectedCity: string) => {
+    setLocation(selectedCity);
+    setShowSuggestions(false);
+    navigate({
+      pathname: '/listings',
+      search: `location=${encodeURIComponent(selectedCity)}`
     });
   };
 
@@ -68,19 +120,48 @@ const Hero = () => {
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-2 md:gap-4">
             <div className="flex-grow relative">
               {isLoading && (
-                <Loader2 className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-tuleeto-orange animate-spin" />
+                <Loader2 className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-tuleeto-orange animate-spin z-10" />
               )}
               {!isLoading && (
-                <MapPin className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400 cursor-pointer hover:text-tuleeto-orange transition-colors" onClick={requestLocation} />
+                <MapPin 
+                  className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400 cursor-pointer hover:text-tuleeto-orange transition-colors z-10" 
+                  onClick={requestLocation} 
+                />
               )}
               <Input
+                ref={inputRef}
                 type="text"
                 placeholder={isLoading ? "Detecting location..." : city ? `Search ${city} property` : "Where do you want to live?"}
                 className="pl-10 pr-3 h-9 md:h-12 text-sm md:text-lg"
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={(e) => {
+                  setLocation(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
                 disabled={isLoading}
+                autoComplete="off"
               />
+              
+              {/* City Autocomplete Dropdown */}
+              {showSuggestions && filteredCities.length > 0 && (
+                <div 
+                  ref={suggestionsRef}
+                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto"
+                >
+                  {filteredCities.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => handleCitySelect(c)}
+                      className="w-full px-4 py-3 text-left hover:bg-orange-50 flex items-center gap-2 transition-colors border-b border-gray-100 last:border-b-0"
+                    >
+                      <MapPin className="h-4 w-4 text-tuleeto-orange flex-shrink-0" />
+                      <span className="text-gray-700">{c}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <Button 
               type="submit" 
