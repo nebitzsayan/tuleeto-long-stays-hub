@@ -82,29 +82,30 @@ const Navbar = () => {
   };
 
   const handleLocationClick = async () => {
-    toast.loading("Detecting your location...", { id: "location-detect" });
+    const toastId = "location-detect";
+    toast.loading("Detecting your location...", { id: toastId });
+    
     try {
+      // Always request fresh location
       await requestLocation();
-      toast.dismiss("location-detect");
-      // Navigate to listings with the detected city
-      if (city) {
-        toast.success(`Location detected: ${city}`);
-        navigate(`/listings?location=${encodeURIComponent(city)}`);
-      } else {
-        // If city detection takes a moment, wait and retry
-        setTimeout(() => {
-          const currentCity = city;
-          if (currentCity) {
-            toast.success(`Location detected: ${currentCity}`);
-            navigate(`/listings?location=${encodeURIComponent(currentCity)}`);
-          } else {
-            toast.success("Location detected! Showing nearby properties.");
-            navigate('/listings');
-          }
-        }, 500);
-      }
+      
+      // Wait a moment for the state to update, then check
+      setTimeout(() => {
+        // Access the latest city from the context
+        const detectedCity = city;
+        toast.dismiss(toastId);
+        
+        if (detectedCity) {
+          toast.success(`Found: ${detectedCity}`);
+          navigate(`/listings?location=${encodeURIComponent(detectedCity)}`);
+        } else {
+          // Still navigate but without location filter
+          toast.success("Showing nearby properties");
+          navigate('/listings');
+        }
+      }, 1000);
     } catch (error) {
-      toast.dismiss("location-detect");
+      toast.dismiss(toastId);
       toast.error("Could not detect location. Please enable location access.");
     }
   };
@@ -186,17 +187,18 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Mobile Location Button */}
+            {/* Mobile Location Button - Optimized for touch */}
             <div className="md:hidden flex items-center">
               <button
                 onClick={handleLocationClick}
                 disabled={locationLoading}
-                className="p-2 rounded-full transition-all duration-300 bg-tuleeto-orange/10 text-tuleeto-orange"
+                className="p-3 rounded-full transition-all duration-300 bg-tuleeto-orange/10 text-tuleeto-orange hover:bg-tuleeto-orange/20 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Find nearby properties"
               >
                 {locationLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 ) : (
-                  <MapPin className="h-5 w-5" />
+                  <MapPin className="h-6 w-6" />
                 )}
               </button>
             </div>
