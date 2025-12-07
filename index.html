@@ -63,9 +63,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://gokrqmykzovxqaoanapu.supabase.co">
     
-    <!-- Preload critical hero image with WebP format for LCP optimization -->
-    <link rel="preload" as="image" href="/images-resources/hero-512.webp" type="image/webp" fetchpriority="high">
-    <link rel="preload" as="image" href="/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" fetchpriority="high">
+    <!-- Preload critical hero image for LCP optimization - only WebP to reduce delay -->
+    <link rel="preload" as="image" href="/images-resources/hero-512.webp" type="image/webp" fetchpriority="high" imagesrcset="/images-resources/hero-512.webp 1x">
     
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
