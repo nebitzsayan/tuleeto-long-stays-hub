@@ -1,12 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/robots.txt", "destination": "/robots.txt" },
-    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
-    { "source": "/manifest.webmanifest", "destination": "/manifest.webmanifest" },
-    { "source": "/favicon.ico", "destination": "/favicon.ico" },
     {
-      "source": "/((?!api|_next|images-resources|lovable-uploads|pwa-|favicon|apple-touch|manifest|robots|sitemap|placeholder|.*\\.xml|.*\\.txt|.*\\.webmanifest).*)",
+      "source": "/((?!robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|favicon\\.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.ico|.*\\.svg|.*\\.webp|.*\\.js|.*\\.css|.*\\.woff|.*\\.woff2|api|_next|images-resources|lovable-uploads|pwa-).*)",
       "destination": "/index.html"
     }
   ],
@@ -31,14 +27,14 @@
     {
       "source": "/robots.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain" },
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
         { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     },
     {
       "source": "/sitemap.xml",
       "headers": [
-        { "key": "Content-Type", "value": "application/xml" },
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
         { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     },
