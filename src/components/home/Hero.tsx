@@ -96,21 +96,15 @@ const Hero = () => {
         <div className="mb-4 md:mb-8 mt-12 md:mt-8">
           <div className="max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto">
             <AspectRatio ratio={1} className="w-full">
-              <picture>
-                <source 
-                  srcSet="/images-resources/hero-512.webp" 
-                  type="image/webp"
-                />
-                <img 
-                  src="/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" 
-                  alt="Person searching for home" 
-                  className="w-full h-full object-contain"
-                  width="512"
-                  height="512"
-                  fetchPriority="high"
-                  decoding="async"
-                />
-              </picture>
+              <img 
+                src="/images-resources/hero-512.webp" 
+                alt="Person searching for home" 
+                className="w-full h-full object-contain"
+                width="512"
+                height="512"
+                fetchPriority="high"
+                decoding="sync"
+              />
             </AspectRatio>
           </div>
         </div>
