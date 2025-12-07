@@ -16,10 +16,10 @@ const OwnerCTA = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Left Side - Content */}
           <div className="text-white">
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6">
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 text-white">
               Own a Property?
             </h2>
-            <p className="text-lg md:text-xl lg:text-2xl mb-8 md:mb-10 opacity-95 leading-relaxed">
+            <p className="text-lg md:text-xl lg:text-2xl mb-8 md:mb-10 opacity-95 leading-relaxed text-white">
               List your property on Tuleeto and connect with reliable long-term renters looking for their next home.
             </p>
 
