@@ -9,6 +9,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 import WishlistButton from "./WishlistButton";
+import { getOptimizedImageUrl } from "@/lib/imageOptimization";
 
 export interface PropertyType {
   id: string;
@@ -74,13 +75,13 @@ const PropertyListingCard = ({
       <div className="relative cursor-pointer" onClick={handleImageClick}>
         <AspectRatio ratio={isMobile ? 4/3 : 16/9}>
           <img 
-            src={property.image} 
+            src={getOptimizedImageUrl(property.image, isMobile ? 400 : 600, isMobile ? 300 : 338)} 
             alt={`${property.title} - ${property.bedrooms} BHK ${property.type} for rent in ${property.location} - Tuleeto`}
             className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
-            width="400"
-            height={isMobile ? "300" : "225"}
+            width={isMobile ? "400" : "600"}
+            height={isMobile ? "300" : "338"}
           />
         </AspectRatio>
         <Badge className="absolute top-2 right-2 bg-tuleeto-orange text-white text-xs px-2 py-1">
