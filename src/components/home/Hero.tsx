@@ -93,7 +93,7 @@ const Hero = () => {
     <div className="relative min-h-[75vh] md:min-h-[90vh] flex flex-col items-center justify-center px-2 md:px-4 bg-white">
       <div className="absolute inset-0 hero-gradient"></div>
       <div className="relative z-10 text-center max-w-4xl mx-auto w-full">
-        <div className="mb-4 md:mb-8">
+        <div className="mb-4 md:mb-8 mt-12 md:mt-8">
           <div className="max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto">
             <AspectRatio ratio={1} className="w-full">
               <img 
