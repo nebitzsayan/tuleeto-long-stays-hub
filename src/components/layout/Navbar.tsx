@@ -133,27 +133,37 @@ const Navbar = () => {
             <Logo />
           </Link>
 
-          {/* Location Button - Only for logged in users */}
-          {user && (
-            <div className="hidden md:flex items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLocationClick}
-                disabled={locationLoading}
-                className="flex items-center gap-2 border-tuleeto-orange/30 text-tuleeto-orange hover:bg-tuleeto-orange/10 hover:text-tuleeto-orange"
-              >
-                {locationLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <MapPin className="h-4 w-4" />
-                )}
-                <span>{city || "Find Nearby"}</span>
-              </Button>
-            </div>
-          )}
+          {/* Location Button */}
+          <div className="hidden md:flex items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLocationClick}
+              disabled={locationLoading}
+              className="flex items-center gap-2 border-tuleeto-orange/30 text-tuleeto-orange hover:bg-tuleeto-orange/10 hover:text-tuleeto-orange"
+            >
+              {locationLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MapPin className="h-4 w-4" />
+              )}
+              <span>{city || "Find Nearby"}</span>
+            </Button>
+          </div>
 
           <div className="hidden md:flex items-center space-x-6">
+            <Link 
+              to="/listings" 
+              className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md"
+            >
+              Browse Properties
+            </Link>
+            <Link 
+              to="/list-property" 
+              className="text-gray-700 hover:text-tuleeto-orange transition-colors font-medium backdrop-blur-sm px-3 py-2 rounded-md"
+            >
+              List Property
+            </Link>
             {user && (
               <Link 
                 to="/wishlist" 
@@ -177,23 +187,21 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Mobile Location Button - Only for logged in users */}
-            {user && (
-              <div className="md:hidden flex items-center">
-                <button
-                  onClick={handleLocationClick}
-                  disabled={locationLoading}
-                  className="p-3 rounded-full transition-all duration-300 bg-tuleeto-orange/10 text-tuleeto-orange hover:bg-tuleeto-orange/20 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  aria-label="Find nearby properties"
-                >
-                  {locationLoading ? (
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : (
-                    <MapPin className="h-6 w-6" />
-                  )}
-                </button>
-              </div>
-            )}
+            {/* Mobile Location Button - Optimized for touch */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={handleLocationClick}
+                disabled={locationLoading}
+                className="p-3 rounded-full transition-all duration-300 bg-tuleeto-orange/10 text-tuleeto-orange hover:bg-tuleeto-orange/20 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Find nearby properties"
+              >
+                {locationLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <MapPin className="h-6 w-6" />
+                )}
+              </button>
+            </div>
             
             {user ? (
               <DropdownMenu>
