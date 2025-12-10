@@ -12,6 +12,7 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { HelmetProvider } from 'react-helmet-async';
 import InstallPrompt from './components/pwa/InstallPrompt';
 import { LocationProvider } from './contexts/LocationContext';
+import { PropertyLoader } from './components/ui/property-loader';
 
 // Lazy load non-critical routes to improve initial load time
 const AuthPage = lazy(() => import('./pages/AuthPage'));
@@ -52,8 +53,8 @@ function App() {
               <div className="App">
                 <InstallPrompt />
                 <Suspense fallback={
-                  <div className="flex items-center justify-center min-h-screen">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tuleeto-orange"></div>
+                  <div className="flex items-center justify-center min-h-screen bg-background">
+                    <PropertyLoader size="lg" text="Loading..." />
                   </div>
                 }>
                   <Routes>
