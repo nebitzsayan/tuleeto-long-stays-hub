@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PropertyType } from "@/components/property/PropertyListingCard";
-import { Loader2 } from "lucide-react";
+import { PropertyLoader } from "@/components/ui/property-loader";
 import PropertyListingCard from "@/components/property/PropertyListingCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocationContext } from "@/contexts/LocationContext";
@@ -129,8 +129,7 @@ const FeaturedProperties = () => {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
-            <p className="mt-4 text-gray-500">Loading featured properties...</p>
+            <PropertyLoader size="lg" text="Finding properties near you..." />
           </div>
         ) : properties.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

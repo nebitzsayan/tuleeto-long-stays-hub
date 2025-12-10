@@ -5,7 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PropertyFilter from "@/components/property/PropertyFilter";
 import PropertyListingCard, { PropertyType } from "@/components/property/PropertyListingCard";
-import { Loader2 } from "lucide-react";
+import { PropertyLoader } from "@/components/ui/property-loader";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import SEO from "@/components/seo/SEO";
@@ -134,8 +134,7 @@ const ListingsPage = () => {
           
           {loading ? (
             <div className="loading-container">
-              <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
-              <p className="mt-4 text-gray-500">Loading properties...</p>
+              <PropertyLoader size="lg" text="Finding properties..." />
             </div>
           ) : filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
