@@ -1,9 +1,19 @@
+# Netlify Redirects for Tuleeto.space
+# https://docs.netlify.com/routing/redirects/
+
 # Force HTTPS and non-www redirect
 http://tuleeto.space/* https://tuleeto.space/:splat 301!
 http://www.tuleeto.space/* https://tuleeto.space/:splat 301!
 https://www.tuleeto.space/* https://tuleeto.space/:splat 301!
 
-# Redirect all routes to index.html for client-side routing
-# These redirects work with Netlify, Vercel, Cloudflare Pages, and other hosts
-/*    /index.html   200
+# Static files - serve directly (MUST come before SPA fallback)
+/robots.txt /robots.txt 200
+/sitemap.xml /sitemap.xml 200
+/manifest.webmanifest /manifest.webmanifest 200
+/favicon.ico /favicon.ico 200
+/apple-touch-icon.png /apple-touch-icon.png 200
+/pwa-192x192.png /pwa-192x192.png 200
+/pwa-512x512.png /pwa-512x512.png 200
 
+# SPA fallback - all other routes to index.html
+/* /index.html 200
