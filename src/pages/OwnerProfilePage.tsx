@@ -6,7 +6,8 @@ import Footer from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import PropertyListingCard from "@/components/property/PropertyListingCard";
-import { MapPin, Mail, Phone, User, Loader2 } from "lucide-react";
+import { MapPin, User } from "lucide-react";
+import { PropertyLoader } from "@/components/ui/property-loader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import OwnerAvatar from "@/components/profile/OwnerAvatar";
@@ -92,7 +93,7 @@ const OwnerProfilePage = () => {
         <div className="container max-w-7xl mx-auto">
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+              <PropertyLoader size="lg" text="Loading profile..." />
             </div>
           ) : owner ? (
             <>

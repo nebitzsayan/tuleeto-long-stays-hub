@@ -5,7 +5,8 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import { PropertyLoader } from '@/components/ui/property-loader';
 import PropertyListingCard, { PropertyType } from '@/components/property/PropertyListingCard';
 import { Button } from '@/components/ui/button';
 
@@ -77,10 +78,7 @@ const WishlistPage = () => {
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow pt-24 px-4 bg-tuleeto-off-white flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange mx-auto mb-4" />
-            <p className="text-gray-500">Loading your wishlist...</p>
-          </div>
+          <PropertyLoader size="lg" text="Loading your wishlist..." />
         </main>
         <Footer />
       </div>

@@ -146,7 +146,7 @@ const InstallPage = () => {
                     Android (Chrome)
                   </h4>
                   <ul className="text-sm text-muted-foreground space-y-1 ml-8">
-                    <li>• Visit tuleeto.com in Chrome</li>
+                    <li>• Visit tuleeto.space in Chrome</li>
                     <li>• Tap the "Install" banner or menu (⋮)</li>
                     <li>• Select "Install app" or "Add to Home screen"</li>
                     <li>• Tap "Install" in the popup</li>
@@ -159,7 +159,7 @@ const InstallPage = () => {
                     iOS (Safari)
                   </h4>
                   <ul className="text-sm text-muted-foreground space-y-1 ml-8">
-                    <li>• Visit tuleeto.com in Safari</li>
+                    <li>• Visit tuleeto.space in Safari</li>
                     <li>• Tap the Share button (square with arrow)</li>
                     <li>• Scroll and tap "Add to Home Screen"</li>
                     <li>• Tap "Add" in the top right</li>
@@ -182,7 +182,7 @@ const InstallPage = () => {
                     Chrome / Edge
                   </h4>
                   <ul className="text-sm text-muted-foreground space-y-1 ml-8">
-                    <li>• Visit tuleeto.com</li>
+                    <li>• Visit tuleeto.space</li>
                     <li>• Click the install icon (+) in the address bar</li>
                     <li>• Click "Install" in the dialog</li>
                     <li>• App opens in its own window</li>
@@ -195,7 +195,7 @@ const InstallPage = () => {
                     Safari (macOS Sonoma+)
                   </h4>
                   <ul className="text-sm text-muted-foreground space-y-1 ml-8">
-                    <li>• Visit tuleeto.com in Safari</li>
+                    <li>• Visit tuleeto.space in Safari</li>
                     <li>• Click File → Add to Dock</li>
                     <li>• App appears in your Dock</li>
                   </ul>

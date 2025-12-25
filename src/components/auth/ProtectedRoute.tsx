@@ -2,7 +2,7 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { PropertyLoader } from '@/components/ui/property-loader';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children, redirectTo = '/auth', requireAdmin = false }
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+        <PropertyLoader size="lg" text="Loading..." />
       </div>
     );
   }

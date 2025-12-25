@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { PropertyLoader } from "@/components/ui/property-loader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -147,8 +148,7 @@ const EditPropertyPage = () => {
         <main className="flex-grow pt-16 md:pt-24 px-4 bg-tuleeto-off-white">
           <div className="container max-w-4xl mx-auto">
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
-              <p className="ml-3 text-gray-600">Loading property details...</p>
+              <PropertyLoader size="lg" text="Loading property details..." />
             </div>
           </div>
         </main>
