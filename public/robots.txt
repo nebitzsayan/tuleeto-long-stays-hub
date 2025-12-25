@@ -3,6 +3,13 @@
 # https://tuleeto.space
 
 # ===========================================
+# Favicon & Icon Locations (for crawlers)
+# ===========================================
+# Primary Favicon: /favicon.ico
+# PWA Icons: /pwa-192x192.png, /pwa-512x512.png
+# Apple Touch Icon: /apple-touch-icon.png
+
+# ===========================================
 # Major Search Engine Crawlers
 # ===========================================
 
@@ -13,6 +20,10 @@ Allow: /property/
 Allow: /about
 Allow: /install
 Allow: /terms
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Allow: /pwa-192x192.png
+Allow: /pwa-512x512.png
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /auth
@@ -33,6 +44,9 @@ User-agent: Googlebot-Image
 Allow: /images-resources/
 Allow: /pwa-192x192.png
 Allow: /pwa-512x512.png
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Allow: /lovable-uploads/
 Disallow: /admin
 
 User-agent: Bingbot
@@ -40,6 +54,10 @@ Allow: /
 Allow: /listings
 Allow: /property/
 Allow: /about
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Allow: /pwa-192x192.png
+Allow: /pwa-512x512.png
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /auth
@@ -55,6 +73,7 @@ Crawl-delay: 0
 
 User-agent: Slurp
 Allow: /
+Allow: /favicon.ico
 Disallow: /admin
 Disallow: /auth
 Disallow: /profile
@@ -62,17 +81,20 @@ Disallow: /my-properties
 
 User-agent: DuckDuckBot
 Allow: /
+Allow: /favicon.ico
 Disallow: /admin
 Disallow: /auth
 Disallow: /profile
 
 User-agent: Baiduspider
 Allow: /
+Allow: /favicon.ico
 Disallow: /admin
 Disallow: /auth
 
 User-agent: YandexBot
 Allow: /
+Allow: /favicon.ico
 Disallow: /admin
 Disallow: /auth
 
@@ -179,6 +201,10 @@ Allow: /property/
 Allow: /about
 Allow: /install
 Allow: /terms
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Allow: /pwa-192x192.png
+Allow: /pwa-512x512.png
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /auth
