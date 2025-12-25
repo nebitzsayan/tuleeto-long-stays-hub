@@ -4,7 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, Edit, Users } from "lucide-react";
+import { Plus, Edit, Users, Loader2 } from "lucide-react";
+import { PropertyLoader } from "@/components/ui/property-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -149,9 +150,8 @@ const MyPropertiesPage = () => {
           </div>
           
           {isLoading ? (
-            <div className="loading-container">
-              <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
-              <p className="mt-2 text-gray-500">Loading your properties...</p>
+            <div className="flex items-center justify-center py-16">
+              <PropertyLoader size="lg" text="Loading your properties..." />
             </div>
           ) : properties.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-8">

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { isAdmin } from "@/lib/security";
 import { logSecurityEvent } from "@/lib/secureLogging";
+import { PropertyLoader } from "@/components/ui/property-loader";
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -52,7 +52,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   if (isLoading || isCheckingAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <PropertyLoader size="lg" text="Verifying access..." />
       </div>
     );
   }

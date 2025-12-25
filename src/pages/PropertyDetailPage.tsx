@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { MapPin, Shield, User, Phone } from "lucide-react";
+import { MapPin, Shield, User, Phone, Share2, Copy, Check } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { getPropertyById } from "@/api/propertyService";
 import { Property } from "@/types";
@@ -20,6 +20,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import SEO from "@/components/seo/SEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/StructuredData";
 import { generatePropertySEO } from "@/lib/seo";
+import { PropertyLoader } from "@/components/ui/property-loader";
+import { toast } from "sonner";
 
 const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +29,7 @@ const PropertyDetailPage = () => {
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -54,11 +57,46 @@ const PropertyDetailPage = () => {
     window.location.href = `tel:${phoneNumber}`;
   };
 
+  const handleShare = async () => {
+    if (!property) return;
+
+    const shareData = {
+      title: property.title,
+      text: `Check out this property: ${property.title} - Rs ${property.price.toLocaleString('en-IN')}/month in ${property.location}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        toast.success("Shared successfully!");
+      } else {
+        // Fallback to copy link
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        toast.success("Link copied to clipboard!");
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        // Fallback to copy link if share fails
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          setCopied(true);
+          toast.success("Link copied to clipboard!");
+          setTimeout(() => setCopied(false), 2000);
+        } catch {
+          toast.error("Failed to share");
+        }
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <MainLayout className="pt-24 pb-16 bg-gray-50">
-        <div className="container max-w-6xl mx-auto px-4">
-          <p>Loading property details...</p>
+        <div className="container max-w-6xl mx-auto px-4 flex items-center justify-center min-h-[50vh]">
+          <PropertyLoader size="lg" text="Loading property details..." />
         </div>
       </MainLayout>
     );
@@ -81,9 +119,9 @@ const PropertyDetailPage = () => {
           <SEO {...generatePropertySEO(property)} />
           <ProductSchema property={property} />
           <BreadcrumbSchema items={[
-            { name: 'Home', url: 'https://tuleeto.com/' },
-            { name: 'Listings', url: 'https://tuleeto.com/listings' },
-            { name: property.location, url: `https://tuleeto.com/listings?location=${encodeURIComponent(property.location)}` },
+            { name: 'Home', url: 'https://tuleeto.space/' },
+            { name: 'Listings', url: 'https://tuleeto.space/listings' },
+            { name: property.location, url: `https://tuleeto.space/listings?location=${encodeURIComponent(property.location)}` },
             { name: property.title }
           ]} />
         </>
@@ -96,7 +134,7 @@ const PropertyDetailPage = () => {
 
             {/* Title and Location Section */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <h1 className="text-3xl font-bold">{property.title}</h1>
                   <div className="flex items-center gap-2 text-gray-600">
@@ -104,22 +142,43 @@ const PropertyDetailPage = () => {
                     <span>{property.location}</span>
                   </div>
                 </div>
-                {/* Property Poster Generator - Only for property owners */}
-                {user && user.id === property.ownerId && (
-                  <PropertyPosterGenerator 
-                    property={{
-                      id: property.id,
-                      title: property.title,
-                      price: property.price,
-                      images: property.images,
-                      features: property.features,
-                      owner_id: property.ownerId,
-                      location: property.location,
-                      contactPhone: property.contactPhone
-                    }}
-                    ownerName={property.ownerName}
-                  />
-                )}
+                <div className="flex items-center gap-2">
+                  {/* Share Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShare}
+                    className="flex items-center gap-2"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="h-4 w-4" />
+                        Share
+                      </>
+                    )}
+                  </Button>
+                  {/* Property Poster Generator - Only for property owners */}
+                  {user && user.id === property.ownerId && (
+                    <PropertyPosterGenerator 
+                      property={{
+                        id: property.id,
+                        title: property.title,
+                        price: property.price,
+                        images: property.images,
+                        features: property.features,
+                        owner_id: property.ownerId,
+                        location: property.location,
+                        contactPhone: property.contactPhone
+                      }}
+                      ownerName={property.ownerName}
+                    />
+                  )}
+                </div>
               </div>
             </div>
             

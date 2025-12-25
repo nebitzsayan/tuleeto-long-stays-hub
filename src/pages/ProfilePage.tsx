@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Upload, User } from "lucide-react";
+import { Upload, User, Loader2 } from "lucide-react";
+import { PropertyLoader } from "@/components/ui/property-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -156,7 +157,7 @@ const ProfilePage = () => {
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow pt-24 px-4 pb-12 bg-tuleeto-off-white flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-tuleeto-orange" />
+          <PropertyLoader size="lg" text="Loading profile..." />
         </main>
         <Footer />
       </div>

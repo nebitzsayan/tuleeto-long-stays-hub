@@ -54,7 +54,16 @@ export default defineConfig(({ mode }) => ({
         categories: ['real estate', 'lifestyle', 'business']
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,xml,txt}'],
+        // Exclude SEO files from SPA fallback
+        navigateFallbackDenylist: [
+          /^\/robots\.txt$/,
+          /^\/sitemap\.xml$/,
+          /^\/manifest\.webmanifest$/,
+          /^\/favicon\.ico$/,
+          /^\/apple-touch-icon\.png$/,
+          /^\/pwa-.*\.png$/,
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/gokrqmykzovxqaoanapu\.supabase\.co\/.*/i,
