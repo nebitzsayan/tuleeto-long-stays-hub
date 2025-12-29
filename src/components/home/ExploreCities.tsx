@@ -2,16 +2,14 @@ import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
 
 const cities = [
-  { name: "Mumbai", emoji: "🏙️" },
-  { name: "Delhi", image: "/images-resources/delhi-city.png" },
-  { name: "Bangalore", emoji: "💻" },
-  { name: "Hyderabad", emoji: "🏰" },
-  { name: "Chennai", emoji: "🌊" },
-  { name: "Pune", emoji: "🎓" },
-  { name: "Kolkata", emoji: "🎭" },
-  { name: "Jaipur", image: "/images-resources/jaipur-city.png" },
-  { name: "Puri", image: "/images-resources/puri-city.png" },
-  { name: "Chandigarh", emoji: "🌳" },
+  { name: "Bangalore", image: "/images-resources/bangalore-city.png" },
+  { name: "Darjeeling", image: "/images-resources/darjeeling-city.png" },
+  { name: "Siliguri", image: "/images-resources/siliguri-city.png" },
+  { name: "Puri", image: "/images-resources/puri-city-new.png" },
+  { name: "Delhi", image: "/images-resources/delhi-city-new.png" },
+  { name: "Kolkata", image: "/images-resources/kolkata-city.png" },
+  { name: "Mumbai", image: "/images-resources/mumbai-city.png" },
+  { name: "Chennai", image: "/images-resources/chennai-city.png" },
 ];
 
 const ExploreCities = () => {
@@ -35,17 +33,11 @@ const ExploreCities = () => {
               className="group relative overflow-hidden rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-all duration-300 hover:scale-105"
             >
               <div className="flex flex-col items-center text-center space-y-3">
-                {city.image ? (
-                  <img 
-                    src={city.image} 
-                    alt={`${city.name} city`}
-                    className="w-16 h-16 object-contain"
-                  />
-                ) : (
-                  <span className="text-4xl" role="img" aria-label={city.name}>
-                    {city.emoji}
-                  </span>
-                )}
+                <img 
+                  src={city.image} 
+                  alt={`${city.name} city`}
+                  className="w-16 h-16 object-contain"
+                />
                 <div className="space-y-1">
                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     {city.name}
