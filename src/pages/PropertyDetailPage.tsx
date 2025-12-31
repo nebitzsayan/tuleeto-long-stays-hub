@@ -142,23 +142,30 @@ const PropertyDetailPage = () => {
                     <span>{property.location}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* Share Button */}
+                  <div className="flex items-center gap-2">
+                  {/* Share Button - Enhanced UX */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleShare}
-                    className="flex items-center gap-2"
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-full
+                      border-2 transition-all duration-300 ease-out
+                      ${copied 
+                        ? 'bg-green-50 border-green-400 text-green-700 dark:bg-green-900/30 dark:border-green-500 dark:text-green-400' 
+                        : 'border-primary/30 hover:border-primary hover:bg-primary/5 hover:shadow-md active:scale-95'
+                      }
+                    `}
                   >
                     {copied ? (
                       <>
-                        <Check className="h-4 w-4" />
-                        Copied!
+                        <Check className="h-4 w-4 animate-scale-in" />
+                        <span className="font-medium">Copied!</span>
                       </>
                     ) : (
                       <>
-                        <Share2 className="h-4 w-4" />
-                        Share
+                        <Share2 className="h-4 w-4 transition-transform group-hover:rotate-12" />
+                        <span className="font-medium">Share</span>
                       </>
                     )}
                   </Button>
