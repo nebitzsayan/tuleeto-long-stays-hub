@@ -79,6 +79,7 @@ export interface PaymentRecord {
   other_charges: number;
   other_charges_description?: string;
   remarks?: string;
+  bill_number?: string;
   created_at: string;
   updated_at: string;
 }
