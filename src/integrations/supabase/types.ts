@@ -68,6 +68,7 @@ export type Database = {
       }
       payment_records: {
         Row: {
+          bill_number: string | null
           cost_per_unit: number | null
           created_at: string
           electricity_amount: number | null
@@ -90,6 +91,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          bill_number?: string | null
           cost_per_unit?: number | null
           created_at?: string
           electricity_amount?: number | null
@@ -112,6 +114,7 @@ export type Database = {
           year: number
         }
         Update: {
+          bill_number?: string | null
           cost_per_unit?: number | null
           created_at?: string
           electricity_amount?: number | null

@@ -10,6 +10,7 @@ import { toJpeg } from "html-to-image";
 import { toast } from "sonner";
 import { Download, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BillGeneratorDialogProps {
   open: boolean;
@@ -34,6 +35,9 @@ export const BillGeneratorDialog = ({
     ? tenants.find(t => t.id === selectedRecord.tenant_id)
     : null;
 
+  // Use existing bill number or generate new one
+  const billNumber = selectedRecord?.bill_number || generateBillNumber();
+
   const handleGenerate = async () => {
     if (!billRef.current || !selectedRecord || !selectedTenant) {
       toast.error("Please select a payment record");
@@ -49,6 +53,18 @@ export const BillGeneratorDialog = ({
         backgroundColor: '#ffffff',
         pixelRatio: 2,
       });
+
+      // Save the bill number to the payment record if not already saved
+      if (!selectedRecord.bill_number) {
+        const { error } = await supabase
+          .from('payment_records')
+          .update({ bill_number: billNumber })
+          .eq('id', selectedRecord.id);
+
+        if (error) {
+          console.error('Error saving bill number:', error);
+        }
+      }
 
       // Trigger download
       const link = document.createElement('a');
@@ -76,7 +92,6 @@ export const BillGeneratorDialog = ({
     };
   });
 
-  const billNumber = generateBillNumber();
   const billDate = new Date().toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
