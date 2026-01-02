@@ -128,7 +128,29 @@ export default function TenantsPage() {
               <p className="text-muted-foreground mt-1">Add and manage your property tenants</p>
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {/* Compact Invoice Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search invoice..."
+                value={invoiceSearch}
+                onChange={(e) => setInvoiceSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleInvoiceSearch()}
+                className="pl-9 pr-8 w-40 md:w-48 h-10"
+              />
+              {invoiceSearch ? (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : isSearching ? (
+                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              ) : null}
+            </div>
+            
             {tenants.length > 0 && (
               <Button variant="outline" onClick={handleExport} size="lg">
                 <Download className="mr-2 h-4 w-4" />
@@ -148,95 +170,63 @@ export default function TenantsPage() {
           </div>
         </div>
 
-        {/* Invoice Search Section */}
-        <Card className="mb-8 border-2 border-primary/20 bg-gradient-to-br from-background to-primary/5">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5 text-primary" />
-              Invoice Search
-            </CardTitle>
-            <CardDescription>
-              Search for generated bills by invoice number (e.g., TB2026001)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Enter invoice number..."
-                  value={invoiceSearch}
-                  onChange={(e) => setInvoiceSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleInvoiceSearch()}
-                  className="pl-10 pr-10"
-                />
-                {invoiceSearch && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <Button onClick={handleInvoiceSearch} disabled={isSearching}>
-                {isSearching ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" />
-                    Search
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Search Result */}
-            {hasSearched && (
-              <div className="mt-4">
-                {searchResult ? (
-                  <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                    <CardContent className="pt-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-                              #{searchResult.record.bill_number}
-                            </span>
-                          </div>
-                          <p className="font-medium text-lg">{searchResult.tenant.name}</p>
-                          <div className="text-sm text-muted-foreground space-y-0.5">
-                            <p>Room: {searchResult.tenant.room_number || 'N/A'}</p>
-                            <p>Period: {getMonthName(searchResult.record.month)} {searchResult.record.year}</p>
-                            <p className="font-medium text-foreground">
-                              Total: ₹{(
-                                searchResult.record.rent_amount + 
-                                searchResult.record.electricity_amount + 
-                                searchResult.record.water_amount + 
-                                searchResult.record.other_charges
-                              ).toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => navigate(`/properties/${propertyId}/payments/${searchResult.tenant.id}`)}
-                        >
-                          View Payment Details
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No invoice found with that number</p>
+        {/* Invoice Search Result Banner */}
+        {hasSearched && (
+          <div className="mb-6">
+            {searchResult ? (
+              <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                <CardContent className="py-3 px-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-semibold text-primary">
+                        #{searchResult.record.bill_number}
+                      </span>
+                      <span className="font-medium">{searchResult.tenant.name}</span>
+                      {searchResult.tenant.room_number && (
+                        <span className="text-sm text-muted-foreground">Room {searchResult.tenant.room_number}</span>
+                      )}
+                      <span className="text-sm text-muted-foreground">
+                        {getMonthName(searchResult.record.month)} {searchResult.record.year}
+                      </span>
+                      <span className="font-medium">
+                        ₹{(
+                          searchResult.record.rent_amount + 
+                          searchResult.record.electricity_amount + 
+                          searchResult.record.water_amount + 
+                          searchResult.record.other_charges
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/properties/${propertyId}/payments/${searchResult.tenant.id}`)}
+                      >
+                        View Details
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearSearch}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-muted">
+                <CardContent className="py-3 px-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <FileText className="h-4 w-4" />
+                    <span className="text-sm">No invoice found with that number</span>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearSearch}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
