@@ -9,19 +9,19 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/pwa-192x192.png",
+      "src": "/images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "/images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/apple-touch-icon.png",
+      "src": "/images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
