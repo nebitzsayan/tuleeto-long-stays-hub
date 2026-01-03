@@ -42,14 +42,29 @@ export default function TenantsPage() {
       return;
     }
 
+    if (!propertyId) {
+      toast.error("Property not found");
+      return;
+    }
+
     setIsSearching(true);
     setHasSearched(true);
 
     try {
+      // Join with tenants and filter by current property
       const { data, error } = await supabase
         .from('payment_records')
-        .select('*')
+        .select(`
+          *,
+          tenants!inner (
+            id, name, phone, email, room_number, 
+            property_id, move_in_date, move_out_date,
+            monthly_rent, is_active, security_deposit, notes,
+            created_at, updated_at
+          )
+        `)
         .eq('bill_number', invoiceSearch.trim().toUpperCase())
+        .eq('tenants.property_id', propertyId)
         .maybeSingle();
 
       if (error) {
@@ -61,35 +76,19 @@ export default function TenantsPage() {
 
       if (!data) {
         setSearchResult(null);
-        toast.info("No invoice found with that number");
+        toast.info("No invoice found with that number for this property");
         return;
       }
 
-      // Find the tenant for this record
-      const tenant = tenants.find(t => t.id === data.tenant_id);
+      // Tenant data is included in the response
+      const tenantData = data.tenants as Tenant;
+      const { tenants: _, ...recordData } = data;
       
-      if (!tenant) {
-        // Fetch tenant if not in current list
-        const { data: tenantData } = await supabase
-          .from('tenants')
-          .select('*')
-          .eq('id', data.tenant_id)
-          .maybeSingle();
-        
-        if (tenantData) {
-          setSearchResult({ 
-            record: data as PaymentRecord, 
-            tenant: tenantData as Tenant 
-          });
-          toast.success("Invoice found!");
-        } else {
-          setSearchResult(null);
-          toast.info("Invoice found but tenant not accessible");
-        }
-      } else {
-        setSearchResult({ record: data as PaymentRecord, tenant });
-        toast.success("Invoice found!");
-      }
+      setSearchResult({ 
+        record: recordData as PaymentRecord, 
+        tenant: tenantData 
+      });
+      toast.success("Invoice found!");
     } catch (error) {
       console.error('Search error:', error);
       toast.error("Error searching for invoice");
