@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash2, Phone, CheckCircle2, XCircle, Calendar } from "lucide-react";
+import { Edit, Trash2, Phone, CheckCircle2, XCircle, Calendar, Lock } from "lucide-react";
 import { format } from "date-fns";
 
 interface PaymentRecordTableProps {
@@ -147,15 +147,22 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
 
           {/* Actions */}
           <div className="flex gap-2 pt-2">
-            <Button 
-              size="sm" 
-              variant="default" 
-              onClick={() => onEdit(record)} 
-              className="flex-1"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
+            {record.bill_number ? (
+              <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-muted rounded-md text-muted-foreground">
+                <Lock className="h-4 w-4" />
+                <span className="text-sm">Bill Generated</span>
+              </div>
+            ) : (
+              <Button 
+                size="sm" 
+                variant="default" 
+                onClick={() => onEdit(record)} 
+                className="flex-1"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
             <Button 
               size="sm" 
               variant="destructive" 
@@ -316,22 +323,36 @@ export function PaymentRecordTable({ records, tenants, onEdit, onDelete }: Payme
                     <TableCell className="text-right sticky right-0 bg-background z-10 min-w-[120px]">
                       <TooltipProvider>
                         <div className="flex justify-end gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="default" 
-                                onClick={() => onEdit(record)} 
-                                className="h-9 w-9 sm:w-auto sm:px-3"
-                              >
-                                <Edit className="h-4 w-4" />
-                                <span className="hidden sm:inline sm:ml-2">Edit</span>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Edit payment details</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          {record.bill_number ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1 px-3 py-2 bg-muted rounded-md text-muted-foreground">
+                                  <Lock className="h-4 w-4" />
+                                  <span className="text-xs">Locked</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Bill generated - cannot edit</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="icon" 
+                                  variant="default" 
+                                  onClick={() => onEdit(record)} 
+                                  className="h-9 w-9 sm:w-auto sm:px-3"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  <span className="hidden sm:inline sm:ml-2">Edit</span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Edit payment details</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
 
                           <Tooltip>
                             <TooltipTrigger asChild>

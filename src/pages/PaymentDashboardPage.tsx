@@ -9,6 +9,7 @@ import { PaymentRecordTable } from "@/components/payment/PaymentRecordTable";
 import { PaymentEntryDialog } from "@/components/payment/PaymentEntryDialog";
 import { BillGeneratorDialog } from "@/components/payment/BillGeneratorDialog";
 import { ArrowLeft, Plus, Download, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { exportPaymentRecordsToExcel } from "@/lib/excelExport";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types";
@@ -131,6 +132,10 @@ export default function PaymentDashboardPage() {
             records={records}
             tenants={tenants}
             onEdit={(record) => {
+              if (record.bill_number) {
+                toast.error("Cannot edit: Bill has been generated for this record");
+                return;
+              }
               setEditingRecord(record);
               setDialogOpen(true);
             }}
