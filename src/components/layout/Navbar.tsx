@@ -13,7 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, LogOut, User, Heart, Download, MapPin, Loader2 } from "lucide-react";
+import { Home, LogOut, User, Heart, Download, MapPin, Loader2, Shield } from "lucide-react";
+import { isAdmin } from "@/lib/security";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Logo from "@/components/ui/logo";
 import { toast } from "sonner";
@@ -31,6 +32,20 @@ const Navbar = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
+
+  // Check if current user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user) {
+        const adminStatus = await isAdmin();
+        setIsUserAdmin(adminStatus);
+      } else {
+        setIsUserAdmin(false);
+      }
+    };
+    checkAdminStatus();
+  }, [user]);
 
   // Track scroll position for navbar blur effect
   useEffect(() => {
@@ -252,6 +267,18 @@ const Navbar = () => {
                       <span>Wishlist</span>
                     </Link>
                   </DropdownMenuItem>
+                  {/* Admin Panel Link - Only visible to admins */}
+                  {isUserAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="w-full cursor-pointer text-tuleeto-orange">
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   {/* Mobile-only navigation items */}
                   {isMobile && (
                     <>
