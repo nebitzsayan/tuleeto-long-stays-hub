@@ -7,8 +7,7 @@ import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
 import { useImagePreview } from "@/hooks/useImagePreview";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
-import OptimizedImagePreview from "./OptimizedImagePreview";
-import SimpleMobileImagePreview from "./SimpleMobileImagePreview";
+import ScrollableImagePreview from "./ScrollableImagePreview";
 
 interface PropertyImageCarouselProps {
   images: string[];
@@ -229,24 +228,13 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
         )}
       </Card>
 
-      {/* Image Preview Modal - Use simple version for mobile, optimized for desktop */}
-      {isMobile ? (
-        <SimpleMobileImagePreview
-          isOpen={isPreviewOpen}
-          onClose={closePreview}
-          images={imageList}
-          initialIndex={previewIndex}
-          title={title}
-        />
-      ) : (
-        <OptimizedImagePreview
-          isOpen={isPreviewOpen}
-          onClose={closePreview}
-          images={imageList}
-          initialIndex={previewIndex}
-          title={title}
-        />
-      )}
+      {/* Image Preview Modal - Contained dialog instead of fullscreen */}
+      <ScrollableImagePreview
+        isOpen={isPreviewOpen}
+        onClose={closePreview}
+        images={imageList}
+        title={title}
+      />
     </>
   );
 };

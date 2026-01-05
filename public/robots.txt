@@ -5,7 +5,7 @@
 # ===========================================
 # Favicon & Icon Locations (for crawlers)
 # ===========================================
-# Primary Favicon: /favicon.ico
+# Primary Favicon: /images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png
 # PWA Icons: /pwa-192x192.png, /pwa-512x512.png
 # Apple Touch Icon: /apple-touch-icon.png
 
@@ -21,6 +21,7 @@ Allow: /about
 Allow: /install
 Allow: /terms
 Allow: /favicon.ico
+Allow: /images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png
 Allow: /apple-touch-icon.png
 Allow: /pwa-192x192.png
 Allow: /pwa-512x512.png
@@ -42,6 +43,7 @@ Crawl-delay: 0
 
 User-agent: Googlebot-Image
 Allow: /images-resources/
+Allow: /images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png
 Allow: /pwa-192x192.png
 Allow: /pwa-512x512.png
 Allow: /favicon.ico
@@ -55,6 +57,7 @@ Allow: /listings
 Allow: /property/
 Allow: /about
 Allow: /favicon.ico
+Allow: /images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png
 Allow: /apple-touch-icon.png
 Allow: /pwa-192x192.png
 Allow: /pwa-512x512.png
@@ -202,6 +205,7 @@ Allow: /about
 Allow: /install
 Allow: /terms
 Allow: /favicon.ico
+Allow: /images-resources/59d0637d-392f-4229-908a-fa6bc4dc3db2.png
 Allow: /apple-touch-icon.png
 Allow: /pwa-192x192.png
 Allow: /pwa-512x512.png
