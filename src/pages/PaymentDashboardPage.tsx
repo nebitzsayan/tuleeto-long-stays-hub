@@ -131,11 +131,7 @@ export default function PaymentDashboardPage() {
           <PaymentRecordTable
             records={records}
             tenants={tenants}
-            onEdit={(record) => {
-              if (record.bill_number) {
-                toast.error("Cannot edit: Bill has been generated for this record");
-                return;
-              }
+          onEdit={(record) => {
               setEditingRecord(record);
               setDialogOpen(true);
             }}

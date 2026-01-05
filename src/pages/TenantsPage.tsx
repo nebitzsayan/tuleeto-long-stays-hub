@@ -2,22 +2,12 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTenants } from "@/hooks/useTenants";
 import { TenantDialog } from "@/components/tenant/TenantDialog";
 import { TenantCard } from "@/components/tenant/TenantCard";
-import { Plus, ArrowLeft, Download, Search, FileText, X, Loader2 } from "lucide-react";
+import { Plus, ArrowLeft, Download } from "lucide-react";
 import { exportTenantsToExcel } from "@/lib/excelExport";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { getMonthName } from "@/lib/billGenerator";
-import { PaymentRecord, Tenant } from "@/types";
-
-interface InvoiceSearchResult {
-  record: PaymentRecord;
-  tenant: Tenant;
-}
 
 export default function TenantsPage() {
   const { propertyId } = useParams<{ propertyId: string }>();
@@ -25,83 +15,9 @@ export default function TenantsPage() {
   const { tenants, loading, addTenant, updateTenant, deleteTenant } = useTenants(propertyId);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<any>(null);
-  
-  // Invoice search states
-  const [invoiceSearch, setInvoiceSearch] = useState("");
-  const [searchResult, setSearchResult] = useState<InvoiceSearchResult | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
 
   const handleExport = () => {
     exportTenantsToExcel(tenants, `tenants_${propertyId}.xlsx`);
-  };
-
-  const handleInvoiceSearch = async () => {
-    if (!invoiceSearch.trim()) {
-      toast.error("Please enter an invoice number");
-      return;
-    }
-
-    if (!propertyId) {
-      toast.error("Property not found");
-      return;
-    }
-
-    setIsSearching(true);
-    setHasSearched(true);
-
-    try {
-      // Join with tenants and filter by current property
-      const { data, error } = await supabase
-        .from('payment_records')
-        .select(`
-          *,
-          tenants!inner (
-            id, name, phone, email, room_number, 
-            property_id, move_in_date, move_out_date,
-            monthly_rent, is_active, security_deposit, notes,
-            created_at, updated_at
-          )
-        `)
-        .eq('bill_number', invoiceSearch.trim().toUpperCase())
-        .eq('tenants.property_id', propertyId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Search error:', error);
-        toast.error("Error searching for invoice");
-        setSearchResult(null);
-        return;
-      }
-
-      if (!data) {
-        setSearchResult(null);
-        toast.info("No invoice found with that number for this property");
-        return;
-      }
-
-      // Tenant data is included in the response
-      const tenantData = data.tenants as Tenant;
-      const { tenants: _, ...recordData } = data;
-      
-      setSearchResult({ 
-        record: recordData as PaymentRecord, 
-        tenant: tenantData 
-      });
-      toast.success("Invoice found!");
-    } catch (error) {
-      console.error('Search error:', error);
-      toast.error("Error searching for invoice");
-      setSearchResult(null);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const clearSearch = () => {
-    setInvoiceSearch("");
-    setSearchResult(null);
-    setHasSearched(false);
   };
 
   const activeTenants = tenants.filter(t => t.is_active);
@@ -128,28 +44,6 @@ export default function TenantsPage() {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap items-center">
-            {/* Compact Invoice Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search invoice..."
-                value={invoiceSearch}
-                onChange={(e) => setInvoiceSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleInvoiceSearch()}
-                className="pl-9 pr-8 w-40 md:w-48 h-10"
-              />
-              {invoiceSearch ? (
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              ) : isSearching ? (
-                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              ) : null}
-            </div>
-            
             {tenants.length > 0 && (
               <Button variant="outline" onClick={handleExport} size="lg">
                 <Download className="mr-2 h-4 w-4" />
@@ -168,64 +62,6 @@ export default function TenantsPage() {
             </Button>
           </div>
         </div>
-
-        {/* Invoice Search Result Banner */}
-        {hasSearched && (
-          <div className="mb-6">
-            {searchResult ? (
-              <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
-                <CardContent className="py-3 px-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-semibold text-primary">
-                        #{searchResult.record.bill_number}
-                      </span>
-                      <span className="font-medium">{searchResult.tenant.name}</span>
-                      {searchResult.tenant.room_number && (
-                        <span className="text-sm text-muted-foreground">Room {searchResult.tenant.room_number}</span>
-                      )}
-                      <span className="text-sm text-muted-foreground">
-                        {getMonthName(searchResult.record.month)} {searchResult.record.year}
-                      </span>
-                      <span className="font-medium">
-                        ₹{(
-                          searchResult.record.rent_amount + 
-                          searchResult.record.electricity_amount + 
-                          searchResult.record.water_amount + 
-                          searchResult.record.other_charges
-                        ).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/properties/${propertyId}/payments/${searchResult.tenant.id}`)}
-                      >
-                        View Details
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearSearch}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-muted">
-                <CardContent className="py-3 px-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm">No invoice found with that number</span>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearSearch}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
