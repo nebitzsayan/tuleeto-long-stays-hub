@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { MapPin, Shield, User, Phone, Share2, Copy, Check } from "lucide-react";
+import { MapPin, Shield, User, Phone, Share2, Copy, Check, Calendar } from "lucide-react";
+import { format } from "date-fns";
 import MainLayout from "@/components/layout/MainLayout";
 import { getPropertyById } from "@/api/propertyService";
 import { Property } from "@/types";
@@ -221,6 +222,14 @@ const PropertyDetailPage = () => {
                     <div>
                       <span className="text-gray-500 block text-sm">Available From</span>
                       <span className="font-medium">{property.availableFrom}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block text-sm">Listed On</span>
+                      <span className="font-medium">
+                        {property.createdAt 
+                          ? format(new Date(property.createdAt), 'dd MMM yyyy')
+                          : 'N/A'}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
