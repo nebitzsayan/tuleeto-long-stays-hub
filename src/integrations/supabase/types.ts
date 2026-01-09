@@ -199,6 +199,7 @@ export type Database = {
           location: string
           owner_id: string
           price: number
+          report_count: number | null
           title: string
           type: string
           view_count: number | null
@@ -222,6 +223,7 @@ export type Database = {
           location: string
           owner_id: string
           price: number
+          report_count?: number | null
           title: string
           type: string
           view_count?: number | null
@@ -245,6 +247,7 @@ export type Database = {
           location?: string
           owner_id?: string
           price?: number
+          report_count?: number | null
           title?: string
           type?: string
           view_count?: number | null
@@ -269,6 +272,51 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "public_profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          property_id: string
+          reason: string
+          reporter_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          property_id: string
+          reason: string
+          reporter_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          property_id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_reports_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_reports_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_public_view"
             referencedColumns: ["id"]
           },
         ]

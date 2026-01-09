@@ -2,9 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { MapPin, Shield, User, Phone, Share2, Copy, Check, Calendar } from "lucide-react";
+import { MapPin, Shield, User, Phone, Share2, Copy, Check, Calendar, Flag } from "lucide-react";
 import { format } from "date-fns";
 import MainLayout from "@/components/layout/MainLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { getPropertyById } from "@/api/propertyService";
 import { Property } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +35,52 @@ const PropertyDetailPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+  const [isReporting, setIsReporting] = useState(false);
+
+  const reportReasons = [
+    "Fraudulent listing",
+    "Incorrect information", 
+    "Already rented/unavailable",
+    "Inappropriate content",
+    "Spam/duplicate listing",
+    "Other"
+  ];
+
+  const handleReportProperty = async () => {
+    if (!user || !property || !reportReason) return;
+    
+    setIsReporting(true);
+    try {
+      const { error } = await supabase
+        .from("property_reports")
+        .insert({
+          property_id: property.id,
+          reporter_id: user.id,
+          reason: reportReason,
+          description: reportDescription || null
+        });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("You have already reported this property");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Property reported successfully. Our team will review it.");
+        setShowReportDialog(false);
+        setReportReason("");
+        setReportDescription("");
+      }
+    } catch (err: any) {
+      toast.error("Failed to report property");
+    } finally {
+      setIsReporting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -185,6 +235,60 @@ const PropertyDetailPage = () => {
                       }}
                       ownerName={property.ownerName}
                     />
+                  )}
+                  
+                  {/* Report Button - Only for logged in users who don't own the property */}
+                  {user && user.id !== property.ownerId && (
+                    <AlertDialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2 text-destructive hover:bg-destructive/10 border-destructive/30"
+                        >
+                          <Flag className="h-4 w-4" />
+                          <span className="hidden sm:inline">Report</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Report Property</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Help us keep our platform safe. Select a reason for reporting this property.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="space-y-4 py-4">
+                          <Select value={reportReason} onValueChange={setReportReason}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a reason" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {reportReasons.map((reason) => (
+                                <SelectItem key={reason} value={reason}>
+                                  {reason}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Textarea
+                            placeholder="Additional details (optional)"
+                            value={reportDescription}
+                            onChange={(e) => setReportDescription(e.target.value)}
+                            rows={3}
+                          />
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleReportProperty}
+                            disabled={!reportReason || isReporting}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            {isReporting ? "Reporting..." : "Submit Report"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>

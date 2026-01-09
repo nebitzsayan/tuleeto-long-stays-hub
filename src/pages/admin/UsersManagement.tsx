@@ -6,15 +6,29 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Ban, Shield, Search, Download } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Trash2, Ban, Search, Download, ChevronDown, ChevronUp, Home, Users } from "lucide-react";
 import { exportUsersToExcel } from "@/lib/adminExport";
 
+interface UserWithDetails {
+  id: string;
+  email: string;
+  full_name: string | null;
+  created_at: string;
+  is_banned: boolean | null;
+  ban_reason: string | null;
+  properties?: any[];
+  tenantHistory?: any[];
+}
+
 export default function UsersManagement() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [deleteUser, setDeleteUser] = useState<any>(null);
-  const [banUser, setBanUser] = useState<any>(null);
+  const [deleteUser, setDeleteUser] = useState<UserWithDetails | null>(null);
+  const [banUser, setBanUser] = useState<UserWithDetails | null>(null);
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -33,13 +47,42 @@ export default function UsersManagement() {
     }
   };
 
+  const fetchUserDetails = async (userId: string) => {
+    try {
+      const [propertiesRes, tenantsRes] = await Promise.all([
+        supabase.from("properties").select("id, title, location, price, is_public, created_at").eq("owner_id", userId),
+        supabase.from("tenants").select("id, name, property_id, move_in_date, move_out_date, is_active, monthly_rent"),
+      ]);
+
+      // Update user with details
+      setUsers(prev => prev.map(u => 
+        u.id === userId 
+          ? { ...u, properties: propertiesRes.data || [], tenantHistory: tenantsRes.data || [] }
+          : u
+      ));
+    } catch (error) {
+      console.error("Failed to fetch user details:", error);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  const handleExpandUser = (userId: string) => {
+    if (expandedUser === userId) {
+      setExpandedUser(null);
+    } else {
+      setExpandedUser(userId);
+      const user = users.find(u => u.id === userId);
+      if (!user?.properties) {
+        fetchUserDetails(userId);
+      }
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Log admin action
       await supabase.rpc("log_admin_action", {
         _action_type: "user_deleted",
         _target_id: userId,
@@ -86,34 +129,149 @@ export default function UsersManagement() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
-          <p className="text-muted-foreground">Manage all users on the platform</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">User Management</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Manage all users on the platform</p>
         </div>
-        <Button onClick={() => exportUsersToExcel(users)} variant="outline">
+        <Button onClick={() => exportUsersToExcel(users)} variant="outline" size="sm" className="w-full md:w-auto">
           <Download className="mr-2 h-4 w-4" />
-          Export to Excel
+          Export
         </Button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-      <div className="rounded-md border">
+      {/* Mobile Cards View */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">No users found</div>
+        ) : (
+          filteredUsers.map((user) => (
+            <Card key={user.id}>
+              <Collapsible open={expandedUser === user.id} onOpenChange={() => handleExpandUser(user.id)}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm font-medium truncate">{user.email}</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-1">{user.full_name || "No name"}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(user.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      {user.is_banned ? (
+                        <Badge variant="destructive" className="text-xs">Banned</Badge>
+                      ) : (
+                        <Badge variant="default" className="text-xs">Active</Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between">
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-xs">
+                        {expandedUser === user.id ? (
+                          <>
+                            <ChevronUp className="h-3 w-3 mr-1" />
+                            Hide Details
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                            View Details
+                          </>
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={user.is_banned ? "default" : "destructive"}
+                        onClick={() => setBanUser(user)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Ban className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setDeleteUser(user)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <CollapsibleContent className="mt-4 space-y-4">
+                    {/* User's Properties */}
+                    <div>
+                      <h4 className="text-xs font-semibold flex items-center gap-1 mb-2">
+                        <Home className="h-3 w-3" /> Listed Properties
+                      </h4>
+                      {user.properties?.length ? (
+                        <div className="space-y-2">
+                          {user.properties.map((prop: any) => (
+                            <div key={prop.id} className="bg-muted p-2 rounded text-xs">
+                              <p className="font-medium truncate">{prop.title}</p>
+                              <p className="text-muted-foreground">{prop.location} • ₹{prop.price?.toLocaleString()}</p>
+                              <Badge variant={prop.is_public ? "default" : "secondary"} className="mt-1 text-xs">
+                                {prop.is_public ? "Public" : "Private"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No properties listed</p>
+                      )}
+                    </div>
+                    
+                    {/* Tenant History */}
+                    <div>
+                      <h4 className="text-xs font-semibold flex items-center gap-1 mb-2">
+                        <Users className="h-3 w-3" /> Tenants Managed
+                      </h4>
+                      {user.tenantHistory?.length ? (
+                        <div className="space-y-2">
+                          {user.tenantHistory.slice(0, 3).map((tenant: any) => (
+                            <div key={tenant.id} className="bg-muted p-2 rounded text-xs">
+                              <p className="font-medium">{tenant.name}</p>
+                              <p className="text-muted-foreground">₹{tenant.monthly_rent?.toLocaleString()}/month</p>
+                              <Badge variant={tenant.is_active ? "default" : "secondary"} className="mt-1 text-xs">
+                                {tenant.is_active ? "Active" : "Moved Out"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No tenants found</p>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </CardContent>
+              </Collapsible>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10"></TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Full Name</TableHead>
               <TableHead>Created At</TableHead>
@@ -124,50 +282,111 @@ export default function UsersManagement() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">No users found</TableCell>
+                <TableCell colSpan={6} className="text-center">No users found</TableCell>
               </TableRow>
             ) : (
               filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.email}</TableCell>
-                  <TableCell>{user.full_name || "N/A"}</TableCell>
-                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    {user.is_banned ? (
-                      <Badge variant="destructive">Banned</Badge>
-                    ) : (
-                      <Badge variant="default">Active</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant={user.is_banned ? "default" : "destructive"}
-                        onClick={() => setBanUser(user)}
-                      >
-                        <Ban className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => setDeleteUser(user)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <>
+                  <TableRow key={user.id} className="cursor-pointer" onClick={() => handleExpandUser(user.id)}>
+                    <TableCell>
+                      {expandedUser === user.id ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{user.email}</TableCell>
+                    <TableCell>{user.full_name || "N/A"}</TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {user.is_banned ? (
+                        <Badge variant="destructive">Banned</Badge>
+                      ) : (
+                        <Badge variant="default">Active</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant={user.is_banned ? "default" : "destructive"}
+                          onClick={() => setBanUser(user)}
+                        >
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeleteUser(user)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {expandedUser === user.id && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="bg-muted/50">
+                        <div className="p-4 grid md:grid-cols-2 gap-6">
+                          {/* Properties */}
+                          <div>
+                            <h4 className="font-semibold flex items-center gap-2 mb-3">
+                              <Home className="h-4 w-4" /> Listed Properties ({user.properties?.length || 0})
+                            </h4>
+                            {user.properties?.length ? (
+                              <div className="space-y-2">
+                                {user.properties.map((prop: any) => (
+                                  <div key={prop.id} className="bg-background p-3 rounded-md border">
+                                    <p className="font-medium">{prop.title}</p>
+                                    <p className="text-sm text-muted-foreground">{prop.location} • ₹{prop.price?.toLocaleString()}/mo</p>
+                                    <Badge variant={prop.is_public ? "default" : "secondary"} className="mt-2">
+                                      {prop.is_public ? "Public" : "Private"}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">No properties listed</p>
+                            )}
+                          </div>
+                          
+                          {/* Tenants */}
+                          <div>
+                            <h4 className="font-semibold flex items-center gap-2 mb-3">
+                              <Users className="h-4 w-4" /> Tenants Managed
+                            </h4>
+                            {user.tenantHistory?.length ? (
+                              <div className="space-y-2">
+                                {user.tenantHistory.map((tenant: any) => (
+                                  <div key={tenant.id} className="bg-background p-3 rounded-md border">
+                                    <p className="font-medium">{tenant.name}</p>
+                                    <p className="text-sm text-muted-foreground">₹{tenant.monthly_rent?.toLocaleString()}/month</p>
+                                    <Badge variant={tenant.is_active ? "default" : "secondary"} className="mt-2">
+                                      {tenant.is_active ? "Active" : "Moved Out"}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">No tenants found</p>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               ))
             )}
           </TableBody>
         </Table>
       </div>
 
+      {/* Delete Dialog */}
       <AlertDialog open={!!deleteUser} onOpenChange={() => setDeleteUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -178,13 +397,14 @@ export default function UsersManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeleteUser(deleteUser?.id)}>
+            <AlertDialogAction onClick={() => deleteUser && handleDeleteUser(deleteUser.id)}>
               Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Ban Dialog */}
       <AlertDialog open={!!banUser} onOpenChange={() => setBanUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -197,7 +417,7 @@ export default function UsersManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleBanUser(banUser?.id, !banUser?.is_banned)}>
+            <AlertDialogAction onClick={() => banUser && handleBanUser(banUser.id, !banUser.is_banned)}>
               {banUser?.is_banned ? "Unban" : "Ban"} User
             </AlertDialogAction>
           </AlertDialogFooter>
