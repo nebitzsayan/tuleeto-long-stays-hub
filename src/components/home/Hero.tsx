@@ -27,6 +27,7 @@ const Hero = () => {
   const [filteredCities, setFilteredCities] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const hasUserTyped = useRef(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { city, permissionStatus, isLoading, requestLocation } = useLocationContext();
@@ -36,12 +37,12 @@ const Hero = () => {
     requestLocation();
   }, []);
 
-  // Pre-fill search box with detected city
+  // Pre-fill search box with detected city (only if user hasn't typed)
   useEffect(() => {
-    if (city && !location) {
+    if (city && !hasUserTyped.current) {
       setLocation(city);
     }
-  }, [city, isLoading, permissionStatus]);
+  }, [city]);
 
   // Filter cities based on input
   useEffect(() => {
@@ -125,7 +126,10 @@ const Hero = () => {
               {!isLoading && (
                 <MapPin 
                   className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400 cursor-pointer hover:text-tuleeto-orange transition-colors z-10" 
-                  onClick={requestLocation} 
+                  onClick={() => {
+                    hasUserTyped.current = false; // Reset so detected city will be used
+                    requestLocation();
+                  }} 
                 />
               )}
               <Input
@@ -135,6 +139,7 @@ const Hero = () => {
                 className="pl-10 pr-3 h-9 md:h-12 text-sm md:text-lg"
                 value={location}
                 onChange={(e) => {
+                  hasUserTyped.current = true; // User is typing manually
                   setLocation(e.target.value);
                   setShowSuggestions(true);
                 }}
