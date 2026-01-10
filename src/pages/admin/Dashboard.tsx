@@ -40,19 +40,21 @@ export default function Dashboard() {
           <p className="text-sm md:text-base text-muted-foreground">Overview of your platform statistics</p>
         </div>
         
-        {/* Period Tabs - Scrollable on mobile */}
+        {/* Period Tabs - Horizontal scroll on mobile */}
         <Tabs value={period} onValueChange={(v) => setPeriod(v as TimePeriod)} className="w-full md:w-auto">
-          <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex gap-1 h-auto p-1">
-            {Object.entries(periodLabels).map(([key, label]) => (
-              <TabsTrigger 
-                key={key} 
-                value={key}
-                className="text-xs md:text-sm px-2 md:px-3 py-1.5"
-              >
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="overflow-x-auto -mx-2 px-2 pb-2">
+            <TabsList className="inline-flex w-auto min-w-full md:min-w-0 gap-1 h-auto p-1">
+              {Object.entries(periodLabels).map(([key, label]) => (
+                <TabsTrigger 
+                  key={key} 
+                  value={key}
+                  className="text-xs md:text-sm px-3 py-2 whitespace-nowrap flex-shrink-0"
+                >
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
         </Tabs>
       </div>
 

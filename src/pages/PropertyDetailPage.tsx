@@ -250,21 +250,24 @@ const PropertyDetailPage = () => {
                           <span className="hidden sm:inline">Report</span>
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Report Property</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Help us keep our platform safe. Select a reason for reporting this property.
+                      <AlertDialogContent className="max-w-[95vw] sm:max-w-md mx-4 rounded-xl">
+                        <AlertDialogHeader className="text-left">
+                          <AlertDialogTitle className="text-lg sm:text-xl flex items-center gap-2">
+                            <Flag className="h-5 w-5 text-destructive" />
+                            Report Property
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-sm text-muted-foreground">
+                            Help us keep our platform safe. Select a reason for reporting.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <div className="space-y-4 py-4">
                           <Select value={reportReason} onValueChange={setReportReason}>
-                            <SelectTrigger>
+                            <SelectTrigger className="h-12 text-base">
                               <SelectValue placeholder="Select a reason" />
                             </SelectTrigger>
                             <SelectContent>
                               {reportReasons.map((reason) => (
-                                <SelectItem key={reason} value={reason}>
+                                <SelectItem key={reason} value={reason} className="py-3 text-sm sm:text-base">
                                   {reason}
                                 </SelectItem>
                               ))}
@@ -274,15 +277,18 @@ const PropertyDetailPage = () => {
                             placeholder="Additional details (optional)"
                             value={reportDescription}
                             onChange={(e) => setReportDescription(e.target.value)}
-                            rows={3}
+                            rows={4}
+                            className="text-base resize-none"
                           />
                         </div>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                          <AlertDialogCancel className="w-full sm:w-auto h-11 text-base">
+                            Cancel
+                          </AlertDialogCancel>
                           <AlertDialogAction
                             onClick={handleReportProperty}
                             disabled={!reportReason || isReporting}
-                            className="bg-destructive hover:bg-destructive/90"
+                            className="w-full sm:w-auto h-11 text-base bg-destructive hover:bg-destructive/90"
                           >
                             {isReporting ? "Reporting..." : "Submit Report"}
                           </AlertDialogAction>

@@ -1,11 +1,10 @@
-import { LayoutDashboard, Users, Home, Receipt, MessageSquare, Settings, FileText, Shield, Menu } from "lucide-react";
+import { LayoutDashboard, Users, Home, MessageSquare, Settings, FileText, Shield, Menu } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { 
   Sidebar, 
   SidebarContent, 
   SidebarGroup, 
   SidebarGroupContent, 
-  SidebarGroupLabel, 
   SidebarMenu, 
   SidebarMenuButton, 
   SidebarMenuItem,
@@ -20,7 +19,6 @@ const menuItems = [
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Properties", url: "/admin/properties", icon: Home },
   { title: "Tenants", url: "/admin/tenants", icon: Shield },
-  { title: "Payments", url: "/admin/payments", icon: Receipt },
   { title: "Reviews", url: "/admin/reviews", icon: MessageSquare },
   { title: "Audit Logs", url: "/admin/logs", icon: FileText },
   { title: "Settings", url: "/admin/settings", icon: Settings },
@@ -69,10 +67,10 @@ export function AdminSidebar() {
 
 export function AdminMobileHeader() {
   return (
-    <div className="md:hidden flex items-center justify-between p-4 border-b bg-background sticky top-0 z-50">
+    <div className="md:hidden flex items-center justify-between p-3 border-b bg-background sticky top-0 z-50 shadow-sm">
       <span className="font-bold text-lg">Admin Panel</span>
-      <SidebarTrigger>
-        <Button variant="ghost" size="icon">
+      <SidebarTrigger asChild>
+        <Button variant="outline" size="icon" className="h-9 w-9">
           <Menu className="h-5 w-5" />
         </Button>
       </SidebarTrigger>
