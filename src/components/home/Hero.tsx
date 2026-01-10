@@ -39,10 +39,10 @@ const Hero = () => {
 
   // Pre-fill search box with detected city (only if user hasn't typed)
   useEffect(() => {
-    if (city && !hasUserTyped.current) {
+    if (city && !hasUserTyped.current && !isLoading) {
       setLocation(city);
     }
-  }, [city]);
+  }, [city, isLoading]);
 
   // Filter cities based on input
   useEffect(() => {

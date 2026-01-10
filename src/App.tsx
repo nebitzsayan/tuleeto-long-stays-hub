@@ -28,7 +28,7 @@ const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const UsersManagement = lazy(() => import('./pages/admin/UsersManagement'));
 const PropertiesManagement = lazy(() => import('./pages/admin/PropertiesManagement'));
 const TenantsManagement = lazy(() => import('./pages/admin/TenantsManagement'));
-const PaymentsManagement = lazy(() => import('./pages/admin/PaymentsManagement'));
+// PaymentsManagement removed from admin panel
 const ReviewsManagement = lazy(() => import('./pages/admin/ReviewsManagement'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
 const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
@@ -117,7 +117,6 @@ function App() {
                                   <Route path="users" element={<UsersManagement />} />
                                   <Route path="properties" element={<PropertiesManagement />} />
                                   <Route path="tenants" element={<TenantsManagement />} />
-                                  <Route path="payments" element={<PaymentsManagement />} />
                                   <Route path="reviews" element={<ReviewsManagement />} />
                                   <Route path="settings" element={<Settings />} />
                                   <Route path="logs" element={<AuditLogs />} />
