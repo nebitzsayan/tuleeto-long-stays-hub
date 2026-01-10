@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Phone, Mail } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, Download, Phone, Mail, Home, Calendar } from "lucide-react";
 import { exportTenantsToExcel } from "@/lib/excelExport";
 
 export default function TenantsManagement() {
@@ -50,13 +51,13 @@ export default function TenantsManagement() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Tenant Management</h2>
-          <p className="text-muted-foreground">View all tenants across all properties</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Tenant Management</h2>
+          <p className="text-sm md:text-base text-muted-foreground">View all tenants across properties</p>
         </div>
-        <Button onClick={() => exportTenantsToExcel(tenants)} variant="outline">
+        <Button onClick={() => exportTenantsToExcel(tenants)} variant="outline" size="sm" className="w-full md:w-auto">
           <Download className="mr-2 h-4 w-4" />
           Export to Excel
         </Button>
@@ -69,12 +70,72 @@ export default function TenantsManagement() {
             placeholder="Search by name, email, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10"
           />
         </div>
       </div>
 
-      <div className="rounded-md border">
+      {/* Mobile Cards View */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <Card>
+            <CardContent className="p-4 text-center text-muted-foreground">
+              Loading...
+            </CardContent>
+          </Card>
+        ) : filteredTenants.length === 0 ? (
+          <Card>
+            <CardContent className="p-4 text-center text-muted-foreground">
+              No tenants found
+            </CardContent>
+          </Card>
+        ) : (
+          filteredTenants.map((tenant) => (
+            <Card key={tenant.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{tenant.name}</p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <Phone className="h-3 w-3 flex-shrink-0" />
+                      <span>{tenant.phone}</span>
+                    </div>
+                    {tenant.email && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                        <Mail className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{tenant.email}</span>
+                      </div>
+                    )}
+                  </div>
+                  <Badge variant={tenant.is_active ? "default" : "secondary"} className="text-xs flex-shrink-0">
+                    {tenant.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-start gap-1.5">
+                    <Home className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{tenant.properties?.title || "N/A"}</p>
+                      <p className="text-muted-foreground truncate">{tenant.properties?.location}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-primary">₹{tenant.monthly_rent?.toLocaleString()}/mo</p>
+                    <p className="text-muted-foreground">Room: {tenant.room_number || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <span>Move-in: {new Date(tenant.move_in_date).toLocaleDateString()}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>

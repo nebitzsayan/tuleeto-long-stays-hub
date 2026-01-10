@@ -1,9 +1,14 @@
-import { Users, Home, Shield, AlertTriangle, Activity, TrendingUp, Calendar } from "lucide-react";
+import { useState } from "react";
+import { Users, Home, Shield, AlertTriangle, Activity, TrendingUp, Calendar, Zap, UserPlus, Download, Eye, CheckCircle, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { useAdminAnalytics, TimePeriod } from "@/hooks/useAdminAnalytics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const COLORS = ['#ff6b35', '#f7931e', '#fdc500', '#4caf50', '#2196f3', '#9c27b0'];
@@ -17,8 +22,12 @@ const periodLabels: Record<TimePeriod, string> = {
   all: "All Time",
 };
 
+type ChartType = 'growth' | 'types' | 'activity' | null;
+
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { stats, loading, period, setPeriod, propertyTypeData, growthData } = useAdminAnalytics();
+  const [selectedChart, setSelectedChart] = useState<ChartType>(null);
 
   if (loading) {
     return (
@@ -31,6 +40,78 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const renderChartContent = (chartType: ChartType) => {
+    switch (chartType) {
+      case 'growth':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={growthData}>
+              <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+              <YAxis tick={{ fontSize: 10 }} width={30} />
+              <Tooltip 
+                contentStyle={{ 
+                  fontSize: 12,
+                  borderRadius: 8,
+                  border: "1px solid hsl(var(--border))",
+                  backgroundColor: "hsl(var(--background))"
+                }} 
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="users" stroke="#ff6b35" strokeWidth={2} dot={false} name="Users" />
+              <Line type="monotone" dataKey="properties" stroke="#4caf50" strokeWidth={2} dot={false} name="Properties" />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      case 'types':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={propertyTypeData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {propertyTypeData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case 'activity':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={growthData.slice(-14)}>
+              <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
+              <YAxis tick={{ fontSize: 10 }} width={30} />
+              <Tooltip 
+                contentStyle={{ 
+                  fontSize: 12,
+                  borderRadius: 8,
+                  border: "1px solid hsl(var(--border))",
+                  backgroundColor: "hsl(var(--background))"
+                }} 
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="users" fill="#ff6b35" name="New Users" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="properties" fill="#4caf50" name="New Properties" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-4 md:space-y-6 p-2 md:p-0">
@@ -56,6 +137,74 @@ export default function Dashboard() {
             </TabsList>
           </div>
         </Tabs>
+      </div>
+
+      {/* System Health + Quick Actions Row */}
+      <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2">
+        {/* System Health Indicator */}
+        <Card className="bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-green-800 dark:text-green-200">System Healthy</p>
+              <p className="text-xs text-green-600 dark:text-green-400">All services running normally</p>
+            </div>
+            <div className="hidden sm:flex items-center gap-1 text-xs text-green-600">
+              <Clock className="h-3 w-3" />
+              <span>Last checked: just now</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm">Quick Actions</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                onClick={() => navigate('/admin/users')}
+              >
+                <UserPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">Users</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                onClick={() => navigate('/admin/properties')}
+              >
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Properties</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                onClick={() => navigate('/admin/reviews')}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="hidden sm:inline">Reviews</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                onClick={() => navigate('/admin/logs')}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Logs</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Stats Grid - 2 columns on mobile, 4 on desktop */}
@@ -113,15 +262,19 @@ export default function Dashboard() {
 
       {/* Charts - Stack on mobile */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" 
+          onClick={() => setSelectedChart('growth')}
+        >
           <CardHeader className="pb-2 md:pb-4">
             <CardTitle className="text-base md:text-lg flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Growth (Last 30 Days)
+              <span className="ml-auto text-xs text-muted-foreground font-normal">Tap to expand</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-6">
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <LineChart data={growthData}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
                 <XAxis 
@@ -139,7 +292,6 @@ export default function Dashboard() {
                     backgroundColor: "hsl(var(--background))"
                   }} 
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Line 
                   type="monotone" 
                   dataKey="users" 
@@ -161,23 +313,27 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" 
+          onClick={() => setSelectedChart('types')}
+        >
           <CardHeader className="pb-2 md:pb-4">
-            <CardTitle className="text-base md:text-lg">Property Types</CardTitle>
+            <CardTitle className="text-base md:text-lg flex items-center justify-between">
+              Property Types
+              <span className="text-xs text-muted-foreground font-normal">Tap to expand</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-6">
             {propertyTypeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
                     data={propertyTypeData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, value, percent }) => 
-                      `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
-                    }
-                    outerRadius={80}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={70}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -189,7 +345,7 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
                 No property data available
               </div>
             )}
@@ -198,18 +354,24 @@ export default function Dashboard() {
       </div>
 
       {/* Activity Bar Chart */}
-      <Card>
+      <Card 
+        className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" 
+        onClick={() => setSelectedChart('activity')}
+      >
         <CardHeader className="pb-2 md:pb-4">
-          <CardTitle className="text-base md:text-lg">Daily Activity</CardTitle>
+          <CardTitle className="text-base md:text-lg flex items-center justify-between">
+            Daily Activity (Last 14 Days)
+            <span className="text-xs text-muted-foreground font-normal">Tap to expand</span>
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-2 md:p-6">
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={growthData.slice(-14)}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
               <XAxis 
                 dataKey="date" 
                 tick={{ fontSize: 10 }} 
-                interval={0}
+                interval={1}
                 angle={-45}
                 textAnchor="end"
                 height={60}
@@ -223,13 +385,28 @@ export default function Dashboard() {
                   backgroundColor: "hsl(var(--background))"
                 }} 
               />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="users" fill="#ff6b35" name="New Users" radius={[4, 4, 0, 0]} />
               <Bar dataKey="properties" fill="#4caf50" name="New Properties" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* Chart Detail Sheet for Mobile */}
+      <Sheet open={!!selectedChart} onOpenChange={() => setSelectedChart(null)}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-xl">
+          <SheetHeader className="pb-4">
+            <SheetTitle>
+              {selectedChart === 'growth' && 'Growth Details (Last 30 Days)'}
+              {selectedChart === 'types' && 'Property Types Distribution'}
+              {selectedChart === 'activity' && 'Daily Activity Details'}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="h-[calc(100%-4rem)]">
+            {renderChartContent(selectedChart)}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -38,11 +38,18 @@ const Hero = () => {
   }, []);
 
   // Pre-fill search box with detected city (only if user hasn't typed)
+  // Using setTimeout to ensure state updates properly after location detection
   useEffect(() => {
-    if (city && !hasUserTyped.current && !isLoading) {
-      setLocation(city);
+    if (city && !isLoading && permissionStatus === 'granted') {
+      // Small delay to ensure state is ready
+      const timer = setTimeout(() => {
+        if (!hasUserTyped.current) {
+          setLocation(city);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [city, isLoading]);
+  }, [city, isLoading, permissionStatus]);
 
   // Filter cities based on input
   useEffect(() => {
@@ -128,6 +135,7 @@ const Hero = () => {
                   className="absolute left-3 top-2.5 md:top-3 h-4 w-4 md:h-5 md:w-5 text-gray-400 cursor-pointer hover:text-tuleeto-orange transition-colors z-10" 
                   onClick={() => {
                     hasUserTyped.current = false; // Reset so detected city will be used
+                    setLocation(''); // Clear first to force re-fill
                     requestLocation();
                   }} 
                 />

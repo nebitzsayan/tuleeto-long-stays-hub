@@ -250,47 +250,57 @@ const PropertyDetailPage = () => {
                           <span className="hidden sm:inline">Report</span>
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="max-w-[95vw] sm:max-w-md mx-4 rounded-xl">
-                        <AlertDialogHeader className="text-left">
-                          <AlertDialogTitle className="text-lg sm:text-xl flex items-center gap-2">
-                            <Flag className="h-5 w-5 text-destructive" />
-                            Report Property
-                          </AlertDialogTitle>
-                          <AlertDialogDescription className="text-sm text-muted-foreground">
-                            Help us keep our platform safe. Select a reason for reporting.
-                          </AlertDialogDescription>
+                      <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md">
+                        <AlertDialogHeader className="text-left space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                              <Flag className="h-5 w-5 text-destructive" />
+                            </div>
+                            <div>
+                              <AlertDialogTitle className="text-lg font-semibold">Report Property</AlertDialogTitle>
+                              <AlertDialogDescription className="text-sm text-muted-foreground mt-0.5">
+                                Help keep our platform safe
+                              </AlertDialogDescription>
+                            </div>
+                          </div>
                         </AlertDialogHeader>
-                        <div className="space-y-4 py-4">
-                          <Select value={reportReason} onValueChange={setReportReason}>
-                            <SelectTrigger className="h-12 text-base">
-                              <SelectValue placeholder="Select a reason" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {reportReasons.map((reason) => (
-                                <SelectItem key={reason} value={reason} className="py-3 text-sm sm:text-base">
-                                  {reason}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Textarea
-                            placeholder="Additional details (optional)"
-                            value={reportDescription}
-                            onChange={(e) => setReportDescription(e.target.value)}
-                            rows={4}
-                            className="text-base resize-none"
-                          />
+                        <div className="space-y-4 py-2">
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Reason for report</label>
+                            <Select value={reportReason} onValueChange={setReportReason}>
+                              <SelectTrigger className="h-12 text-base touch-manipulation">
+                                <SelectValue placeholder="Select a reason" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[50vh]">
+                                {reportReasons.map((reason) => (
+                                  <SelectItem key={reason} value={reason} className="py-3.5 text-base">
+                                    {reason}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Additional details (optional)</label>
+                            <Textarea
+                              placeholder="Describe the issue..."
+                              value={reportDescription}
+                              onChange={(e) => setReportDescription(e.target.value)}
+                              rows={3}
+                              className="text-base resize-none"
+                            />
+                          </div>
                         </div>
-                        <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-                          <AlertDialogCancel className="w-full sm:w-auto h-11 text-base">
+                        <AlertDialogFooter className="flex-col gap-2 sm:flex-row pt-2">
+                          <AlertDialogCancel className="w-full sm:w-auto h-12 text-base order-2 sm:order-1 mt-0">
                             Cancel
                           </AlertDialogCancel>
                           <AlertDialogAction
                             onClick={handleReportProperty}
                             disabled={!reportReason || isReporting}
-                            className="w-full sm:w-auto h-11 text-base bg-destructive hover:bg-destructive/90"
+                            className="w-full sm:w-auto h-12 text-base bg-destructive hover:bg-destructive/90 order-1 sm:order-2"
                           >
-                            {isReporting ? "Reporting..." : "Submit Report"}
+                            {isReporting ? "Submitting..." : "Submit Report"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

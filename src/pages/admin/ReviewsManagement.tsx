@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Flag, Search, Download, Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Trash2, Flag, Search, Download, Star, MessageSquare } from "lucide-react";
 import { exportReviewsExcel } from "@/lib/adminExport";
 
 export default function ReviewsManagement() {
@@ -109,13 +110,13 @@ export default function ReviewsManagement() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Review Management</h2>
-          <p className="text-muted-foreground">Moderate reviews across all properties</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Review Management</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Moderate reviews across all properties</p>
         </div>
-        <Button onClick={() => exportReviewsExcel(reviews)} variant="outline">
+        <Button onClick={() => exportReviewsExcel(reviews)} variant="outline" size="sm" className="w-full md:w-auto">
           <Download className="mr-2 h-4 w-4" />
           Export to Excel
         </Button>
@@ -128,12 +129,94 @@ export default function ReviewsManagement() {
             placeholder="Search reviews..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10"
           />
         </div>
       </div>
 
-      <div className="rounded-md border">
+      {/* Mobile Cards View */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <Card>
+            <CardContent className="p-4 text-center text-muted-foreground">
+              Loading...
+            </CardContent>
+          </Card>
+        ) : filteredReviews.length === 0 ? (
+          <Card>
+            <CardContent className="p-4 text-center text-muted-foreground">
+              No reviews found
+            </CardContent>
+          </Card>
+        ) : (
+          filteredReviews.map((review) => (
+            <Card key={review.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{review.properties?.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{review.properties?.location}</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Star className="h-4 w-4 fill-primary text-primary" />
+                    <span className="font-semibold">{review.rating}</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-1.5 mt-2">
+                  {review.is_approved ? (
+                    <Badge variant="default" className="text-xs">Approved</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs">Pending</Badge>
+                  )}
+                  {review.is_flagged && <Badge variant="destructive" className="text-xs">Flagged</Badge>}
+                </div>
+
+                {review.comment && (
+                  <div className="mt-3 flex items-start gap-2">
+                    <MessageSquare className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground line-clamp-2">{review.comment}</p>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  {new Date(review.created_at).toLocaleDateString()}
+                </p>
+
+                <div className="flex gap-2 mt-3 pt-3 border-t">
+                  <Button
+                    size="sm"
+                    variant={review.is_approved ? "secondary" : "default"}
+                    onClick={() => handleToggleApproved(review.id, !review.is_approved)}
+                    className="flex-1 h-9 text-xs"
+                  >
+                    {review.is_approved ? "Reject" : "Approve"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={review.is_flagged ? "destructive" : "outline"}
+                    onClick={() => handleToggleFlagged(review.id, !review.is_flagged)}
+                    className="h-9 w-9 p-0"
+                  >
+                    <Flag className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setDeleteReview(review)}
+                    className="h-9 w-9 p-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
