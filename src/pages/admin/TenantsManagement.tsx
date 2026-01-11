@@ -51,28 +51,26 @@ export default function TenantsManagement() {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Tenant Management</h2>
-          <p className="text-sm md:text-base text-muted-foreground">View all tenants across properties</p>
+          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Tenant Management</h2>
+          <p className="text-xs md:text-base text-muted-foreground">View all tenants across properties</p>
         </div>
-        <Button onClick={() => exportTenantsToExcel(tenants)} variant="outline" size="sm" className="w-full md:w-auto">
+        <Button onClick={() => exportTenantsToExcel(tenants)} variant="outline" size="sm" className="w-full md:w-auto h-10">
           <Download className="mr-2 h-4 w-4" />
-          Export to Excel
+          Export
         </Button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-10"
-          />
-        </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search by name, email, or phone..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 h-10"
+        />
       </div>
 
       {/* Mobile Cards View */}
@@ -92,16 +90,16 @@ export default function TenantsManagement() {
         ) : (
           filteredTenants.map((tenant) => (
             <Card key={tenant.id}>
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{tenant.name}</p>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <p className="font-medium text-sm truncate">{tenant.name}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                       <Phone className="h-3 w-3 flex-shrink-0" />
                       <span>{tenant.phone}</span>
                     </div>
                     {tenant.email && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                         <Mail className="h-3 w-3 flex-shrink-0" />
                         <span className="truncate">{tenant.email}</span>
                       </div>
@@ -124,7 +122,7 @@ export default function TenantsManagement() {
                     <p className="text-muted-foreground">Room: {tenant.room_number || "N/A"}</p>
                   </div>
                 </div>
-                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
                   <span>Move-in: {new Date(tenant.move_in_date).toLocaleDateString()}</span>
                 </div>

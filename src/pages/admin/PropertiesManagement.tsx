@@ -65,14 +65,12 @@ export default function PropertiesManagement() {
 
   const handleVerifyProperty = async (propertyId: string) => {
     try {
-      // Log admin action
       await supabase.rpc("log_admin_action", {
         _action_type: "property_verified",
         _target_id: propertyId,
         _target_type: "property",
       });
 
-      // Update property - make public, unflag, reset report count
       const { error: updateError } = await supabase
         .from("properties")
         .update({ 
@@ -85,7 +83,6 @@ export default function PropertiesManagement() {
 
       if (updateError) throw updateError;
 
-      // Delete all reports for this property
       const { error: deleteError } = await supabase
         .from("property_reports")
         .delete()
@@ -184,13 +181,13 @@ export default function PropertiesManagement() {
   const reportedCount = properties.filter(p => (p.report_count && p.report_count > 0) || p.is_flagged).length;
 
   return (
-    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Property Management</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Manage all property listings</p>
+          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Property Management</h2>
+          <p className="text-xs md:text-base text-muted-foreground">Manage all property listings</p>
         </div>
-        <Button onClick={() => exportPropertiesExcel(properties)} variant="outline" size="sm" className="w-full md:w-auto">
+        <Button onClick={() => exportPropertiesExcel(properties)} variant="outline" size="sm" className="w-full md:w-auto h-10">
           <Download className="mr-2 h-4 w-4" />
           Export
         </Button>
@@ -198,25 +195,27 @@ export default function PropertiesManagement() {
 
       {/* Filter Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
-        <TabsList className="w-full md:w-auto grid grid-cols-4 md:flex">
-          <TabsTrigger value="all" className="text-xs md:text-sm">
-            All ({properties.length})
-          </TabsTrigger>
-          <TabsTrigger value="reported" className="text-xs md:text-sm relative">
-            Reported
-            {reportedCount > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                {reportedCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="public" className="text-xs md:text-sm">
-            Public
-          </TabsTrigger>
-          <TabsTrigger value="private" className="text-xs md:text-sm">
-            Private
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-3 px-3">
+          <TabsList className="w-auto inline-flex">
+            <TabsTrigger value="all" className="text-xs md:text-sm px-3">
+              All ({properties.length})
+            </TabsTrigger>
+            <TabsTrigger value="reported" className="text-xs md:text-sm px-3 relative">
+              Reported
+              {reportedCount > 0 && (
+                <Badge variant="destructive" className="ml-1.5 h-5 min-w-5 px-1 flex items-center justify-center text-xs">
+                  {reportedCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="public" className="text-xs md:text-sm px-3">
+              Public
+            </TabsTrigger>
+            <TabsTrigger value="private" className="text-xs md:text-sm px-3">
+              Private
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </Tabs>
 
       <div className="relative">
@@ -225,7 +224,7 @@ export default function PropertiesManagement() {
           placeholder="Search by title or location..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+          className="pl-10 h-10"
         />
       </div>
 
@@ -238,17 +237,17 @@ export default function PropertiesManagement() {
         ) : (
           filteredProperties.map((property) => (
             <Card key={property.id} className={property.report_count > 0 ? "border-destructive" : ""}>
-              <CardHeader className="pb-2">
+              <CardHeader className="p-3 pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-sm font-medium truncate">{property.title}</CardTitle>
                     <p className="text-xs text-muted-foreground mt-1 truncate">{property.location}</p>
-                    <p className="text-sm font-semibold mt-1">₹{property.price?.toLocaleString()}/mo</p>
+                    <p className="text-sm font-semibold mt-1 text-primary">₹{property.price?.toLocaleString()}/mo</p>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex flex-wrap gap-1 mb-3">
+              <CardContent className="p-3 pt-0">
+                <div className="flex flex-wrap gap-1.5 mb-3">
                   {property.is_public ? (
                     <Badge variant="default" className="text-xs">Public</Badge>
                   ) : (
@@ -259,7 +258,7 @@ export default function PropertiesManagement() {
                   {property.report_count > 0 && (
                     <Badge variant="destructive" className="text-xs flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      {property.report_count} Reports
+                      {property.report_count}
                     </Badge>
                   )}
                 </div>
@@ -269,7 +268,7 @@ export default function PropertiesManagement() {
                     size="sm"
                     variant="outline"
                     onClick={() => navigate(`/property/${property.id}`)}
-                    className="text-xs h-8"
+                    className="text-xs h-9 flex-1"
                   >
                     View
                   </Button>
@@ -279,7 +278,7 @@ export default function PropertiesManagement() {
                       size="sm"
                       variant="default"
                       onClick={() => setVerifyProperty(property)}
-                      className="text-xs h-8 bg-green-600 hover:bg-green-700"
+                      className="text-xs h-9 bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Verify
@@ -290,27 +289,27 @@ export default function PropertiesManagement() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleToggleVisibility(property.id, !property.is_public)}
-                    className="h-8 w-8 p-0"
+                    className="h-9 w-9 p-0"
                   >
-                    {property.is_public ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {property.is_public ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                   
                   <Button
                     size="sm"
                     variant={property.is_featured ? "default" : "outline"}
                     onClick={() => handleToggleFeatured(property.id, !property.is_featured)}
-                    className="h-8 w-8 p-0"
+                    className="h-9 w-9 p-0"
                   >
-                    <Star className="h-3 w-3" />
+                    <Star className="h-4 w-4" />
                   </Button>
                   
                   <Button
                     size="sm"
                     variant="destructive"
                     onClick={() => setDeleteProperty(property)}
-                    className="h-8 w-8 p-0"
+                    className="h-9 w-9 p-0"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -424,38 +423,48 @@ export default function PropertiesManagement() {
         </Table>
       </div>
 
-      {/* Delete Dialog */}
+      {/* Delete Dialog - Mobile Optimized */}
       <AlertDialog open={!!deleteProperty} onOpenChange={() => setDeleteProperty(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle className="text-lg">Delete Property?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
               This will permanently delete <strong>{deleteProperty?.title}</strong>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeleteProperty(deleteProperty?.id)}>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 mt-4">
+            <AlertDialogCancel className="w-full sm:w-auto h-11">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => handleDeleteProperty(deleteProperty?.id)}
+              className="w-full sm:w-auto h-11 bg-destructive hover:bg-destructive/90"
+            >
               Delete Property
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Verify Dialog */}
+      {/* Verify Dialog - Mobile Optimized */}
       <AlertDialog open={!!verifyProperty} onOpenChange={() => setVerifyProperty(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Verify & Publish Property</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will verify <strong>{verifyProperty?.title}</strong>, make it public, clear all reports ({verifyProperty?.report_count || 0}), and remove the flagged status.
+        <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
+          <AlertDialogHeader className="text-left">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-lg">Verify Property</AlertDialogTitle>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-sm">
+              This will verify <strong>{verifyProperty?.title}</strong>, make it public, clear all reports, and remove flags.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 mt-4">
+            <AlertDialogCancel className="w-full sm:w-auto h-11">Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => handleVerifyProperty(verifyProperty?.id)}
-              className="bg-green-600 hover:bg-green-700"
+              className="w-full sm:w-auto h-11 bg-green-600 hover:bg-green-700"
             >
               Verify & Publish
             </AlertDialogAction>

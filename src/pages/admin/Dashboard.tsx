@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Home, Shield, AlertTriangle, Activity, TrendingUp, Calendar, Zap, UserPlus, Download, Eye, CheckCircle, Clock } from "lucide-react";
+import { Users, Home, Shield, AlertTriangle, Activity, TrendingUp, Calendar, Zap, UserPlus, Download, Eye, CheckCircle, Clock, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { useAdminAnalytics, TimePeriod } from "@/hooks/useAdminAnalytics";
@@ -31,7 +31,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+      <div className="space-y-4 md:space-y-6 p-3 md:p-0">
         <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
             <Skeleton key={i} className="h-24 md:h-32" />
@@ -41,11 +41,81 @@ export default function Dashboard() {
     );
   }
 
-  const renderChartContent = (chartType: ChartType) => {
+  const getChartTitle = (chartType: ChartType) => {
+    switch (chartType) {
+      case 'growth':
+        return 'Growth Details (Last 30 Days)';
+      case 'types':
+        return 'Property Types Distribution';
+      case 'activity':
+        return 'Daily Activity Details';
+      default:
+        return '';
+    }
+  };
+
+  const getChartSummary = (chartType: ChartType) => {
+    switch (chartType) {
+      case 'growth':
+        const totalNewUsers = growthData.reduce((a, b) => a + (b.users || 0), 0);
+        const totalNewProperties = growthData.reduce((a, b) => a + (b.properties || 0), 0);
+        return (
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-muted-foreground text-xs">Total New Users (30d)</p>
+              <p className="text-2xl font-bold text-primary">{totalNewUsers}</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-muted-foreground text-xs">Total New Properties (30d)</p>
+              <p className="text-2xl font-bold text-green-600">{totalNewProperties}</p>
+            </div>
+          </div>
+        );
+      case 'types':
+        return (
+          <div className="space-y-2">
+            {propertyTypeData.map((type, i) => (
+              <div key={type.name} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                <span className="flex items-center gap-2 text-sm">
+                  <span 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: COLORS[i % COLORS.length] }} 
+                  />
+                  {type.name}
+                </span>
+                <span className="font-semibold">{type.value}</span>
+              </div>
+            ))}
+          </div>
+        );
+      case 'activity':
+        const recentData = growthData.slice(-14);
+        const avgUsers = recentData.length > 0 ? Math.round(recentData.reduce((a, b) => a + (b.users || 0), 0) / recentData.length) : 0;
+        const avgProps = recentData.length > 0 ? Math.round(recentData.reduce((a, b) => a + (b.properties || 0), 0) / recentData.length) : 0;
+        return (
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-muted-foreground text-xs">Avg. Daily Users</p>
+              <p className="text-2xl font-bold text-primary">{avgUsers}</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-muted-foreground text-xs">Avg. Daily Properties</p>
+              <p className="text-2xl font-bold text-green-600">{avgProps}</p>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderChartContent = (chartType: ChartType, fullSize = false) => {
+    const height = fullSize ? "100%" : 200;
+    
     switch (chartType) {
       case 'growth':
         return (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={height}>
             <LineChart data={growthData}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
@@ -66,15 +136,15 @@ export default function Dashboard() {
         );
       case 'types':
         return (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={height}>
             <PieChart>
               <Pie
                 data={propertyTypeData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={100}
+                label={fullSize ? ({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)` : ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={fullSize ? 120 : 70}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -83,13 +153,13 @@ export default function Dashboard() {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
+              {fullSize && <Legend />}
             </PieChart>
           </ResponsiveContainer>
         );
       case 'activity':
         return (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={height}>
             <BarChart data={growthData.slice(-14)}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
@@ -114,7 +184,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
@@ -123,13 +193,13 @@ export default function Dashboard() {
         
         {/* Period Tabs - Horizontal scroll on mobile */}
         <Tabs value={period} onValueChange={(v) => setPeriod(v as TimePeriod)} className="w-full md:w-auto">
-          <div className="overflow-x-auto -mx-2 px-2 pb-2">
+          <div className="overflow-x-auto -mx-3 px-3 pb-2">
             <TabsList className="inline-flex w-auto min-w-full md:min-w-0 gap-1 h-auto p-1">
               {Object.entries(periodLabels).map(([key, label]) => (
                 <TabsTrigger 
                   key={key} 
                   value={key}
-                  className="text-xs md:text-sm px-3 py-2 whitespace-nowrap flex-shrink-0"
+                  className="text-xs md:text-sm px-2.5 py-2 whitespace-nowrap flex-shrink-0"
                 >
                   {label}
                 </TabsTrigger>
@@ -143,7 +213,7 @@ export default function Dashboard() {
       <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2">
         {/* System Health Indicator */}
         <Card className="bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900">
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-3 md:p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
               <CheckCircle className="h-5 w-5 text-white" />
             </div>
@@ -153,14 +223,14 @@ export default function Dashboard() {
             </div>
             <div className="hidden sm:flex items-center gap-1 text-xs text-green-600">
               <Clock className="h-3 w-3" />
-              <span>Last checked: just now</span>
+              <span>just now</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-3">
               <Zap className="h-4 w-4 text-primary" />
               <span className="font-medium text-sm">Quick Actions</span>
@@ -169,38 +239,38 @@ export default function Dashboard() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
                 onClick={() => navigate('/admin/users')}
               >
                 <UserPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">Users</span>
+                <span className="hidden xs:inline text-[10px] md:text-xs">Users</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
                 onClick={() => navigate('/admin/properties')}
               >
                 <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Properties</span>
+                <span className="hidden xs:inline text-[10px] md:text-xs">Properties</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
                 onClick={() => navigate('/admin/reviews')}
               >
                 <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">Reviews</span>
+                <span className="hidden xs:inline text-[10px] md:text-xs">Reviews</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
                 onClick={() => navigate('/admin/logs')}
               >
                 <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Logs</span>
+                <span className="hidden xs:inline text-[10px] md:text-xs">Logs</span>
               </Button>
             </div>
           </CardContent>
@@ -261,55 +331,22 @@ export default function Dashboard() {
       </div>
 
       {/* Charts - Stack on mobile */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:gap-4 md:grid-cols-2">
         <Card 
           className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" 
           onClick={() => setSelectedChart('growth')}
         >
-          <CardHeader className="pb-2 md:pb-4">
-            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+          <CardHeader className="p-3 md:p-4 pb-2">
+            <CardTitle className="text-sm md:text-lg flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Growth (Last 30 Days)
-              <span className="ml-auto text-xs text-muted-foreground font-normal">Tap to expand</span>
+              <span className="flex-1">Growth (30 Days)</span>
+              <span className="text-[10px] md:text-xs text-muted-foreground font-normal">Tap to expand</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2 md:p-6">
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={growthData}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 10 }} 
-                  interval="preserveStartEnd"
-                  tickMargin={8}
-                />
-                <YAxis tick={{ fontSize: 10 }} width={30} />
-                <Tooltip 
-                  contentStyle={{ 
-                    fontSize: 12,
-                    borderRadius: 8,
-                    border: "1px solid hsl(var(--border))",
-                    backgroundColor: "hsl(var(--background))"
-                  }} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="users" 
-                  stroke="#ff6b35" 
-                  strokeWidth={2}
-                  dot={false}
-                  name="Users"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="properties" 
-                  stroke="#4caf50" 
-                  strokeWidth={2}
-                  dot={false}
-                  name="Properties"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <CardContent className="p-2 md:p-4">
+            <div className="h-[160px] md:h-[200px]">
+              {renderChartContent('growth')}
+            </div>
           </CardContent>
         </Card>
 
@@ -317,35 +354,19 @@ export default function Dashboard() {
           className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" 
           onClick={() => setSelectedChart('types')}
         >
-          <CardHeader className="pb-2 md:pb-4">
-            <CardTitle className="text-base md:text-lg flex items-center justify-between">
-              Property Types
-              <span className="text-xs text-muted-foreground font-normal">Tap to expand</span>
+          <CardHeader className="p-3 md:p-4 pb-2">
+            <CardTitle className="text-sm md:text-lg flex items-center justify-between">
+              <span>Property Types</span>
+              <span className="text-[10px] md:text-xs text-muted-foreground font-normal">Tap to expand</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2 md:p-6">
+          <CardContent className="p-2 md:p-4">
             {propertyTypeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={propertyTypeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={70}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {propertyTypeData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="h-[160px] md:h-[200px]">
+                {renderChartContent('types')}
+              </div>
             ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[160px] md:h-[200px] text-muted-foreground text-sm">
                 No property data available
               </div>
             )}
@@ -358,52 +379,45 @@ export default function Dashboard() {
         className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]" 
         onClick={() => setSelectedChart('activity')}
       >
-        <CardHeader className="pb-2 md:pb-4">
-          <CardTitle className="text-base md:text-lg flex items-center justify-between">
-            Daily Activity (Last 14 Days)
-            <span className="text-xs text-muted-foreground font-normal">Tap to expand</span>
+        <CardHeader className="p-3 md:p-4 pb-2">
+          <CardTitle className="text-sm md:text-lg flex items-center justify-between">
+            <span>Daily Activity (14 Days)</span>
+            <span className="text-[10px] md:text-xs text-muted-foreground font-normal">Tap to expand</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-2 md:p-6">
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={growthData.slice(-14)}>
-              <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 10 }} 
-                interval={1}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis tick={{ fontSize: 10 }} width={30} />
-              <Tooltip 
-                contentStyle={{ 
-                  fontSize: 12,
-                  borderRadius: 8,
-                  border: "1px solid hsl(var(--border))",
-                  backgroundColor: "hsl(var(--background))"
-                }} 
-              />
-              <Bar dataKey="users" fill="#ff6b35" name="New Users" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="properties" fill="#4caf50" name="New Properties" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <CardContent className="p-2 md:p-4">
+          <div className="h-[160px] md:h-[200px]">
+            {renderChartContent('activity')}
+          </div>
         </CardContent>
       </Card>
 
       {/* Chart Detail Sheet for Mobile */}
       <Sheet open={!!selectedChart} onOpenChange={() => setSelectedChart(null)}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-xl">
-          <SheetHeader className="pb-4">
-            <SheetTitle>
-              {selectedChart === 'growth' && 'Growth Details (Last 30 Days)'}
-              {selectedChart === 'types' && 'Property Types Distribution'}
-              {selectedChart === 'activity' && 'Daily Activity Details'}
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl px-4 pt-4 pb-8">
+          <div className="flex items-center justify-between mb-4">
+            <SheetTitle className="text-lg">
+              {getChartTitle(selectedChart)}
             </SheetTitle>
-          </SheetHeader>
-          <div className="h-[calc(100%-4rem)]">
-            {renderChartContent(selectedChart)}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setSelectedChart(null)}
+              className="h-8 w-8 rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          {/* Full Chart */}
+          <div className="h-[45vh] mb-4">
+            {renderChartContent(selectedChart, true)}
+          </div>
+          
+          {/* Summary Section */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm">Summary</h4>
+            {getChartSummary(selectedChart)}
           </div>
         </SheetContent>
       </Sheet>

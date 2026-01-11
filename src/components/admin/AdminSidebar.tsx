@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Users, Home, MessageSquare, Settings, FileText, Shield, Menu, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, Users, Home, MessageSquare, Settings, FileText, Shield, Menu, AlertTriangle, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -25,7 +25,7 @@ interface MenuItem {
 }
 
 export function AdminSidebar() {
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, openMobile } = useSidebar();
   const [reportedCount, setReportedCount] = useState(0);
 
   useEffect(() => {
@@ -50,48 +50,68 @@ export function AdminSidebar() {
   ];
 
   return (
-    <Sidebar className="border-r" collapsible="icon">
-      <SidebarHeader className="border-b p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold group-data-[collapsible=icon]:hidden">Admin Panel</span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/admin"}
-                      className={({ isActive }) =>
-                        `relative ${isActive
-                          ? "bg-primary text-primary-foreground font-medium"
-                          : "hover:bg-muted"}`
-                      }
-                      onClick={() => isMobile && setOpenMobile(false)}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.title}</span>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <Badge 
-                          variant="destructive" 
-                          className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:-right-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:text-[10px]"
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+    <>
+      {/* Mobile Backdrop */}
+      {isMobile && openMobile && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setOpenMobile(false)}
+        />
+      )}
+      
+      <Sidebar className="border-r z-50" collapsible="icon">
+        <SidebarHeader className="border-b p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold group-data-[collapsible=icon]:hidden">Admin Panel</span>
+            {isMobile && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 md:hidden"
+                onClick={() => setOpenMobile(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {menuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title}>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/admin"}
+                        className={({ isActive }) =>
+                          `relative ${isActive
+                            ? "bg-primary text-primary-foreground font-medium"
+                            : "hover:bg-muted"}`
+                        }
+                        onClick={() => isMobile && setOpenMobile(false)}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="flex-1">{item.title}</span>
+                        {item.badge !== undefined && item.badge > 0 && (
+                          <Badge 
+                            variant="destructive" 
+                            className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:-right-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:text-[10px]"
+                          >
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+    </>
   );
 }
 
@@ -110,7 +130,7 @@ export function AdminMobileHeader() {
   }, []);
 
   return (
-    <div className="md:hidden flex items-center justify-between p-3 border-b bg-background sticky top-0 z-50 shadow-sm">
+    <div className="md:hidden flex items-center justify-between p-3 border-b bg-background sticky top-0 z-40 shadow-sm">
       <div className="flex items-center gap-2">
         <span className="font-bold text-lg">Admin Panel</span>
         {reportedCount > 0 && (
@@ -121,7 +141,7 @@ export function AdminMobileHeader() {
         )}
       </div>
       <SidebarTrigger asChild>
-        <Button variant="outline" size="icon" className="h-9 w-9">
+        <Button variant="outline" size="icon" className="h-10 w-10">
           <Menu className="h-5 w-5" />
         </Button>
       </SidebarTrigger>
