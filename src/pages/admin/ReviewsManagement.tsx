@@ -110,28 +110,26 @@ export default function ReviewsManagement() {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Review Management</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Moderate reviews across all properties</p>
+          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Review Management</h2>
+          <p className="text-xs md:text-base text-muted-foreground">Moderate reviews across all properties</p>
         </div>
-        <Button onClick={() => exportReviewsExcel(reviews)} variant="outline" size="sm" className="w-full md:w-auto">
+        <Button onClick={() => exportReviewsExcel(reviews)} variant="outline" size="sm" className="w-full md:w-auto h-10">
           <Download className="mr-2 h-4 w-4" />
-          Export to Excel
+          Export
         </Button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search reviews..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-10"
-          />
-        </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search reviews..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 h-10"
+        />
       </div>
 
       {/* Mobile Cards View */}
@@ -151,15 +149,15 @@ export default function ReviewsManagement() {
         ) : (
           filteredReviews.map((review) => (
             <Card key={review.id}>
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{review.properties?.title}</p>
+                    <p className="font-medium text-sm truncate">{review.properties?.title}</p>
                     <p className="text-xs text-muted-foreground truncate">{review.properties?.location}</p>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <Star className="h-4 w-4 fill-primary text-primary" />
-                    <span className="font-semibold">{review.rating}</span>
+                    <span className="font-semibold text-sm">{review.rating}</span>
                   </div>
                 </div>
                 
@@ -175,7 +173,7 @@ export default function ReviewsManagement() {
                 {review.comment && (
                   <div className="mt-3 flex items-start gap-2">
                     <MessageSquare className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground line-clamp-2">{review.comment}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{review.comment}</p>
                   </div>
                 )}
 
@@ -188,7 +186,7 @@ export default function ReviewsManagement() {
                     size="sm"
                     variant={review.is_approved ? "secondary" : "default"}
                     onClick={() => handleToggleApproved(review.id, !review.is_approved)}
-                    className="flex-1 h-9 text-xs"
+                    className="flex-1 h-10 text-xs"
                   >
                     {review.is_approved ? "Reject" : "Approve"}
                   </Button>
@@ -196,7 +194,7 @@ export default function ReviewsManagement() {
                     size="sm"
                     variant={review.is_flagged ? "destructive" : "outline"}
                     onClick={() => handleToggleFlagged(review.id, !review.is_flagged)}
-                    className="h-9 w-9 p-0"
+                    className="h-10 w-10 p-0"
                   >
                     <Flag className="h-4 w-4" />
                   </Button>
@@ -204,7 +202,7 @@ export default function ReviewsManagement() {
                     size="sm"
                     variant="destructive"
                     onClick={() => setDeleteReview(review)}
-                    className="h-9 w-9 p-0"
+                    className="h-10 w-10 p-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -296,17 +294,26 @@ export default function ReviewsManagement() {
         </Table>
       </div>
 
+      {/* Delete Dialog - Mobile Optimized */}
       <AlertDialog open={!!deleteReview} onOpenChange={() => setDeleteReview(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
+          <AlertDialogHeader className="text-left">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <AlertDialogTitle className="text-lg">Delete Review?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm">
               This will permanently delete this review. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeleteReview(deleteReview?.id)}>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 mt-4">
+            <AlertDialogCancel className="w-full sm:w-auto h-11">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => handleDeleteReview(deleteReview?.id)}
+              className="w-full sm:w-auto h-11 bg-destructive hover:bg-destructive/90"
+            >
               Delete Review
             </AlertDialogAction>
           </AlertDialogFooter>

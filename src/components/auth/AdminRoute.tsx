@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { isAdmin } from "@/lib/security";
+import { supabase } from "@/integrations/supabase/client";
 import { logSecurityEvent } from "@/lib/secureLogging";
 import { PropertyLoader } from "@/components/ui/property-loader";
+import { toast } from "sonner";
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -22,22 +23,39 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
       }
 
       try {
-        const adminStatus = await isAdmin();
-        setIsUserAdmin(adminStatus);
+        // Primary check via RPC
+        const { data, error } = await supabase.rpc('is_current_user_admin');
         
-        if (!adminStatus) {
+        if (error) {
+          console.error('RPC admin check failed:', error);
+          
+          // Fallback: check user_roles directly
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
+          
+          if (roleError) {
+            console.error('Fallback admin check failed:', roleError);
+            setIsUserAdmin(false);
+          } else {
+            setIsUserAdmin(!!roleData);
+          }
+        } else {
+          setIsUserAdmin(data || false);
+        }
+        
+        // Log unauthorized access attempts
+        if (!isUserAdmin) {
           await logSecurityEvent('unauthorized_admin_access_attempt', { 
             userId: user.id,
             userEmail: user.email 
           });
         }
       } catch (error) {
-        console.error('Error checking admin status:', error);
-        console.warn('Admin check failed - this may indicate RPC function is missing or user lacks permissions', error);
-        await logSecurityEvent('admin_check_error', { 
-          userId: user.id,
-          error: error 
-        });
+        console.error('Admin check failed completely:', error);
         setIsUserAdmin(false);
       } finally {
         setIsCheckingAdmin(false);

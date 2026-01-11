@@ -54,7 +54,6 @@ export default function UsersManagement() {
         supabase.from("tenants").select("id, name, property_id, move_in_date, move_out_date, is_active, monthly_rent"),
       ]);
 
-      // Update user with details
       setUsers(prev => prev.map(u => 
         u.id === userId 
           ? { ...u, properties: propertiesRes.data || [], tenantHistory: tenantsRes.data || [] }
@@ -129,13 +128,13 @@ export default function UsersManagement() {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">User Management</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Manage all users on the platform</p>
+          <h2 className="text-xl md:text-3xl font-bold tracking-tight">User Management</h2>
+          <p className="text-xs md:text-base text-muted-foreground">Manage all users on the platform</p>
         </div>
-        <Button onClick={() => exportUsersToExcel(users)} variant="outline" size="sm" className="w-full md:w-auto">
+        <Button onClick={() => exportUsersToExcel(users)} variant="outline" size="sm" className="w-full md:w-auto h-10">
           <Download className="mr-2 h-4 w-4" />
           Export
         </Button>
@@ -147,7 +146,7 @@ export default function UsersManagement() {
           placeholder="Search by name or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+          className="pl-10 h-10"
         />
       </div>
 
@@ -161,7 +160,7 @@ export default function UsersManagement() {
           filteredUsers.map((user) => (
             <Card key={user.id}>
               <Collapsible open={expandedUser === user.id} onOpenChange={() => handleExpandUser(user.id)}>
-                <CardHeader className="pb-2">
+                <CardHeader className="p-3 pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-sm font-medium truncate">{user.email}</CardTitle>
@@ -177,19 +176,19 @@ export default function UsersManagement() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="p-3 pt-0">
                   <div className="flex items-center justify-between">
                     <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-xs">
+                      <Button variant="ghost" size="sm" className="text-xs h-9 px-2">
                         {expandedUser === user.id ? (
                           <>
                             <ChevronUp className="h-3 w-3 mr-1" />
-                            Hide Details
+                            Hide
                           </>
                         ) : (
                           <>
                             <ChevronDown className="h-3 w-3 mr-1" />
-                            View Details
+                            Details
                           </>
                         )}
                       </Button>
@@ -199,17 +198,17 @@ export default function UsersManagement() {
                         size="sm"
                         variant={user.is_banned ? "default" : "destructive"}
                         onClick={() => setBanUser(user)}
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 p-0"
                       >
-                        <Ban className="h-3 w-3" />
+                        <Ban className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => setDeleteUser(user)}
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 p-0"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -223,10 +222,10 @@ export default function UsersManagement() {
                       {user.properties?.length ? (
                         <div className="space-y-2">
                           {user.properties.map((prop: any) => (
-                            <div key={prop.id} className="bg-muted p-2 rounded text-xs">
+                            <div key={prop.id} className="bg-muted p-2.5 rounded-lg text-xs">
                               <p className="font-medium truncate">{prop.title}</p>
                               <p className="text-muted-foreground">{prop.location} • ₹{prop.price?.toLocaleString()}</p>
-                              <Badge variant={prop.is_public ? "default" : "secondary"} className="mt-1 text-xs">
+                              <Badge variant={prop.is_public ? "default" : "secondary"} className="mt-1.5 text-xs">
                                 {prop.is_public ? "Public" : "Private"}
                               </Badge>
                             </div>
@@ -245,10 +244,10 @@ export default function UsersManagement() {
                       {user.tenantHistory?.length ? (
                         <div className="space-y-2">
                           {user.tenantHistory.slice(0, 3).map((tenant: any) => (
-                            <div key={tenant.id} className="bg-muted p-2 rounded text-xs">
+                            <div key={tenant.id} className="bg-muted p-2.5 rounded-lg text-xs">
                               <p className="font-medium">{tenant.name}</p>
                               <p className="text-muted-foreground">₹{tenant.monthly_rent?.toLocaleString()}/month</p>
-                              <Badge variant={tenant.is_active ? "default" : "secondary"} className="mt-1 text-xs">
+                              <Badge variant={tenant.is_active ? "default" : "secondary"} className="mt-1.5 text-xs">
                                 {tenant.is_active ? "Active" : "Moved Out"}
                               </Badge>
                             </div>
@@ -386,39 +385,52 @@ export default function UsersManagement() {
         </Table>
       </div>
 
-      {/* Delete Dialog */}
+      {/* Delete Dialog - Mobile Optimized */}
       <AlertDialog open={!!deleteUser} onOpenChange={() => setDeleteUser(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the user <strong>{deleteUser?.email}</strong> and all their data. This action cannot be undone.
+        <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle className="text-lg">Delete User?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              This will permanently delete <strong>{deleteUser?.email}</strong> and all their data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteUser && handleDeleteUser(deleteUser.id)}>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 mt-4">
+            <AlertDialogCancel className="w-full sm:w-auto h-11">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deleteUser && handleDeleteUser(deleteUser.id)}
+              className="w-full sm:w-auto h-11 bg-destructive hover:bg-destructive/90"
+            >
               Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Ban Dialog */}
+      {/* Ban Dialog - Mobile Optimized */}
       <AlertDialog open={!!banUser} onOpenChange={() => setBanUser(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{banUser?.is_banned ? "Unban User" : "Ban User"}</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
+          <AlertDialogHeader className="text-left">
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${banUser?.is_banned ? 'bg-green-100' : 'bg-destructive/10'}`}>
+                <Ban className={`h-5 w-5 ${banUser?.is_banned ? 'text-green-600' : 'text-destructive'}`} />
+              </div>
+              <AlertDialogTitle className="text-lg">
+                {banUser?.is_banned ? "Unban User?" : "Ban User?"}
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm">
               {banUser?.is_banned
-                ? `Are you sure you want to unban ${banUser?.email}?`
-                : `Are you sure you want to ban ${banUser?.email}? They will not be able to access the platform.`}
+                ? `This will unban ${banUser?.email} and restore their access.`
+                : `This will ban ${banUser?.email} from the platform. They will not be able to access their account.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => banUser && handleBanUser(banUser.id, !banUser.is_banned)}>
-              {banUser?.is_banned ? "Unban" : "Ban"} User
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 mt-4">
+            <AlertDialogCancel className="w-full sm:w-auto h-11">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => banUser && handleBanUser(banUser.id, !banUser.is_banned)}
+              className={`w-full sm:w-auto h-11 ${banUser?.is_banned ? 'bg-green-600 hover:bg-green-700' : 'bg-destructive hover:bg-destructive/90'}`}
+            >
+              {banUser?.is_banned ? "Unban User" : "Ban User"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

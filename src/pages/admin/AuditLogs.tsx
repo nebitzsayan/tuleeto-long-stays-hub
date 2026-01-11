@@ -42,16 +42,19 @@ export default function AuditLogs() {
     if (actionType.includes("delete")) return <Badge variant="destructive" className="text-xs">{actionType}</Badge>;
     if (actionType.includes("ban")) return <Badge variant="destructive" className="text-xs">{actionType}</Badge>;
     if (actionType.includes("flag")) return <Badge className="text-xs">{actionType}</Badge>;
+    if (actionType.includes("verify") || actionType.includes("approve")) return <Badge variant="default" className="text-xs bg-green-600">{actionType}</Badge>;
     return <Badge variant="secondary" className="text-xs">{actionType}</Badge>;
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 p-2 md:p-0">
-      <div className="flex items-center gap-2">
-        <FileText className="h-6 w-6 md:h-8 md:w-8" />
+    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+          <FileText className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+        </div>
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Audit Logs</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Track all administrative actions</p>
+          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Audit Logs</h2>
+          <p className="text-xs md:text-base text-muted-foreground">Track all administrative actions</p>
         </div>
       </div>
 
@@ -72,7 +75,7 @@ export default function AuditLogs() {
         ) : (
           logs.map((log) => (
             <Card key={log.id}>
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -85,7 +88,7 @@ export default function AuditLogs() {
                 </div>
                 
                 <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs">
-                  <div className="flex items-center gap-1 text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
                     <span className="font-medium">Target:</span>
                     <span>{log.target_type || "N/A"}</span>
                   </div>
@@ -96,7 +99,7 @@ export default function AuditLogs() {
                 </div>
                 
                 {log.target_id && (
-                  <p className="text-xs text-muted-foreground mt-1 font-mono">
+                  <p className="text-xs text-muted-foreground mt-1.5 font-mono bg-muted px-2 py-1 rounded inline-block">
                     ID: {log.target_id.slice(0, 8)}...
                   </p>
                 )}
