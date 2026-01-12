@@ -164,7 +164,7 @@ const PropertyDetailPage = () => {
   }
 
   return (
-    <MainLayout className="pt-24 pb-16 bg-gray-50">
+    <MainLayout className="pt-20 sm:pt-24 pb-16 bg-gray-50">
       {property && (
         <>
           <SEO {...generatePropertySEO(property)} />
@@ -177,31 +177,38 @@ const PropertyDetailPage = () => {
           ]} />
         </>
       )}
-      <div className="container max-w-6xl mx-auto px-4">
+      <div className="container max-w-6xl mx-auto px-3 sm:px-4">
         {property && (
-          <div className="space-y-8">
-            {/* Image Carousel */}
-            <PropertyImageCarousel images={property.images} title={property.title} />
+          <div className="space-y-6 sm:space-y-8">
+            {/* Image Carousel - Full width on mobile */}
+            <div className="-mx-3 sm:mx-0">
+              <PropertyImageCarousel images={property.images} title={property.title} />
+            </div>
 
-            {/* Title and Location Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h1 className="text-3xl font-bold">{property.title}</h1>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin className="h-4 w-4" />
-                    <span>{property.location}</span>
+            {/* Title and Location Section - Mobile optimized */}
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3">
+                {/* Title and location */}
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight line-clamp-2">
+                    {property.title}
+                  </h1>
+                  <div className="flex items-center gap-2 text-muted-foreground mt-1.5">
+                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm sm:text-base truncate">{property.location}</span>
                   </div>
                 </div>
-                  <div className="flex items-center gap-2">
-                  {/* Share Button - Enhanced UX */}
+                
+                {/* Action buttons - row on all sizes */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Share Button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleShare}
                     className={`
-                      flex items-center gap-2 px-4 py-2 rounded-full
-                      border-2 transition-all duration-300 ease-out
+                      flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full h-10
+                      border-2 transition-all duration-300 ease-out touch-manipulation
                       ${copied 
                         ? 'bg-green-50 border-green-400 text-green-700 dark:bg-green-900/30 dark:border-green-500 dark:text-green-400' 
                         : 'border-primary/30 hover:border-primary hover:bg-primary/5 hover:shadow-md active:scale-95'
@@ -210,16 +217,17 @@ const PropertyDetailPage = () => {
                   >
                     {copied ? (
                       <>
-                        <Check className="h-4 w-4 animate-scale-in" />
-                        <span className="font-medium">Copied!</span>
+                        <Check className="h-4 w-4" />
+                        <span className="font-medium text-sm">Copied!</span>
                       </>
                     ) : (
                       <>
-                        <Share2 className="h-4 w-4 transition-transform group-hover:rotate-12" />
-                        <span className="font-medium">Share</span>
+                        <Share2 className="h-4 w-4" />
+                        <span className="font-medium text-sm">Share</span>
                       </>
                     )}
                   </Button>
+                  
                   {/* Property Poster Generator - Only for property owners */}
                   {user && user.id === property.ownerId && (
                     <PropertyPosterGenerator 
@@ -244,13 +252,13 @@ const PropertyDetailPage = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex items-center gap-2 text-destructive hover:bg-destructive/10 border-destructive/30"
+                          className="flex items-center gap-2 text-destructive hover:bg-destructive/10 border-destructive/30 h-10 px-3 touch-manipulation"
                         >
                           <Flag className="h-4 w-4" />
-                          <span className="hidden sm:inline">Report</span>
+                          <span className="hidden sm:inline text-sm">Report</span>
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md">
+                      <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
                         <AlertDialogHeader className="text-left space-y-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
@@ -311,41 +319,43 @@ const PropertyDetailPage = () => {
             </div>
             
             {/* Property Details Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                {/* Property Info Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Property Information</CardTitle>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                {/* Property Info Card - Mobile optimized grid */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="text-lg sm:text-xl">Property Information</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <span className="text-gray-500 block text-sm">Price</span>
-                      <span className="font-medium">Rs {property.price.toLocaleString('en-IN')}/month</span>
+                  <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <span className="text-muted-foreground block text-xs sm:text-sm">Price</span>
+                      <span className="font-semibold text-sm sm:text-base text-primary">
+                        Rs {property.price.toLocaleString('en-IN')}/mo
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block text-sm">Bedrooms</span>
-                      <span className="font-medium">{property.bedrooms}</span>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <span className="text-muted-foreground block text-xs sm:text-sm">Bedrooms</span>
+                      <span className="font-semibold text-sm sm:text-base">{property.bedrooms}</span>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block text-sm">Bathrooms</span>
-                      <span className="font-medium">{property.bathrooms}</span>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <span className="text-muted-foreground block text-xs sm:text-sm">Bathrooms</span>
+                      <span className="font-semibold text-sm sm:text-base">{property.bathrooms}</span>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block text-sm">Area</span>
-                      <span className="font-medium">{property.area} sq ft</span>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <span className="text-muted-foreground block text-xs sm:text-sm">Area</span>
+                      <span className="font-semibold text-sm sm:text-base">{property.area} sq ft</span>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block text-sm">Property Type</span>
-                      <span className="font-medium">{property.propertyType}</span>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <span className="text-muted-foreground block text-xs sm:text-sm">Property Type</span>
+                      <span className="font-semibold text-sm sm:text-base">{property.propertyType}</span>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block text-sm">Available From</span>
-                      <span className="font-medium">{property.availableFrom}</span>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <span className="text-muted-foreground block text-xs sm:text-sm">Available From</span>
+                      <span className="font-semibold text-sm sm:text-base">{property.availableFrom}</span>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block text-sm">Listed On</span>
-                      <span className="font-medium">
+                    <div className="bg-muted/50 rounded-lg p-3 col-span-2 sm:col-span-1">
+                      <span className="text-muted-foreground block text-xs sm:text-sm">Listed On</span>
+                      <span className="font-semibold text-sm sm:text-base">
                         {property.createdAt 
                           ? format(new Date(property.createdAt), 'dd MMM yyyy')
                           : 'N/A'}
@@ -354,21 +364,23 @@ const PropertyDetailPage = () => {
                   </CardContent>
                 </Card>
 
-                {/* Description */}
+                {/* Description - Mobile optimized */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Description</CardTitle>
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="text-lg sm:text-xl">Description</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700">{property.description}</p>
+                    <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                      {property.description}
+                    </p>
                   </CardContent>
                 </Card>
                 
                 {/* Amenities Section */}
                 {property.features && property.features.length > 0 && (
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="pb-3 sm:pb-4">
+                      <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                         <Shield className="h-5 w-5 text-tuleeto-orange" />
                         Amenities & Features
                       </CardTitle>
@@ -379,7 +391,7 @@ const PropertyDetailPage = () => {
                   </Card>
                 )}
 
-                {/* Map Section - Simplified Logic */}
+                {/* Map Section */}
                 <PropertyMapDisplay
                   coordinates={property.coordinates || { lat: 26.727066, lng: 88.428421 }}
                   title={property.title}
@@ -394,28 +406,28 @@ const PropertyDetailPage = () => {
                 />
               </div>
 
-              {/* Sidebar */}
+              {/* Sidebar - Sticky on desktop, full width card on mobile */}
               <div className="lg:col-span-1">
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle>Contact Owner</CardTitle>
+                <Card className="lg:sticky lg:top-24">
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="text-lg sm:text-xl">Contact Owner</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 pb-3 border-b">
                       <OwnerAvatar 
                         ownerId={property.ownerId} 
                         ownerName={property.ownerName}
                         size="md"
                         withLink={true}
                       />
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <Link 
                           to={`/owner/${property.ownerId}`}
-                          className="text-sm font-medium hover:text-tuleeto-orange transition-colors"
+                          className="text-sm font-medium hover:text-tuleeto-orange transition-colors truncate block"
                         >
                           {property.ownerName}
                         </Link>
-                        <p className="text-xs text-gray-500">Property Owner</p>
+                        <p className="text-xs text-muted-foreground">Property Owner</p>
                       </div>
                     </div>
                     
@@ -423,13 +435,16 @@ const PropertyDetailPage = () => {
                     {user ? (
                       <div className="space-y-3">
                         {property.contactPhone && (
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm text-gray-600">Phone: {property.contactPhone}</p>
+                          <div className="flex items-center justify-between gap-2 bg-muted/50 rounded-lg p-3">
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground">Phone</p>
+                              <p className="text-sm font-medium truncate">{property.contactPhone}</p>
+                            </div>
                             <Button 
                               onClick={() => handlePhoneCall(property.contactPhone)}
                               size="sm"
                               variant="outline"
-                              className="p-1 h-8 w-8"
+                              className="h-9 w-9 p-0 flex-shrink-0"
                             >
                               <Phone className="h-4 w-4" />
                             </Button>
@@ -438,19 +453,24 @@ const PropertyDetailPage = () => {
                         {property.contactPhone && (
                           <Button 
                             onClick={() => handlePhoneCall(property.contactPhone)}
-                            className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange/90"
+                            className="w-full h-12 bg-tuleeto-orange hover:bg-tuleeto-orange/90 text-base font-medium touch-manipulation"
                           >
-                            <Phone className="h-4 w-4 mr-2" />
+                            <Phone className="h-5 w-5 mr-2" />
                             Call Now
                           </Button>
                         )}
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <p className="text-sm text-gray-600">Please login to view contact details</p>
+                        <div className="bg-muted/50 rounded-lg p-4 text-center">
+                          <User className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            Please login to view contact details
+                          </p>
+                        </div>
                         <Button 
                           onClick={() => window.location.href = '/auth'}
-                          className="w-full bg-tuleeto-orange hover:bg-tuleeto-orange/90"
+                          className="w-full h-12 bg-tuleeto-orange hover:bg-tuleeto-orange/90 text-base font-medium touch-manipulation"
                         >
                           Login to Contact Owner
                         </Button>

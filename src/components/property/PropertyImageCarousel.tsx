@@ -56,8 +56,8 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
 
   if (!imageList.length) {
     return (
-      <Card className={`aspect-[4/3] bg-gray-200 flex items-center justify-center ${className}`}>
-        <p className="text-gray-500">No images available</p>
+      <Card className={`aspect-[4/3] bg-muted flex items-center justify-center ${className}`}>
+        <p className="text-muted-foreground">No images available</p>
       </Card>
     );
   }
@@ -110,10 +110,10 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
 
   return (
     <>
-      <Card className={`relative overflow-hidden bg-gray-100 ${className}`}>
+      <Card className={`relative overflow-hidden bg-muted sm:rounded-xl rounded-none ${className}`}>
         <div 
           ref={imageRef}
-          className="aspect-[4/3] relative group cursor-pointer" 
+          className="aspect-[4/3] sm:aspect-[16/10] relative group cursor-pointer" 
           onClick={handleImageClick}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -142,8 +142,8 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
             />
           )}
           
-          {/* Overlay with expand icon */}
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+          {/* Overlay with expand icon - hidden on mobile for cleaner look */}
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-300 hidden sm:flex items-center justify-center">
             <Button
               variant="secondary"
               size="sm"
@@ -154,45 +154,56 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
             </Button>
           </div>
 
-          {/* Navigation arrows */}
+          {/* Navigation arrows - Larger on mobile for better touch targets */}
           {imageList.length > 1 && (
             <>
               <Button
                 variant="secondary"
                 size="icon"
-                className={`absolute left-2 top-1/2 -translate-y-1/2 transition-opacity duration-300 h-10 w-10 z-10 ${
-                  isMobile ? 'opacity-70 hover:opacity-100' : 'opacity-0 group-hover:opacity-100'
-                }`}
+                className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 shadow-lg
+                  ${isMobile 
+                    ? 'opacity-80 h-12 w-12 rounded-full bg-white/90 hover:bg-white' 
+                    : 'opacity-0 group-hover:opacity-100 h-10 w-10'
+                  }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   prevImage();
                 }}
                 disabled={isTransitioning}
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className={isMobile ? "h-6 w-6" : "h-5 w-5"} />
               </Button>
               
               <Button
                 variant="secondary"
                 size="icon"
-                className={`absolute right-2 top-1/2 -translate-y-1/2 transition-opacity duration-300 h-10 w-10 z-10 ${
-                  isMobile ? 'opacity-70 hover:opacity-100' : 'opacity-0 group-hover:opacity-100'
-                }`}
+                className={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 shadow-lg
+                  ${isMobile 
+                    ? 'opacity-80 h-12 w-12 rounded-full bg-white/90 hover:bg-white' 
+                    : 'opacity-0 group-hover:opacity-100 h-10 w-10'
+                  }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   nextImage();
                 }}
                 disabled={isTransitioning}
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className={isMobile ? "h-6 w-6" : "h-5 w-5"} />
               </Button>
             </>
           )}
 
-          {/* Image counter */}
+          {/* Image counter - Better positioned for mobile */}
           {imageList.length > 1 && (
-            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+            <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs sm:text-sm px-2.5 py-1.5 rounded-full backdrop-blur-sm font-medium">
               {currentImageIndex + 1} / {imageList.length}
+            </div>
+          )}
+
+          {/* Tap to view hint on mobile */}
+          {isMobile && (
+            <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-full backdrop-blur-sm">
+              Tap to view
             </div>
           )}
 
@@ -204,15 +215,18 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
           )}
         </div>
 
-        {/* Thumbnail dots */}
+        {/* Thumbnail dots - Better touch targets on mobile */}
         {imageList.length > 1 && imageList.length <= 5 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-1">
             {imageList.map((_, index) => (
               <button
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                }`}
+                className={`rounded-full transition-all touch-manipulation
+                  ${isMobile ? 'w-2.5 h-2.5' : 'w-2 h-2'}
+                  ${index === currentImageIndex 
+                    ? 'bg-white scale-110' 
+                    : 'bg-white/50 hover:bg-white/75'
+                  }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!isTransitioning) {
@@ -228,7 +242,7 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
         )}
       </Card>
 
-      {/* Image Preview Modal - Contained dialog instead of fullscreen */}
+      {/* Image Preview Modal */}
       <ScrollableImagePreview
         isOpen={isPreviewOpen}
         onClose={closePreview}
