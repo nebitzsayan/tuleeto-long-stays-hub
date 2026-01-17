@@ -118,20 +118,20 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[100vw] max-h-[100dvh] w-screen h-[100dvh] p-0 bg-black border-none rounded-none sm:max-w-[95vw] sm:max-h-[95vh] sm:rounded-lg">
+      <DialogContent className="max-w-[100vw] max-h-[100dvh] w-screen h-[100dvh] p-0 bg-black border-none rounded-none fixed inset-0">
         {/* Header with close and zoom buttons */}
-        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/60 to-transparent">
-          <div className="flex items-center gap-2">
-            <span className="text-white/90 text-sm font-medium truncate max-w-[200px] sm:max-w-none">
+        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent safe-area-top">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-white/90 text-sm font-medium truncate">
               {title}
             </span>
             {images.length > 1 && (
-              <span className="text-white/70 text-sm">
+              <span className="text-white/70 text-sm whitespace-nowrap">
                 ({currentIndex + 1}/{images.length})
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -157,70 +157,75 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
           </div>
         </div>
 
-        {/* Main image container with swipe support */}
+        {/* Main image container with swipe support - full height with proper padding */}
         <div 
-          className="flex items-center justify-center w-full h-full"
+          className="absolute inset-0 flex items-center justify-center pt-16 pb-24 sm:pb-16"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <div className="relative flex items-center justify-center w-full h-full px-2 py-16 sm:px-12">
-            {/* Loading indicator */}
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-              </div>
-            )}
-            
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+          )}
+          
+          {/* Image container - properly centered with max dimensions */}
+          <div className="relative w-full h-full flex items-center justify-center px-4 sm:px-12">
             <img
               ref={imageRef}
               src={images[currentIndex]}
               alt={`${title} - Image ${currentIndex + 1}`}
-              className={`max-w-full max-h-full object-contain transition-transform duration-300 touch-manipulation select-none ${
+              className={`max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 touch-manipulation select-none ${
                 isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'
               } ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+              style={{
+                maxWidth: 'calc(100vw - 2rem)',
+                maxHeight: 'calc(100dvh - 10rem)',
+              }}
               onClick={toggleZoom}
               onLoad={handleImageLoad}
               draggable={false}
             />
-            
-            {/* Desktop navigation arrows */}
-            {images.length > 1 && !isZoomed && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={prevImage}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-12 h-12 sm:w-11 sm:h-11 hidden sm:flex shadow-lg backdrop-blur-sm"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={nextImage}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-12 h-12 sm:w-11 sm:h-11 hidden sm:flex shadow-lg backdrop-blur-sm"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
-              </>
-            )}
           </div>
+          
+          {/* Desktop navigation arrows */}
+          {images.length > 1 && !isZoomed && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={prevImage}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-11 h-11 hidden sm:flex shadow-lg backdrop-blur-sm"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={nextImage}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-11 h-11 hidden sm:flex shadow-lg backdrop-blur-sm"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Bottom navigation for mobile - dots indicator */}
         {images.length > 1 && (
-          <div className="absolute bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-black/60 to-transparent">
-            <div className="flex items-center justify-center gap-2">
+          <div className="absolute bottom-0 left-0 right-0 z-50 p-4 pb-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent safe-area-bottom">
+            <div className="flex items-center justify-center gap-3">
               {/* Mobile navigation buttons */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={prevImage}
-                className="bg-white/10 hover:bg-white/20 text-white rounded-full w-10 h-10 sm:hidden touch-manipulation"
+                className="bg-white/15 hover:bg-white/25 text-white rounded-full w-11 h-11 sm:hidden touch-manipulation active:scale-95 transition-transform"
                 aria-label="Previous image"
                 disabled={isZoomed}
               >
@@ -239,9 +244,9 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
                           setIsLoading(true);
                         }
                       }}
-                      className={`w-2 h-2 rounded-full transition-all touch-manipulation ${
+                      className={`w-2.5 h-2.5 rounded-full transition-all touch-manipulation ${
                         index === currentIndex 
-                          ? 'bg-white w-4' 
+                          ? 'bg-white w-5' 
                           : 'bg-white/40 hover:bg-white/60'
                       }`}
                       aria-label={`Go to image ${index + 1}`}
@@ -249,7 +254,7 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
                     />
                   ))
                 ) : (
-                  <span className="text-white/90 text-sm font-medium">
+                  <span className="text-white/90 text-sm font-medium bg-black/30 px-3 py-1 rounded-full">
                     {currentIndex + 1} / {images.length}
                   </span>
                 )}
@@ -259,7 +264,7 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
                 variant="ghost"
                 size="icon"
                 onClick={nextImage}
-                className="bg-white/10 hover:bg-white/20 text-white rounded-full w-10 h-10 sm:hidden touch-manipulation"
+                className="bg-white/15 hover:bg-white/25 text-white rounded-full w-11 h-11 sm:hidden touch-manipulation active:scale-95 transition-transform"
                 aria-label="Next image"
                 disabled={isZoomed}
               >
@@ -268,7 +273,7 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
             </div>
             
             {/* Swipe hint for mobile */}
-            <p className="text-white/50 text-xs text-center mt-2 sm:hidden">
+            <p className="text-white/50 text-xs text-center mt-3 sm:hidden">
               Swipe to navigate • Tap image to zoom
             </p>
           </div>

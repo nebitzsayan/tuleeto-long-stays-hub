@@ -152,15 +152,32 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           
           if (loadedImages.length === 1) {
             const img = loadedImages[0];
-            const imgWidth = canvas.width - margin * 2 - 16;
+            const maxImgWidth = canvas.width - margin * 2 - 16;
+            const maxImgHeight = 350;
             const aspectRatio = img.naturalWidth / img.naturalHeight;
-            let imgHeight = imgWidth / aspectRatio;
             
-            if (imgHeight > 350) {
-              imgHeight = 350;
+            // Calculate dimensions maintaining aspect ratio
+            let imgWidth, imgHeight;
+            if (aspectRatio >= 1) {
+              // Landscape or square image
+              imgWidth = Math.min(maxImgWidth, img.naturalWidth);
+              imgHeight = imgWidth / aspectRatio;
+              if (imgHeight > maxImgHeight) {
+                imgHeight = maxImgHeight;
+                imgWidth = imgHeight * aspectRatio;
+              }
+            } else {
+              // Portrait image
+              imgHeight = Math.min(maxImgHeight, img.naturalHeight);
+              imgWidth = imgHeight * aspectRatio;
+              if (imgWidth > maxImgWidth) {
+                imgWidth = maxImgWidth;
+                imgHeight = imgWidth / aspectRatio;
+              }
             }
             
-            const imgX = margin;
+            // Center the image horizontally
+            const imgX = (canvas.width - imgWidth) / 2 - 8;
             
             // Clean white border (8px)
             ctx.fillStyle = '#ffffff';
@@ -171,7 +188,7 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
             ctx.shadowBlur = 5;
             ctx.shadowOffsetY = 2;
             
-            // Draw image with minimal rounding (4px)
+            // Draw image with minimal rounding (4px) - maintaining original aspect ratio
             ctx.save();
             drawRoundedRect(imgX + 8, currentY + 8, imgWidth, imgHeight, 4);
             ctx.clip();
@@ -186,15 +203,46 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
             currentY += imgHeight + 36;
           } else if (loadedImages.length === 2) {
             const gap = 20;
-            const imgWidth = (canvas.width - margin * 2 - gap - 16) / 2;
-            const imgHeight = 250;
+            const maxImgWidth = (canvas.width - margin * 2 - gap - 16) / 2;
+            const maxImgHeight = 250;
+            
+            // Calculate proper dimensions for each image
+            const imageDimensions = loadedImages.map((img) => {
+              const aspectRatio = img.naturalWidth / img.naturalHeight;
+              let drawWidth, drawHeight;
+              
+              if (aspectRatio >= 1) {
+                // Landscape or square
+                drawWidth = maxImgWidth;
+                drawHeight = drawWidth / aspectRatio;
+                if (drawHeight > maxImgHeight) {
+                  drawHeight = maxImgHeight;
+                  drawWidth = drawHeight * aspectRatio;
+                }
+              } else {
+                // Portrait
+                drawHeight = maxImgHeight;
+                drawWidth = drawHeight * aspectRatio;
+                if (drawWidth > maxImgWidth) {
+                  drawWidth = maxImgWidth;
+                  drawHeight = drawWidth / aspectRatio;
+                }
+              }
+              
+              return { drawWidth, drawHeight, aspectRatio };
+            });
             
             loadedImages.forEach((img, index) => {
-              const x = margin + (index * (imgWidth + gap));
+              const x = margin + (index * (maxImgWidth + gap));
+              const { drawWidth, drawHeight } = imageDimensions[index];
+              
+              // Center image within its slot
+              const offsetX = (maxImgWidth - drawWidth) / 2;
+              const offsetY = (maxImgHeight - drawHeight) / 2;
               
               // White border
               ctx.fillStyle = '#ffffff';
-              ctx.fillRect(x, currentY, imgWidth + 16, imgHeight + 16);
+              ctx.fillRect(x, currentY, maxImgWidth + 16, maxImgHeight + 16);
               
               // Subtle shadow
               ctx.shadowColor = 'rgba(0, 0, 0, 0.05)';
@@ -202,15 +250,11 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
               ctx.shadowOffsetY = 2;
               
               ctx.save();
-              drawRoundedRect(x + 8, currentY + 8, imgWidth, imgHeight, 4);
+              drawRoundedRect(x + 8 + offsetX, currentY + 8 + offsetY, drawWidth, drawHeight, 4);
               ctx.clip();
               
-              const aspectRatio = img.naturalWidth / img.naturalHeight;
-              const drawWidth = imgWidth;
-              const drawHeight = imgWidth / aspectRatio;
-              const offsetY = (imgHeight - drawHeight) / 2;
-              
-              ctx.drawImage(img, x + 8, currentY + 8 + offsetY, drawWidth, drawHeight);
+              // Draw image at correct size maintaining aspect ratio
+              ctx.drawImage(img, x + 8 + offsetX, currentY + 8 + offsetY, drawWidth, drawHeight);
               ctx.restore();
               
               ctx.shadowColor = 'transparent';
@@ -218,7 +262,7 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
               ctx.shadowOffsetY = 0;
             });
             
-            currentY += imgHeight + 36;
+            currentY += maxImgHeight + 36;
           }
         } catch (error) {
           console.error('Error loading images:', error);
