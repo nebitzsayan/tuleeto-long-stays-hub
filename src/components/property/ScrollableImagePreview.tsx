@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ZoomIn } from "lucide-react";
 import ImagePreviewModal from "./ImagePreviewModal";
+import { getThumbUrl, isImageKitUrl } from "@/lib/imagekitUrl";
 
 interface ScrollableImagePreviewProps {
   isOpen: boolean;
@@ -44,63 +45,71 @@ const ScrollableImagePreview = ({ isOpen, onClose, images, title }: ScrollableIm
     setFullscreenIndex(null);
   };
 
+  // Get optimized thumbnail URL
+  const getThumbnail = (url: string) => {
+    return isImageKitUrl(url) ? getThumbUrl(url) : url;
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[90vw] max-h-[90vh] w-full h-full p-0 bg-background border-none rounded-xl">
+        <DialogContent className="fixed inset-0 w-screen h-[100dvh] max-w-none max-h-none p-0 bg-background border-none rounded-none sm:inset-auto sm:w-[90vw] sm:h-auto sm:max-w-3xl sm:max-h-[90vh] sm:rounded-xl sm:border">
           {/* Header with close button */}
-          <div className="sticky top-0 z-10 bg-background border-b p-3 sm:p-4 flex items-center justify-between">
+          <div className="sticky top-0 z-10 bg-background border-b p-3 sm:p-4 flex items-center justify-between safe-area-top">
             <h2 className="text-base sm:text-lg font-semibold text-foreground truncate pr-2">
-              {title} - All Photos ({images.length})
+              {title}
             </h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="rounded-full h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 touch-manipulation"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-sm text-muted-foreground">{images.length} photos</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="rounded-full h-10 w-10 touch-manipulation"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Scrollable image grid */}
-          <div className="overflow-y-auto flex-1 p-3 sm:p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-3xl mx-auto">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 min-h-0" style={{ maxHeight: 'calc(100dvh - 60px)' }}>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-3xl mx-auto pb-safe">
               {images.map((image, index) => (
                 <div 
                   key={index}
                   onClick={() => handleImageClick(index)}
-                  className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-md border border-border 
-                             cursor-pointer group touch-manipulation active:scale-[0.98] transition-all duration-200
-                             hover:shadow-lg hover:border-primary/30"
+                  className="relative w-full aspect-[4/3] rounded-lg overflow-hidden shadow-sm border border-border 
+                             cursor-pointer group touch-manipulation active:scale-[0.98] transition-all duration-150
+                             hover:shadow-md hover:border-primary/30"
                 >
                   <img
-                    src={image}
+                    src={getThumbnail(image)}
                     alt={`${title} - Image ${index + 1}`}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading={index < 4 ? "eager" : "lazy"}
+                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    loading={index < 6 ? "eager" : "lazy"}
                   />
                   
                   {/* Overlay with zoom hint */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 group-active:bg-black/20 transition-colors duration-150 
                                   flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                                    bg-black/60 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-2">
-                      <ZoomIn className="h-4 w-4 text-white" />
-                      <span className="text-white text-sm font-medium">View</span>
+                    <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-150
+                                    bg-black/60 backdrop-blur-sm px-2 py-1.5 rounded-full flex items-center gap-1.5">
+                      <ZoomIn className="h-3.5 w-3.5 text-white" />
+                      <span className="text-white text-xs font-medium">View</span>
                     </div>
                   </div>
                   
                   {/* Image counter badge */}
-                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                    {index + 1} / {images.length}
+                  <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    {index + 1}
                   </div>
                 </div>
               ))}
             </div>
             
             {/* Tap hint for mobile */}
-            <p className="text-center text-muted-foreground text-xs mt-4 sm:hidden">
+            <p className="text-center text-muted-foreground text-xs mt-4 pb-4 sm:hidden">
               Tap any image to view full screen
             </p>
           </div>

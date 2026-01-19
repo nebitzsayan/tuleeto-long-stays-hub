@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
+import { stripImageKitTransform, getPosterUrl, isImageKitUrl } from '@/lib/imagekitUrl';
 
 interface PropertyPosterProps {
   property: {
@@ -21,6 +22,13 @@ interface PropertyPosterProps {
 export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Get optimized poster URL - strip transforms and get high quality
+  const getOptimizedPosterUrl = (url: string): string => {
+    if (!isImageKitUrl(url)) return url;
+    const cleanUrl = stripImageKitTransform(url);
+    return getPosterUrl(cleanUrl);
+  };
 
   const generatePoster = async () => {
     if (!canvasRef.current) return;
@@ -43,6 +51,42 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
       ctx.lineTo(x, y + radius);
       ctx.quadraticCurveTo(x, y, x + radius, y);
       ctx.closePath();
+    };
+
+    // Helper to draw image maintaining aspect ratio (contain mode)
+    const drawImageContain = (
+      img: HTMLImageElement,
+      slotX: number,
+      slotY: number,
+      slotWidth: number,
+      slotHeight: number,
+      borderRadius: number = 4
+    ) => {
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const slotAspect = slotWidth / slotHeight;
+      
+      let drawWidth: number;
+      let drawHeight: number;
+      
+      if (imgAspect > slotAspect) {
+        // Image is wider than slot - fit to width
+        drawWidth = slotWidth;
+        drawHeight = slotWidth / imgAspect;
+      } else {
+        // Image is taller than slot - fit to height
+        drawHeight = slotHeight;
+        drawWidth = slotHeight * imgAspect;
+      }
+      
+      // Center within slot
+      const drawX = slotX + (slotWidth - drawWidth) / 2;
+      const drawY = slotY + (slotHeight - drawHeight) / 2;
+      
+      ctx.save();
+      drawRoundedRect(drawX, drawY, drawWidth, drawHeight, borderRadius);
+      ctx.clip();
+      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      ctx.restore();
     };
 
     // Set canvas size
@@ -143,7 +187,8 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
             img.crossOrigin = 'anonymous';
             img.onload = () => resolve(img);
             img.onerror = reject;
-            img.src = url;
+            // Use optimized poster URL
+            img.src = getOptimizedPosterUrl(url);
           });
         });
 
@@ -152,117 +197,55 @@ export const PropertyPosterGenerator = ({ property, ownerName }: PropertyPosterP
           
           if (loadedImages.length === 1) {
             const img = loadedImages[0];
-            const maxImgWidth = canvas.width - margin * 2 - 16;
-            const maxImgHeight = 350;
-            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            const slotWidth = canvas.width - margin * 2;
+            const slotHeight = 350;
+            const slotX = margin;
             
-            // Calculate dimensions maintaining aspect ratio
-            let imgWidth, imgHeight;
-            if (aspectRatio >= 1) {
-              // Landscape or square image
-              imgWidth = Math.min(maxImgWidth, img.naturalWidth);
-              imgHeight = imgWidth / aspectRatio;
-              if (imgHeight > maxImgHeight) {
-                imgHeight = maxImgHeight;
-                imgWidth = imgHeight * aspectRatio;
-              }
-            } else {
-              // Portrait image
-              imgHeight = Math.min(maxImgHeight, img.naturalHeight);
-              imgWidth = imgHeight * aspectRatio;
-              if (imgWidth > maxImgWidth) {
-                imgWidth = maxImgWidth;
-                imgHeight = imgWidth / aspectRatio;
-              }
-            }
-            
-            // Center the image horizontally
-            const imgX = (canvas.width - imgWidth) / 2 - 8;
-            
-            // Clean white border (8px)
+            // Draw white background for the slot
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(imgX, currentY, imgWidth + 16, imgHeight + 16);
+            ctx.fillRect(slotX - 4, currentY - 4, slotWidth + 8, slotHeight + 8);
             
-            // Very subtle shadow (optional)
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.05)';
-            ctx.shadowBlur = 5;
+            // Subtle shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+            ctx.shadowBlur = 8;
             ctx.shadowOffsetY = 2;
             
-            // Draw image with minimal rounding (4px) - maintaining original aspect ratio
-            ctx.save();
-            drawRoundedRect(imgX + 8, currentY + 8, imgWidth, imgHeight, 4);
-            ctx.clip();
-            ctx.drawImage(img, imgX + 8, currentY + 8, imgWidth, imgHeight);
-            ctx.restore();
+            // Draw image maintaining aspect ratio
+            drawImageContain(img, slotX, currentY, slotWidth, slotHeight, 6);
             
             // Reset shadow
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
             ctx.shadowOffsetY = 0;
             
-            currentY += imgHeight + 36;
+            currentY += slotHeight + 30;
           } else if (loadedImages.length === 2) {
-            const gap = 20;
-            const maxImgWidth = (canvas.width - margin * 2 - gap - 16) / 2;
-            const maxImgHeight = 250;
-            
-            // Calculate proper dimensions for each image
-            const imageDimensions = loadedImages.map((img) => {
-              const aspectRatio = img.naturalWidth / img.naturalHeight;
-              let drawWidth, drawHeight;
-              
-              if (aspectRatio >= 1) {
-                // Landscape or square
-                drawWidth = maxImgWidth;
-                drawHeight = drawWidth / aspectRatio;
-                if (drawHeight > maxImgHeight) {
-                  drawHeight = maxImgHeight;
-                  drawWidth = drawHeight * aspectRatio;
-                }
-              } else {
-                // Portrait
-                drawHeight = maxImgHeight;
-                drawWidth = drawHeight * aspectRatio;
-                if (drawWidth > maxImgWidth) {
-                  drawWidth = maxImgWidth;
-                  drawHeight = drawWidth / aspectRatio;
-                }
-              }
-              
-              return { drawWidth, drawHeight, aspectRatio };
-            });
+            const gap = 16;
+            const slotWidth = (canvas.width - margin * 2 - gap) / 2;
+            const slotHeight = 250;
             
             loadedImages.forEach((img, index) => {
-              const x = margin + (index * (maxImgWidth + gap));
-              const { drawWidth, drawHeight } = imageDimensions[index];
+              const slotX = margin + index * (slotWidth + gap);
               
-              // Center image within its slot
-              const offsetX = (maxImgWidth - drawWidth) / 2;
-              const offsetY = (maxImgHeight - drawHeight) / 2;
-              
-              // White border
+              // White background
               ctx.fillStyle = '#ffffff';
-              ctx.fillRect(x, currentY, maxImgWidth + 16, maxImgHeight + 16);
+              ctx.fillRect(slotX - 4, currentY - 4, slotWidth + 8, slotHeight + 8);
               
               // Subtle shadow
-              ctx.shadowColor = 'rgba(0, 0, 0, 0.05)';
-              ctx.shadowBlur = 5;
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+              ctx.shadowBlur = 8;
               ctx.shadowOffsetY = 2;
               
-              ctx.save();
-              drawRoundedRect(x + 8 + offsetX, currentY + 8 + offsetY, drawWidth, drawHeight, 4);
-              ctx.clip();
+              // Draw image maintaining aspect ratio
+              drawImageContain(img, slotX, currentY, slotWidth, slotHeight, 6);
               
-              // Draw image at correct size maintaining aspect ratio
-              ctx.drawImage(img, x + 8 + offsetX, currentY + 8 + offsetY, drawWidth, drawHeight);
-              ctx.restore();
-              
+              // Reset shadow
               ctx.shadowColor = 'transparent';
               ctx.shadowBlur = 0;
               ctx.shadowOffsetY = 0;
             });
             
-            currentY += maxImgHeight + 36;
+            currentY += slotHeight + 30;
           }
         } catch (error) {
           console.error('Error loading images:', error);

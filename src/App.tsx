@@ -5,6 +5,7 @@ import Index from './pages/Index';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import AdminErrorBoundary from './components/admin/AdminErrorBoundary';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -106,26 +107,28 @@ function App() {
                     } />
                     <Route path="/admin/*" element={
                       <AdminRoute>
-                        <SidebarProvider>
-                          <div className="flex min-h-screen w-full flex-col md:flex-row">
-                            <AdminSidebar />
-                            <div className="flex-1 flex flex-col">
-                              <AdminMobileHeader />
-                              <main className="flex-1 p-4 md:p-8 bg-background overflow-auto">
-                                <Routes>
-                                  <Route index element={<Dashboard />} />
-                                  <Route path="users" element={<UsersManagement />} />
-                                  <Route path="properties" element={<PropertiesManagement />} />
-                                  <Route path="tenants" element={<TenantsManagement />} />
-                                  <Route path="reviews" element={<ReviewsManagement />} />
-                                  <Route path="settings" element={<Settings />} />
-                                  <Route path="logs" element={<AuditLogs />} />
-                                  <Route path="*" element={<Dashboard />} />
-                                </Routes>
-                              </main>
+                        <AdminErrorBoundary>
+                          <SidebarProvider>
+                            <div className="flex min-h-screen w-full flex-col md:flex-row">
+                              <AdminSidebar />
+                              <div className="flex-1 flex flex-col">
+                                <AdminMobileHeader />
+                                <main className="flex-1 p-4 md:p-8 bg-background overflow-auto">
+                                  <Routes>
+                                    <Route index element={<Dashboard />} />
+                                    <Route path="users" element={<UsersManagement />} />
+                                    <Route path="properties" element={<PropertiesManagement />} />
+                                    <Route path="tenants" element={<TenantsManagement />} />
+                                    <Route path="reviews" element={<ReviewsManagement />} />
+                                    <Route path="settings" element={<Settings />} />
+                                    <Route path="logs" element={<AuditLogs />} />
+                                    <Route path="*" element={<Dashboard />} />
+                                  </Routes>
+                                </main>
+                              </div>
                             </div>
-                          </div>
-                        </SidebarProvider>
+                          </SidebarProvider>
+                        </AdminErrorBoundary>
                       </AdminRoute>
                     } />
                     <Route path="/terms" element={<TermsOfServicePage />} />
