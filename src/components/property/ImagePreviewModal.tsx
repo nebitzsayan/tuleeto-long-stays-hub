@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import { getPreviewUrl, stripImageKitTransform, isImageKitUrl } from "@/lib/imagekitUrl";
 
 interface ImagePreviewModalProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Minimum swipe distance for navigation (in pixels)
   const minSwipeDistance = 50;
@@ -28,6 +29,13 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
     setIsZoomed(false);
     setIsLoading(true);
   }, [initialIndex, isOpen]);
+
+  // Get optimized preview URL
+  const getOptimizedUrl = useCallback((url: string) => {
+    if (!isImageKitUrl(url)) return url;
+    const cleanUrl = stripImageKitTransform(url);
+    return getPreviewUrl(cleanUrl, window.innerWidth);
+  }, []);
 
   const nextImage = useCallback(() => {
     if (!isZoomed) {
@@ -116,74 +124,74 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
 
   if (!images.length) return null;
 
+  const currentImageUrl = getOptimizedUrl(images[currentIndex]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[100vw] max-h-[100dvh] w-screen h-[100dvh] p-0 bg-black border-none rounded-none fixed inset-0">
-        {/* Header with close and zoom buttons */}
-        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent safe-area-top">
+      <DialogContent className="fixed inset-0 w-screen h-[100dvh] max-w-none max-h-none p-0 bg-black border-none rounded-none">
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-b from-black/70 to-transparent">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span className="text-white/90 text-sm font-medium truncate">
+            <span className="text-white/90 text-sm font-medium truncate max-w-[50vw]">
               {title}
             </span>
             {images.length > 1 && (
-              <span className="text-white/70 text-sm whitespace-nowrap">
-                ({currentIndex + 1}/{images.length})
+              <span className="text-white/70 text-sm whitespace-nowrap bg-white/10 px-2 py-0.5 rounded-full">
+                {currentIndex + 1}/{images.length}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleZoom}
-              className="bg-white/10 hover:bg-white/20 text-white rounded-full w-10 h-10 touch-manipulation"
+              className="bg-white/10 hover:bg-white/20 text-white rounded-full w-9 h-9 sm:w-10 sm:h-10 touch-manipulation"
               aria-label={isZoomed ? "Zoom out" : "Zoom in"}
             >
               {isZoomed ? (
-                <ZoomOut className="h-5 w-5" />
+                <ZoomOut className="h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
-                <ZoomIn className="h-5 w-5" />
+                <ZoomIn className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="bg-white/10 hover:bg-white/20 text-white rounded-full w-10 h-10 touch-manipulation"
+              className="bg-white/10 hover:bg-white/20 text-white rounded-full w-9 h-9 sm:w-10 sm:h-10 touch-manipulation"
               aria-label="Close"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </div>
 
-        {/* Main image container with swipe support - full height with proper padding */}
+        {/* Main image container */}
         <div 
-          className="absolute inset-0 flex items-center justify-center pt-16 pb-24 sm:pb-16"
+          ref={containerRef}
+          className="absolute inset-0 flex items-center justify-center"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
+          style={{ touchAction: isZoomed ? 'pinch-zoom' : 'pan-y' }}
         >
           {/* Loading indicator */}
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+              <div className="w-10 h-10 border-3 border-white/20 border-t-white rounded-full animate-spin" />
             </div>
           )}
           
-          {/* Image container - properly centered with max dimensions */}
-          <div className="relative w-full h-full flex items-center justify-center px-4 sm:px-12">
+          {/* Image - using flex container for proper centering */}
+          <div className="w-full h-full flex items-center justify-center p-2 sm:p-4">
             <img
               ref={imageRef}
-              src={images[currentIndex]}
+              src={currentImageUrl}
               alt={`${title} - Image ${currentIndex + 1}`}
-              className={`max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 touch-manipulation select-none ${
+              className={`max-w-full max-h-full w-auto h-auto object-contain select-none transition-transform duration-200 ${
                 isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'
               } ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-              style={{
-                maxWidth: 'calc(100vw - 2rem)',
-                maxHeight: 'calc(100dvh - 10rem)',
-              }}
               onClick={toggleZoom}
               onLoad={handleImageLoad}
               draggable={false}
@@ -197,35 +205,35 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
                 variant="ghost"
                 size="icon"
                 onClick={prevImage}
-                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-11 h-11 hidden sm:flex shadow-lg backdrop-blur-sm"
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-10 h-10 sm:w-11 sm:h-11 hidden sm:flex shadow-lg"
                 aria-label="Previous image"
               >
-                <ChevronLeft className="h-6 w-6" />
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
               
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={nextImage}
-                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-11 h-11 hidden sm:flex shadow-lg backdrop-blur-sm"
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-10 h-10 sm:w-11 sm:h-11 hidden sm:flex shadow-lg"
                 aria-label="Next image"
               >
-                <ChevronRight className="h-6 w-6" />
+                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
             </>
           )}
         </div>
 
-        {/* Bottom navigation for mobile - dots indicator */}
+        {/* Bottom navigation for mobile */}
         {images.length > 1 && (
-          <div className="absolute bottom-0 left-0 right-0 z-50 p-4 pb-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent safe-area-bottom">
-            <div className="flex items-center justify-center gap-3">
-              {/* Mobile navigation buttons */}
+          <div className="absolute bottom-0 left-0 right-0 z-50 px-3 py-3 sm:py-4 bg-gradient-to-t from-black/70 to-transparent">
+            <div className="flex items-center justify-center gap-4">
+              {/* Mobile prev button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={prevImage}
-                className="bg-white/15 hover:bg-white/25 text-white rounded-full w-11 h-11 sm:hidden touch-manipulation active:scale-95 transition-transform"
+                className="bg-white/15 hover:bg-white/25 active:bg-white/30 text-white rounded-full w-10 h-10 sm:hidden touch-manipulation"
                 aria-label="Previous image"
                 disabled={isZoomed}
               >
@@ -233,8 +241,8 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
               </Button>
               
               {/* Dots indicator */}
-              <div className="flex items-center gap-1.5 px-3">
-                {images.length <= 10 ? (
+              <div className="flex items-center gap-1.5">
+                {images.length <= 8 ? (
                   images.map((_, index) => (
                     <button
                       key={index}
@@ -244,10 +252,10 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
                           setIsLoading(true);
                         }
                       }}
-                      className={`w-2.5 h-2.5 rounded-full transition-all touch-manipulation ${
+                      className={`rounded-full transition-all duration-200 touch-manipulation ${
                         index === currentIndex 
-                          ? 'bg-white w-5' 
-                          : 'bg-white/40 hover:bg-white/60'
+                          ? 'bg-white w-6 h-2' 
+                          : 'bg-white/40 hover:bg-white/60 w-2 h-2'
                       }`}
                       aria-label={`Go to image ${index + 1}`}
                       disabled={isZoomed}
@@ -260,11 +268,12 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
                 )}
               </div>
               
+              {/* Mobile next button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={nextImage}
-                className="bg-white/15 hover:bg-white/25 text-white rounded-full w-11 h-11 sm:hidden touch-manipulation active:scale-95 transition-transform"
+                className="bg-white/15 hover:bg-white/25 active:bg-white/30 text-white rounded-full w-10 h-10 sm:hidden touch-manipulation"
                 aria-label="Next image"
                 disabled={isZoomed}
               >
@@ -272,9 +281,9 @@ const ImagePreviewModal = ({ isOpen, onClose, images, initialIndex, title }: Ima
               </Button>
             </div>
             
-            {/* Swipe hint for mobile */}
-            <p className="text-white/50 text-xs text-center mt-3 sm:hidden">
-              Swipe to navigate • Tap image to zoom
+            {/* Swipe hint */}
+            <p className="text-white/50 text-xs text-center mt-2 sm:hidden">
+              Swipe to navigate • Tap to zoom
             </p>
           </div>
         )}
