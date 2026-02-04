@@ -1,13 +1,12 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
-import { useImagePreview } from "@/hooks/useImagePreview";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
-import ScrollableImagePreview from "./ScrollableImagePreview";
+import ImageGalleryPopup from "./ImageGalleryPopup";
+import MobileImageViewer from "./MobileImageViewer";
 
 interface PropertyImageCarouselProps {
   images: string[];
@@ -18,9 +17,10 @@ interface PropertyImageCarouselProps {
 const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageCarouselProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [showViewer, setShowViewer] = useState(false);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
-  const imageRef = useRef<HTMLDivElement>(null);
   
   const { 
     imageList, 
@@ -30,12 +30,12 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
     preloadAdjacentImages, 
     isImageLoading 
   } = useImageHandling(images);
-  const { isPreviewOpen, previewIndex, openPreview, closePreview } = useImagePreview();
   const isMobile = useMobileDetection();
 
   // Keyboard navigation and preloading
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      if (showGallery || showViewer) return;
       if (e.key === 'ArrowLeft') {
         prevImage();
       } else if (e.key === 'ArrowRight') {
@@ -45,7 +45,7 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
+  }, [showGallery, showViewer]);
 
   // Preload adjacent images when current image changes
   useEffect(() => {
@@ -81,7 +81,11 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
   };
 
   const handleImageClick = () => {
-    openPreview(currentImageIndex);
+    if (isMobile) {
+      setShowViewer(true);
+    } else {
+      setShowGallery(true);
+    }
   };
 
   // Touch handlers for swipe gestures
@@ -112,7 +116,6 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
     <>
       <Card className={`relative overflow-hidden bg-muted sm:rounded-xl rounded-none ${className}`}>
         <div 
-          ref={imageRef}
           className="aspect-[4/3] sm:aspect-[16/10] relative group cursor-pointer" 
           onClick={handleImageClick}
           onTouchStart={handleTouchStart}
@@ -242,11 +245,20 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
         )}
       </Card>
 
-      {/* Image Preview Modal */}
-      <ScrollableImagePreview
-        isOpen={isPreviewOpen}
-        onClose={closePreview}
+      {/* Image Gallery Popup - for desktop */}
+      <ImageGalleryPopup
         images={imageList}
+        isOpen={showGallery}
+        onClose={() => setShowGallery(false)}
+        title={title}
+      />
+
+      {/* Full-screen viewer - for mobile direct view */}
+      <MobileImageViewer
+        images={imageList}
+        initialIndex={currentImageIndex}
+        isOpen={showViewer}
+        onClose={() => setShowViewer(false)}
         title={title}
       />
     </>

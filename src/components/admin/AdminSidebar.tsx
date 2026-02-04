@@ -81,12 +81,12 @@ export function AdminSidebar() {
               <SidebarMenu>
                 {menuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
+                    <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
                         end={item.url === "/admin"}
                         className={({ isActive }) =>
-                          `relative ${isActive
+                          `relative flex items-center gap-2 ${isActive
                             ? "bg-primary text-primary-foreground font-medium"
                             : "hover:bg-muted"}`
                         }
@@ -140,11 +140,7 @@ export function AdminMobileHeader() {
           </Badge>
         )}
       </div>
-      <SidebarTrigger asChild>
-        <Button variant="outline" size="icon" className="h-10 w-10">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SidebarTrigger>
+      <SidebarTrigger className="h-10 w-10" />
     </div>
   );
 }
