@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { MapPin, Shield, User, Phone, Share2, Copy, Check, Calendar, Flag } from "lucide-react";
 import { format } from "date-fns";
+import { formatPhonePartialMask } from "@/lib/formatPhone";
 import MainLayout from "@/components/layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -438,7 +439,7 @@ const PropertyDetailPage = () => {
                           <div className="flex items-center justify-between gap-2 bg-muted/50 rounded-lg p-3">
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground">Phone</p>
-                              <p className="text-sm font-medium truncate">{property.contactPhone}</p>
+                              <p className="text-sm font-medium truncate">{formatPhonePartialMask(property.contactPhone)}</p>
                             </div>
                             <Button 
                               onClick={() => handlePhoneCall(property.contactPhone)}
