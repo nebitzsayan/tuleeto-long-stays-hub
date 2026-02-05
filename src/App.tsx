@@ -8,8 +8,6 @@ import AdminRoute from './components/auth/AdminRoute';
 import AdminErrorBoundary from './components/admin/AdminErrorBoundary';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AdminSidebar, AdminMobileHeader } from '@/components/admin/AdminSidebar';
 import { HelmetProvider } from 'react-helmet-async';
 import InstallPrompt from './components/pwa/InstallPrompt';
 import { LocationProvider } from './contexts/LocationContext';
@@ -25,6 +23,7 @@ const EditPropertyPage = lazy(() => import('./pages/EditPropertyPage'));
 const MyPropertiesPage = lazy(() => import('./pages/MyPropertiesPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const UsersManagement = lazy(() => import('./pages/admin/UsersManagement'));
 const PropertiesManagement = lazy(() => import('./pages/admin/PropertiesManagement'));
@@ -105,32 +104,25 @@ function App() {
                         <WishlistPage />
                       </ProtectedRoute>
                     } />
-                    <Route path="/admin/*" element={
+                    <Route
+                      path="/admin"
+                      element={
                       <AdminRoute>
                         <AdminErrorBoundary>
-                          <SidebarProvider>
-                            <div className="flex min-h-screen w-full flex-col md:flex-row">
-                              <AdminSidebar />
-                              <div className="flex-1 flex flex-col">
-                                <AdminMobileHeader />
-                                <main className="flex-1 p-4 md:p-8 bg-background overflow-auto">
-                                  <Routes>
-                                    <Route index element={<Dashboard />} />
-                                    <Route path="users" element={<UsersManagement />} />
-                                    <Route path="properties" element={<PropertiesManagement />} />
-                                    <Route path="tenants" element={<TenantsManagement />} />
-                                    <Route path="reviews" element={<ReviewsManagement />} />
-                                    <Route path="settings" element={<Settings />} />
-                                    <Route path="logs" element={<AuditLogs />} />
-                                    <Route path="*" element={<Dashboard />} />
-                                  </Routes>
-                                </main>
-                              </div>
-                            </div>
-                          </SidebarProvider>
+                            <AdminLayout />
                         </AdminErrorBoundary>
                       </AdminRoute>
-                    } />
+                      }
+                    >
+                      <Route index element={<Dashboard />} />
+                      <Route path="users" element={<UsersManagement />} />
+                      <Route path="properties" element={<PropertiesManagement />} />
+                      <Route path="tenants" element={<TenantsManagement />} />
+                      <Route path="reviews" element={<ReviewsManagement />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="logs" element={<AuditLogs />} />
+                      <Route path="*" element={<Dashboard />} />
+                    </Route>
                     <Route path="/terms" element={<TermsOfServicePage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/install" element={<InstallPage />} />

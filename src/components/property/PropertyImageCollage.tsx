@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Expand } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
-import ImageGalleryPopup from "./ImageGalleryPopup";
-import MobileImageViewer from "./MobileImageViewer";
-import { useMobileDetection } from "@/hooks/useMobileDetection";
+import ImageLightbox from "./ImageLightbox";
+import ImageGalleryGrid from "./ImageGalleryGrid";
 
 interface PropertyImageCollageProps {
   images: string[];
@@ -13,18 +12,13 @@ interface PropertyImageCollageProps {
 
 const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
   const { validImages, imageList, handleImageError, handleImageLoad } = useImageHandling(images);
-  const [showGallery, setShowGallery] = useState(false);
-  const [showViewer, setShowViewer] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
   const [viewerStartIndex, setViewerStartIndex] = useState(0);
-  const isMobile = useMobileDetection();
 
   const openPreview = (index: number = 0) => {
     setViewerStartIndex(index);
-    if (isMobile) {
-      setShowViewer(true);
-    } else {
-      setShowGallery(true);
-    }
+    setShowLightbox(true);
   };
 
   return (
@@ -144,20 +138,21 @@ const PropertyImageCollage = ({ images, title }: PropertyImageCollageProps) => {
         </div>
       </div>
 
-      {/* Image Gallery Popup - for desktop */}
-      <ImageGalleryPopup
-        images={validImages}
-        isOpen={showGallery}
-        onClose={() => setShowGallery(false)}
+      {/* Unified Lightbox for all screen sizes */}
+      <ImageLightbox
+        images={imageList}
+        initialIndex={viewerStartIndex}
+        isOpen={showLightbox}
+        onClose={() => setShowLightbox(false)}
         title={title}
+        onOpenGrid={() => setShowGrid(true)}
       />
 
-      {/* Full-screen viewer - for mobile */}
-      <MobileImageViewer
-        images={validImages}
-        initialIndex={viewerStartIndex}
-        isOpen={showViewer}
-        onClose={() => setShowViewer(false)}
+      {/* Image Grid Popup */}
+      <ImageGalleryGrid
+        images={imageList}
+        isOpen={showGrid}
+        onClose={() => setShowGrid(false)}
         title={title}
       />
     </>

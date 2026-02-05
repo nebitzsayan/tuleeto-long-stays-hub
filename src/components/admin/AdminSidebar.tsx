@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { LayoutDashboard, Users, Home, MessageSquare, Settings, FileText, Shield, Menu, AlertTriangle, X } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { LayoutDashboard, Users, Home, MessageSquare, Settings, FileText, Shield, AlertTriangle, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Sidebar, 
@@ -27,6 +27,8 @@ interface MenuItem {
 export function AdminSidebar() {
   const { isMobile, setOpenMobile, openMobile } = useSidebar();
   const [reportedCount, setReportedCount] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchReportedCount = async () => {
@@ -48,6 +50,20 @@ export function AdminSidebar() {
     { title: "Audit Logs", url: "/admin/logs", icon: FileText },
     { title: "Settings", url: "/admin/settings", icon: Settings },
   ];
+
+  const isActive = useCallback((url: string) => {
+    if (url === '/admin') {
+      return location.pathname === '/admin';
+    }
+    return location.pathname.startsWith(url);
+  }, [location.pathname]);
+
+  const handleNavigation = useCallback((url: string) => {
+    navigate(url);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [navigate, isMobile, setOpenMobile]);
 
   return (
     <>
@@ -81,28 +97,21 @@ export function AdminSidebar() {
               <SidebarMenu>
                 {menuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        end={item.url === "/admin"}
-                        className={({ isActive }) =>
-                          `relative flex items-center gap-2 ${isActive
-                            ? "bg-primary text-primary-foreground font-medium"
-                            : "hover:bg-muted"}`
-                        }
-                        onClick={() => isMobile && setOpenMobile(false)}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span className="flex-1">{item.title}</span>
-                        {item.badge !== undefined && item.badge > 0 && (
-                          <Badge 
-                            variant="destructive" 
-                            className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:-right-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:text-[10px]"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </NavLink>
+                    <SidebarMenuButton
+                      isActive={isActive(item.url)}
+                      onClick={() => handleNavigation(item.url)}
+                      className="relative"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.title}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <Badge 
+                          variant="destructive" 
+                          className="ml-auto h-5 min-w-5 px-1.5 text-xs font-medium group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:-right-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:text-[10px]"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -117,6 +126,7 @@ export function AdminSidebar() {
 
 export function AdminMobileHeader() {
   const [reportedCount, setReportedCount] = useState(0);
+  const { setOpenMobile } = useSidebar();
 
   useEffect(() => {
     const fetchReportedCount = async () => {
@@ -140,7 +150,28 @@ export function AdminMobileHeader() {
           </Badge>
         )}
       </div>
-      <SidebarTrigger className="h-10 w-10" />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-10 w-10"
+        onClick={() => setOpenMobile(true)}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="4" x2="20" y1="12" y2="12" />
+          <line x1="4" x2="20" y1="6" y2="6" />
+          <line x1="4" x2="20" y1="18" y2="18" />
+        </svg>
+      </Button>
     </div>
   );
 }

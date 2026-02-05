@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, Grid3X3 } from "lucide-react";
 import { useImageHandling } from "@/hooks/useImageHandling";
-import { useMobileDetection } from "@/hooks/useMobileDetection";
-import ImageGalleryPopup from "./ImageGalleryPopup";
-import MobileImageViewer from "./MobileImageViewer";
+import ImageLightbox from "./ImageLightbox";
+import ImageGalleryGrid from "./ImageGalleryGrid";
 
 interface PropertyImageCarouselProps {
   images: string[];
@@ -17,8 +16,8 @@ interface PropertyImageCarouselProps {
 const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageCarouselProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [showGallery, setShowGallery] = useState(false);
-  const [showViewer, setShowViewer] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   
@@ -30,12 +29,11 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
     preloadAdjacentImages, 
     isImageLoading 
   } = useImageHandling(images);
-  const isMobile = useMobileDetection();
 
   // Keyboard navigation and preloading
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (showGallery || showViewer) return;
+      if (showLightbox || showGrid) return;
       if (e.key === 'ArrowLeft') {
         prevImage();
       } else if (e.key === 'ArrowRight') {
@@ -45,7 +43,7 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [showGallery, showViewer]);
+  }, [showLightbox, showGrid]);
 
   // Preload adjacent images when current image changes
   useEffect(() => {
@@ -81,11 +79,7 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
   };
 
   const handleImageClick = () => {
-    if (isMobile) {
-      setShowViewer(true);
-    } else {
-      setShowGallery(true);
-    }
+    setShowLightbox(true);
   };
 
   // Touch handlers for swipe gestures
@@ -163,35 +157,27 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
               <Button
                 variant="secondary"
                 size="icon"
-                className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 shadow-lg
-                  ${isMobile 
-                    ? 'opacity-80 h-12 w-12 rounded-full bg-white/90 hover:bg-white' 
-                    : 'opacity-0 group-hover:opacity-100 h-10 w-10'
-                  }`}
+                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 shadow-lg opacity-80 sm:opacity-0 sm:group-hover:opacity-100 h-12 w-12 sm:h-10 sm:w-10 rounded-full bg-white/90 hover:bg-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   prevImage();
                 }}
                 disabled={isTransitioning}
               >
-                <ChevronLeft className={isMobile ? "h-6 w-6" : "h-5 w-5"} />
+                <ChevronLeft className="h-6 w-6 sm:h-5 sm:w-5" />
               </Button>
               
               <Button
                 variant="secondary"
                 size="icon"
-                className={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 shadow-lg
-                  ${isMobile 
-                    ? 'opacity-80 h-12 w-12 rounded-full bg-white/90 hover:bg-white' 
-                    : 'opacity-0 group-hover:opacity-100 h-10 w-10'
-                  }`}
+                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 transition-all duration-300 z-10 shadow-lg opacity-80 sm:opacity-0 sm:group-hover:opacity-100 h-12 w-12 sm:h-10 sm:w-10 rounded-full bg-white/90 hover:bg-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   nextImage();
                 }}
                 disabled={isTransitioning}
               >
-                <ChevronRight className={isMobile ? "h-6 w-6" : "h-5 w-5"} />
+                <ChevronRight className="h-6 w-6 sm:h-5 sm:w-5" />
               </Button>
             </>
           )}
@@ -203,12 +189,10 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
             </div>
           )}
 
-          {/* Tap to view hint on mobile */}
-          {isMobile && (
-            <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-full backdrop-blur-sm">
-              Tap to view
-            </div>
-          )}
+          {/* Tap to view hint on mobile - using CSS to show/hide */}
+          <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2.5 py-1.5 rounded-full backdrop-blur-sm sm:hidden">
+            Tap to view
+          </div>
 
           {/* Transition loading indicator */}
           {(isTransitioning || isImageLoading(currentImageIndex)) && (
@@ -224,8 +208,7 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
             {imageList.map((_, index) => (
               <button
                 key={index}
-                className={`rounded-full transition-all touch-manipulation
-                  ${isMobile ? 'w-2.5 h-2.5' : 'w-2 h-2'}
+                className={`rounded-full transition-all touch-manipulation w-2.5 h-2.5 sm:w-2 sm:h-2
                   ${index === currentImageIndex 
                     ? 'bg-white scale-110' 
                     : 'bg-white/50 hover:bg-white/75'
@@ -245,20 +228,21 @@ const PropertyImageCarousel = ({ images, title, className = "" }: PropertyImageC
         )}
       </Card>
 
-      {/* Image Gallery Popup - for desktop */}
-      <ImageGalleryPopup
-        images={imageList}
-        isOpen={showGallery}
-        onClose={() => setShowGallery(false)}
-        title={title}
-      />
-
-      {/* Full-screen viewer - for mobile direct view */}
-      <MobileImageViewer
+      {/* Unified Lightbox for all screen sizes */}
+      <ImageLightbox
         images={imageList}
         initialIndex={currentImageIndex}
-        isOpen={showViewer}
-        onClose={() => setShowViewer(false)}
+        isOpen={showLightbox}
+        onClose={() => setShowLightbox(false)}
+        title={title}
+        onOpenGrid={() => setShowGrid(true)}
+      />
+
+      {/* Image Grid Popup */}
+      <ImageGalleryGrid
+        images={imageList}
+        isOpen={showGrid}
+        onClose={() => setShowGrid(false)}
         title={title}
       />
     </>
