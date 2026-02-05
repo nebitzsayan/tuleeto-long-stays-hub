@@ -73,3 +73,30 @@ export const getMediumUrl = (url: string): string => {
   if (!isImageKitUrl(url)) return url;
   return withImageKitTransform(url, 'w-800,q-75,fo-auto');
 };
+
+/**
+ * Clamp a number between min and max
+ */
+const clamp = (value: number, min: number, max: number): number => {
+  return Math.min(Math.max(value, min), max);
+};
+
+/**
+ * Get fullscreen URL optimized for the viewport dimensions
+ * Uses ImageKit's fit-within-box transform to avoid downloading oversized images
+ */
+export const getFullscreenUrl = (
+  url: string,
+  viewportWidth: number,
+  viewportHeight: number
+): string => {
+  if (!isImageKitUrl(url)) return url;
+  
+  // Calculate target dimensions with DPR consideration (capped at 2x)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const targetW = clamp(Math.round(viewportWidth * dpr), 800, 2400);
+  const targetH = clamp(Math.round(viewportHeight * dpr), 800, 2400);
+  
+  // c-at_max: fit image within the box while maintaining aspect ratio
+  return withImageKitTransform(url, `w-${targetW},h-${targetH},c-at_max,q-85,fo-auto`);
+};
