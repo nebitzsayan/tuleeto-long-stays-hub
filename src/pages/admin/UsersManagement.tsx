@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Trash2, Ban, Search, Download, ChevronDown, ChevronUp, Home, Users } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Ban, Search, Download, ChevronDown, ChevronUp, Home, Users, RefreshCw } from "lucide-react";
 import { exportUsersToExcel } from "@/lib/adminExport";
+import { Pagination } from "@/components/admin/Pagination";
+import { BulkActions, commonBulkActions } from "@/components/admin/BulkActions";
 
 interface UserWithDetails {
   id: string;
@@ -22,6 +25,8 @@ interface UserWithDetails {
   tenantHistory?: any[];
 }
 
+const ITEMS_PER_PAGE = 15;
+
 export default function UsersManagement() {
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +34,10 @@ export default function UsersManagement() {
   const [deleteUser, setDeleteUser] = useState<UserWithDetails | null>(null);
   const [banUser, setBanUser] = useState<UserWithDetails | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkBanConfirm, setBulkBanConfirm] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -121,23 +130,101 @@ export default function UsersManagement() {
     }
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Bulk operations
+  const handleBulkDelete = async () => {
+    try {
+      for (const userId of selectedUsers) {
+        await supabase.rpc("log_admin_action", {
+          _action_type: "user_deleted",
+          _target_id: userId,
+          _target_type: "user",
+        });
+        await supabase.from("profiles").delete().eq("id", userId);
+      }
+      toast.success(`${selectedUsers.size} users deleted`);
+      setSelectedUsers(new Set());
+      fetchUsers();
+    } catch (error) {
+      toast.error("Bulk delete failed");
+    }
+    setBulkDeleteConfirm(false);
+  };
+
+  const handleBulkBan = async () => {
+    try {
+      for (const userId of selectedUsers) {
+        await supabase.rpc("log_admin_action", {
+          _action_type: "user_banned",
+          _target_id: userId,
+          _target_type: "user",
+        });
+        await supabase.from("profiles").update({ is_banned: true, ban_reason: "Bulk banned by admin" }).eq("id", userId);
+      }
+      toast.success(`${selectedUsers.size} users banned`);
+      setSelectedUsers(new Set());
+      fetchUsers();
+    } catch (error) {
+      toast.error("Bulk ban failed");
+    }
+    setBulkBanConfirm(false);
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    const newSelection = new Set(selectedUsers);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      newSelection.add(userId);
+    }
+    setSelectedUsers(newSelection);
+  };
+
+  const filteredUsers = useMemo(() => {
+    return users.filter(
+      (user) =>
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const selectAllOnPage = () => {
+    const newSelection = new Set(selectedUsers);
+    paginatedUsers.forEach(user => newSelection.add(user.id));
+    setSelectedUsers(newSelection);
+  };
+
+  const isAllPageSelected = paginatedUsers.every(user => selectedUsers.has(user.id));
 
   return (
     <div className="space-y-4 md:space-y-6 p-3 md:p-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl md:text-3xl font-bold tracking-tight">User Management</h2>
-          <p className="text-xs md:text-base text-muted-foreground">Manage all users on the platform</p>
+          <p className="text-xs md:text-base text-muted-foreground">
+            {filteredUsers.length} users {searchTerm && `matching "${searchTerm}"`}
+          </p>
         </div>
-        <Button onClick={() => exportUsersToExcel(users)} variant="outline" size="sm" className="w-full md:w-auto h-10">
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={fetchUsers} variant="outline" size="sm" className="h-10">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button onClick={() => exportUsersToExcel(users)} variant="outline" size="sm" className="flex-1 md:flex-none h-10">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
@@ -150,18 +237,36 @@ export default function UsersManagement() {
         />
       </div>
 
+      {/* Bulk Actions */}
+      <BulkActions
+        selectedCount={selectedUsers.size}
+        totalCount={paginatedUsers.length}
+        onSelectAll={selectAllOnPage}
+        onClearSelection={() => setSelectedUsers(new Set())}
+        isAllSelected={isAllPageSelected && paginatedUsers.length > 0}
+        actions={[
+          commonBulkActions.ban(() => setBulkBanConfirm(true)),
+          commonBulkActions.delete(() => setBulkDeleteConfirm(true)),
+        ]}
+      />
+
       {/* Mobile Cards View */}
       <div className="md:hidden space-y-3">
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">Loading...</div>
-        ) : filteredUsers.length === 0 ? (
+        ) : paginatedUsers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">No users found</div>
         ) : (
-          filteredUsers.map((user) => (
-            <Card key={user.id}>
+          paginatedUsers.map((user) => (
+            <Card key={user.id} className={selectedUsers.has(user.id) ? "ring-2 ring-primary" : ""}>
               <Collapsible open={expandedUser === user.id} onOpenChange={() => handleExpandUser(user.id)}>
                 <CardHeader className="p-3 pb-2">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={selectedUsers.has(user.id)}
+                      onCheckedChange={() => toggleUserSelection(user.id)}
+                      className="mt-1"
+                    />
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-sm font-medium truncate">{user.email}</CardTitle>
                       <p className="text-xs text-muted-foreground mt-1">{user.full_name || "No name"}</p>
@@ -270,6 +375,12 @@ export default function UsersManagement() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={isAllPageSelected && paginatedUsers.length > 0}
+                  onCheckedChange={() => isAllPageSelected ? setSelectedUsers(new Set()) : selectAllOnPage()}
+                />
+              </TableHead>
               <TableHead className="w-10"></TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Full Name</TableHead>
@@ -281,27 +392,36 @@ export default function UsersManagement() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
               </TableRow>
-            ) : filteredUsers.length === 0 ? (
+            ) : paginatedUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">No users found</TableCell>
+                <TableCell colSpan={7} className="text-center">No users found</TableCell>
               </TableRow>
             ) : (
-              filteredUsers.map((user) => (
+              paginatedUsers.map((user) => (
                 <>
-                  <TableRow key={user.id} className="cursor-pointer" onClick={() => handleExpandUser(user.id)}>
-                    <TableCell>
+                  <TableRow 
+                    key={user.id} 
+                    className={`cursor-pointer ${selectedUsers.has(user.id) ? 'bg-primary/5' : ''}`}
+                  >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedUsers.has(user.id)}
+                        onCheckedChange={() => toggleUserSelection(user.id)}
+                      />
+                    </TableCell>
+                    <TableCell onClick={() => handleExpandUser(user.id)}>
                       {expandedUser === user.id ? (
                         <ChevronUp className="h-4 w-4" />
                       ) : (
                         <ChevronDown className="h-4 w-4" />
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">{user.email}</TableCell>
-                    <TableCell>{user.full_name || "N/A"}</TableCell>
-                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium" onClick={() => handleExpandUser(user.id)}>{user.email}</TableCell>
+                    <TableCell onClick={() => handleExpandUser(user.id)}>{user.full_name || "N/A"}</TableCell>
+                    <TableCell onClick={() => handleExpandUser(user.id)}>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell onClick={() => handleExpandUser(user.id)}>
                       {user.is_banned ? (
                         <Badge variant="destructive">Banned</Badge>
                       ) : (
@@ -329,7 +449,7 @@ export default function UsersManagement() {
                   </TableRow>
                   {expandedUser === user.id && (
                     <TableRow>
-                      <TableCell colSpan={6} className="bg-muted/50">
+                      <TableCell colSpan={7} className="bg-muted/50">
                         <div className="p-4 grid md:grid-cols-2 gap-6">
                           {/* Properties */}
                           <div>
@@ -385,7 +505,16 @@ export default function UsersManagement() {
         </Table>
       </div>
 
-      {/* Delete Dialog - Mobile Optimized */}
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalItems={filteredUsers.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+      />
+
+      {/* Delete Dialog */}
       <AlertDialog open={!!deleteUser} onOpenChange={() => setDeleteUser(null)}>
         <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
           <AlertDialogHeader className="text-left">
@@ -406,31 +535,63 @@ export default function UsersManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Ban Dialog - Mobile Optimized */}
+      {/* Ban Dialog */}
       <AlertDialog open={!!banUser} onOpenChange={() => setBanUser(null)}>
         <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl">
           <AlertDialogHeader className="text-left">
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${banUser?.is_banned ? 'bg-green-100' : 'bg-destructive/10'}`}>
-                <Ban className={`h-5 w-5 ${banUser?.is_banned ? 'text-green-600' : 'text-destructive'}`} />
-              </div>
-              <AlertDialogTitle className="text-lg">
-                {banUser?.is_banned ? "Unban User?" : "Ban User?"}
-              </AlertDialogTitle>
-            </div>
+            <AlertDialogTitle className="text-lg">
+              {banUser?.is_banned ? "Unban" : "Ban"} User?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              {banUser?.is_banned
-                ? `This will unban ${banUser?.email} and restore their access.`
-                : `This will ban ${banUser?.email} from the platform. They will not be able to access their account.`}
+              {banUser?.is_banned 
+                ? `This will allow ${banUser?.email} to access the platform again.`
+                : `This will prevent ${banUser?.email} from accessing the platform.`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 mt-4">
             <AlertDialogCancel className="w-full sm:w-auto h-11">Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => banUser && handleBanUser(banUser.id, !banUser.is_banned)}
-              className={`w-full sm:w-auto h-11 ${banUser?.is_banned ? 'bg-green-600 hover:bg-green-700' : 'bg-destructive hover:bg-destructive/90'}`}
+              className={`w-full sm:w-auto h-11 ${banUser?.is_banned ? '' : 'bg-destructive hover:bg-destructive/90'}`}
             >
               {banUser?.is_banned ? "Unban User" : "Ban User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedUsers.size} Users?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all selected users and their data. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="w-full sm:w-auto bg-destructive hover:bg-destructive/90">
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Ban Dialog */}
+      <AlertDialog open={bulkBanConfirm} onOpenChange={setBulkBanConfirm}>
+        <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ban {selectedUsers.size} Users?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will ban all selected users from accessing the platform.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkBan} className="w-full sm:w-auto bg-destructive hover:bg-destructive/90">
+              Ban All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
