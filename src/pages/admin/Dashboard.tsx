@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Home, Shield, AlertTriangle, Activity, TrendingUp, Calendar, Zap, UserPlus, Download, Eye, CheckCircle, Clock, X } from "lucide-react";
+import { Users, Home, Shield, AlertTriangle, Activity, TrendingUp, Calendar, Zap, UserPlus, Download, Eye, CheckCircle, Clock, X, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { useAdminAnalytics, TimePeriod } from "@/hooks/useAdminAnalytics";
@@ -26,8 +26,17 @@ type ChartType = 'growth' | 'types' | 'activity' | null;
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { stats, loading, period, setPeriod, propertyTypeData, growthData } = useAdminAnalytics();
+  const { stats, loading, period, setPeriod, propertyTypeData, growthData, refetch } = useAdminAnalytics();
   const [selectedChart, setSelectedChart] = useState<ChartType>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setLastUpdated(new Date());
+    setIsRefreshing(false);
+  };
 
   if (loading) {
     return (
@@ -188,7 +197,25 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Overview of your platform statistics</p>
+          <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2">
+            Overview of your platform statistics
+            <span className="text-xs text-muted-foreground/70">
+              · Updated {lastUpdated.toLocaleTimeString()}
+            </span>
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
         
         {/* Period Tabs - Horizontal scroll on mobile */}
