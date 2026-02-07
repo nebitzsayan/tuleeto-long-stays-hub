@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,12 +14,14 @@ import { Trash2, Flag, Search, Download, Star, MessageSquare, RefreshCw, CheckCi
 import { exportReviewsExcel } from "@/lib/adminExport";
 import { Pagination } from "@/components/admin/Pagination";
 import { BulkActions, commonBulkActions } from "@/components/admin/BulkActions";
+import { PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
 
 type FilterTab = "all" | "pending" | "approved" | "flagged";
 
 const ITEMS_PER_PAGE = 15;
 
 export default function ReviewsManagement() {
+  const queryClient = useQueryClient();
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,6 +32,11 @@ export default function ReviewsManagement() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkApproveConfirm, setBulkApproveConfirm] = useState(false);
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: PROPERTIES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ['reviews'] });
+  };
 
   const fetchReviews = async () => {
     try {
@@ -69,6 +77,7 @@ export default function ReviewsManagement() {
       if (error) throw error;
 
       toast.success("Review deleted successfully");
+      invalidateQueries();
       fetchReviews();
       setDeleteReview(null);
     } catch (error: any) {
@@ -91,6 +100,7 @@ export default function ReviewsManagement() {
 
       if (error) throw error;
       toast.success(`Review ${isFlagged ? "flagged" : "unflagged"}`);
+      invalidateQueries();
       fetchReviews();
     } catch (error: any) {
       toast.error("Failed to update review");
@@ -112,6 +122,7 @@ export default function ReviewsManagement() {
 
       if (error) throw error;
       toast.success(`Review ${isApproved ? "approved" : "rejected"}`);
+      invalidateQueries();
       fetchReviews();
     } catch (error: any) {
       toast.error("Failed to update review");
@@ -130,6 +141,7 @@ export default function ReviewsManagement() {
         await supabase.from("property_reviews").delete().eq("id", reviewId);
       }
       toast.success(`${selectedReviews.size} reviews deleted`);
+      invalidateQueries();
       setSelectedReviews(new Set());
       fetchReviews();
     } catch (error) {
@@ -149,6 +161,7 @@ export default function ReviewsManagement() {
         await supabase.from("property_reviews").update({ is_approved: true }).eq("id", reviewId);
       }
       toast.success(`${selectedReviews.size} reviews approved`);
+      invalidateQueries();
       setSelectedReviews(new Set());
       fetchReviews();
     } catch (error) {
@@ -215,78 +228,80 @@ export default function ReviewsManagement() {
   const flaggedCount = reviews.filter(r => r.is_flagged).length;
 
   return (
-    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Review Management</h2>
-          <p className="text-xs md:text-base text-muted-foreground">
-            {filteredReviews.length} reviews
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={fetchReviews} variant="outline" size="sm" className="h-10">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => exportReviewsExcel(reviews)} variant="outline" size="sm" className="flex-1 md:flex-none h-10">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
-        <div className="overflow-x-auto -mx-3 px-3">
-          <TabsList className="w-auto inline-flex">
-            <TabsTrigger value="all" className="text-xs md:text-sm px-3">
-              All ({reviews.length})
-            </TabsTrigger>
-            <TabsTrigger value="pending" className="text-xs md:text-sm px-3 relative">
-              Pending
-              {pendingCount > 0 && (
-                <Badge variant="secondary" className="ml-1.5 h-5 min-w-5 px-1 flex items-center justify-center text-xs">
-                  {pendingCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="approved" className="text-xs md:text-sm px-3">
-              Approved
-            </TabsTrigger>
-            <TabsTrigger value="flagged" className="text-xs md:text-sm px-3 relative">
-              Flagged
-              {flaggedCount > 0 && (
-                <Badge variant="destructive" className="ml-1.5 h-5 min-w-5 px-1 flex items-center justify-center text-xs">
-                  {flaggedCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-      </Tabs>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search reviews..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-10"
-          />
-        </div>
-        {/* Rating Filter */}
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((rating) => (
-            <Button
-              key={rating}
-              variant={ratingFilter === rating ? "default" : "outline"}
-              size="sm"
-              className="h-10 w-10 p-0"
-              onClick={() => setRatingFilter(ratingFilter === rating ? null : rating)}
-            >
-              {rating}★
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-3xl font-bold tracking-tight">Review Management</h2>
+            <p className="text-[10px] sm:text-xs md:text-base text-muted-foreground">
+              {filteredReviews.length} reviews
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button onClick={fetchReviews} variant="outline" size="sm" className="h-9 sm:h-10 w-9 sm:w-auto p-0 sm:px-3">
+              <RefreshCw className="h-4 w-4" />
             </Button>
-          ))}
+            <Button onClick={() => exportReviewsExcel(reviews)} variant="outline" size="sm" className="h-9 sm:h-10 flex-1 sm:flex-none">
+              <Download className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
+          <div className="overflow-x-auto -mx-2 px-2">
+            <TabsList className="w-auto inline-flex gap-0.5">
+              <TabsTrigger value="all" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 min-h-[36px]">
+                All ({reviews.length})
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 relative min-h-[36px]">
+                Pending
+                {pendingCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-4 min-w-4 px-1 flex items-center justify-center text-[10px]">
+                    {pendingCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="approved" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 min-h-[36px]">
+                Approved
+              </TabsTrigger>
+              <TabsTrigger value="flagged" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 relative min-h-[36px]">
+                Flagged
+                {flaggedCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 flex items-center justify-center text-[10px]">
+                    {flaggedCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </Tabs>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search reviews..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-9 sm:h-10 text-sm"
+            />
+          </div>
+          {/* Rating Filter */}
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {[1, 2, 3, 4, 5].map((rating) => (
+              <Button
+                key={rating}
+                variant={ratingFilter === rating ? "default" : "outline"}
+                size="sm"
+                className="h-9 sm:h-10 w-9 sm:w-10 p-0 flex-shrink-0"
+                onClick={() => setRatingFilter(ratingFilter === rating ? null : rating)}
+              >
+                {rating}★
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PropertyFilter from "@/components/property/PropertyFilter";
@@ -11,67 +12,51 @@ import { toast } from "sonner";
 import SEO from "@/components/seo/SEO";
 import { ItemListSchema, BreadcrumbSchema } from "@/components/seo/StructuredData";
 import { generateListingsSEO } from "@/lib/seo";
+import { PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
 
 const ListingsPage = () => {
   const [searchParams] = useSearchParams();
-  const [allProperties, setAllProperties] = useState<PropertyType[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<PropertyType[]>([]);
-  const [loading, setLoading] = useState(true);
   
-  // Fetch all properties
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        
-        const { data, error } = await supabase
-          .from('properties')
-          .select('*, reviews:property_reviews(rating)')
-          .eq('is_public', true);
-        
-        if (error) throw error;
-        
-        if (data) {
-          console.log("Fetched properties:", data);
+  // Use React Query for data fetching with cache
+  const { data: allProperties = [], isLoading: loading } = useQuery({
+    queryKey: PROPERTIES_QUERY_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*, reviews:property_reviews(rating)')
+        .eq('is_public', true);
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Format the data to match the PropertyType with string id
+        return data.map(prop => {
+          const reviews = prop.reviews as any[] || [];
+          const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
+          const averageRating = reviews.length ? totalRatings / reviews.length : undefined;
+          const reviewCount = reviews.length;
           
-          // Format the data to match the PropertyType with string id
-          const properties = data.map(prop => {
-            const reviews = prop.reviews as any[] || [];
-            const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
-            const averageRating = reviews.length ? totalRatings / reviews.length : undefined;
-            const reviewCount = reviews.length;
-            
-            return {
-              id: prop.id.toString(),
-              title: prop.title || "Untitled Property",
-              location: prop.location || "Unknown Location",
-              price: prop.price || 0,
-              bedrooms: prop.bedrooms || 0,
-              bathrooms: prop.bathrooms || 0,
-              area: prop.area || 0,
-              image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-              type: prop.type || "Apartment",
-              contact_phone: prop.contact_phone || "",
-              average_rating: averageRating,
-              review_count: reviewCount || 0
-            };
-          });
-          
-          setAllProperties(properties);
-          
-          // Initially show all properties
-          setFilteredProperties(properties);
-        }
-      } catch (error: any) {
-        toast.error(`Error fetching properties: ${error.message}`);
-        console.error("Error fetching properties:", error);
-      } finally {
-        setLoading(false);
+          return {
+            id: prop.id.toString(),
+            title: prop.title || "Untitled Property",
+            location: prop.location || "Unknown Location",
+            price: prop.price || 0,
+            bedrooms: prop.bedrooms || 0,
+            bathrooms: prop.bathrooms || 0,
+            area: prop.area || 0,
+            image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
+            type: prop.type || "Apartment",
+            contact_phone: prop.contact_phone || "",
+            average_rating: averageRating,
+            review_count: reviewCount || 0
+          };
+        });
       }
-    };
-    
-    fetchProperties();
-  }, []);
+      return [];
+    },
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+  });
 
   // Filter properties based on search params
   useEffect(() => {

@@ -193,23 +193,24 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2">
-            Overview of your platform statistics
-            <span className="text-xs text-muted-foreground/70">
-              · Updated {lastUpdated.toLocaleTimeString()}
-            </span>
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      {/* Header Section - Stacked on mobile */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Overview of your platform statistics
+              <span className="block sm:inline sm:ml-1 text-muted-foreground/70">
+                · Updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            </p>
+          </div>
+          
           <Button
             variant="outline"
             size="sm"
-            className="h-9"
+            className="h-9 w-full sm:w-auto flex-shrink-0"
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
@@ -219,14 +220,14 @@ export default function Dashboard() {
         </div>
         
         {/* Period Tabs - Horizontal scroll on mobile */}
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as TimePeriod)} className="w-full md:w-auto">
-          <div className="overflow-x-auto -mx-3 px-3 pb-2">
-            <TabsList className="inline-flex w-auto min-w-full md:min-w-0 gap-1 h-auto p-1">
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as TimePeriod)} className="w-full">
+          <div className="overflow-x-auto -mx-2 px-2 pb-1">
+            <TabsList className="inline-flex w-auto min-w-full gap-0.5 h-auto p-1">
               {Object.entries(periodLabels).map(([key, label]) => (
                 <TabsTrigger 
                   key={key} 
                   value={key}
-                  className="text-xs md:text-sm px-2.5 py-2 whitespace-nowrap flex-shrink-0"
+                  className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-2.5 py-1.5 sm:py-2 whitespace-nowrap flex-shrink-0 min-h-[36px]"
                 >
                   {label}
                 </TabsTrigger>
@@ -237,67 +238,63 @@ export default function Dashboard() {
       </div>
 
       {/* System Health + Quick Actions Row */}
-      <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2">
+      <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2">
         {/* System Health Indicator */}
         <Card className="bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900">
-          <CardContent className="p-3 md:p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="h-5 w-5 text-white" />
+          <CardContent className="p-2.5 sm:p-3 md:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-green-800 dark:text-green-200">System Healthy</p>
-              <p className="text-xs text-green-600 dark:text-green-400">All services running normally</p>
-            </div>
-            <div className="hidden sm:flex items-center gap-1 text-xs text-green-600">
-              <Clock className="h-3 w-3" />
-              <span>just now</span>
+              <p className="font-medium text-sm sm:text-base text-green-800 dark:text-green-200 truncate">System Healthy</p>
+              <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 truncate">All services running normally</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
         <Card>
-          <CardContent className="p-3 md:p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="h-4 w-4 text-primary" />
-              <span className="font-medium text-sm">Quick Actions</span>
+          <CardContent className="p-2.5 sm:p-3 md:p-4">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+              <span className="font-medium text-xs sm:text-sm">Quick Actions</span>
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2 sm:py-2.5 px-1 sm:px-2 flex-col gap-0.5 sm:gap-1 text-xs min-h-[44px]"
                 onClick={() => navigate('/admin/users')}
               >
                 <UserPlus className="h-4 w-4" />
-                <span className="hidden xs:inline text-[10px] md:text-xs">Users</span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs truncate">Users</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2 sm:py-2.5 px-1 sm:px-2 flex-col gap-0.5 sm:gap-1 text-xs min-h-[44px]"
                 onClick={() => navigate('/admin/properties')}
               >
                 <Home className="h-4 w-4" />
-                <span className="hidden xs:inline text-[10px] md:text-xs">Properties</span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs truncate">Props</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2 sm:py-2.5 px-1 sm:px-2 flex-col gap-0.5 sm:gap-1 text-xs min-h-[44px]"
                 onClick={() => navigate('/admin/reviews')}
               >
                 <Eye className="h-4 w-4" />
-                <span className="hidden xs:inline text-[10px] md:text-xs">Reviews</span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs truncate">Reviews</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-auto py-2.5 px-1.5 md:px-2 flex-col gap-1 text-xs"
+                className="h-auto py-2 sm:py-2.5 px-1 sm:px-2 flex-col gap-0.5 sm:gap-1 text-xs min-h-[44px]"
                 onClick={() => navigate('/admin/logs')}
               >
                 <Download className="h-4 w-4" />
-                <span className="hidden xs:inline text-[10px] md:text-xs">Logs</span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs truncate">Logs</span>
               </Button>
             </div>
           </CardContent>
@@ -305,7 +302,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid - 2 columns on mobile, 4 on desktop */}
-      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="New Users"
           value={stats.newUsers}
