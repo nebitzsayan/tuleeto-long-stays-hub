@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,107 +10,105 @@ import PropertyListingCard from "@/components/property/PropertyListingCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocationContext } from "@/contexts/LocationContext";
 import { calculateDistance } from "@/lib/geoUtils";
+import { FEATURED_PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
 
 const FeaturedProperties = () => {
   const [properties, setProperties] = useState<PropertyType[]>([]);
-  const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
   const { coordinates, city, permissionStatus } = useLocationContext();
   
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch more properties if location is denied (for randomness)
-        // Otherwise fetch limited set for distance sorting
-        const limit = permissionStatus === 'granted' && coordinates ? 20 : 50;
-        
-        // First get properties
-        const { data: propertiesData, error: propertiesError } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('is_public', true)
-          .limit(limit);
-        
-        if (propertiesError) throw propertiesError;
-        
-        if (propertiesData) {
-          console.log("Fetched featured properties:", propertiesData);
+  const { data: propertiesData, isLoading: loading } = useQuery({
+    queryKey: [...FEATURED_PROPERTIES_QUERY_KEY, coordinates?.lat, coordinates?.lng, permissionStatus],
+    queryFn: async () => {
+      // Fetch more properties if location is denied (for randomness)
+      // Otherwise fetch limited set for distance sorting
+      const limit = permissionStatus === 'granted' && coordinates ? 20 : 50;
+      
+      // First get properties
+      const { data: propertiesResult, error: propertiesError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('is_public', true)
+        .limit(limit);
+      
+      if (propertiesError) throw propertiesError;
+      
+      if (!propertiesResult) return [];
+      
+      // Fetch ratings for each property separately
+      const formattedProperties = await Promise.all(propertiesResult.map(async (prop) => {
+        // Get reviews for this property
+        const { data: reviewsData } = await supabase
+          .from('property_reviews')
+          .select('rating')
+          .eq('property_id', prop.id);
           
-          // Fetch ratings for each property separately
-          const formattedProperties = await Promise.all(propertiesData.map(async (prop) => {
-            // Get reviews for this property
-            const { data: reviewsData } = await supabase
-              .from('property_reviews')
-              .select('rating')
-              .eq('property_id', prop.id);
-              
-            // Calculate average rating
-            let averageRating;
-            let reviewCount = 0;
-            
-            if (reviewsData && reviewsData.length > 0) {
-              reviewCount = reviewsData.length;
-              const sum = reviewsData.reduce((total, review) => total + review.rating, 0);
-              averageRating = sum / reviewCount;
-            }
-            
-            return {
-              id: prop.id.toString(),
-              title: prop.title || "Untitled Property",
-              location: prop.location || "Unknown Location",
-              price: prop.price || 0,
-              bedrooms: prop.bedrooms || 0,
-              bathrooms: prop.bathrooms || 0,
-              area: prop.area || 0,
-              image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
-              type: prop.type || "Apartment",
-              contact_phone: prop.contact_phone || "",
-              average_rating: averageRating,
-              review_count: reviewCount,
-              is_public: prop.is_public !== false,
-              coordinates: prop.coordinates
-            };
-          }));
-          
-          // If user granted location and we have coordinates, sort by distance
-          let finalProperties = formattedProperties;
-          if (permissionStatus === 'granted' && coordinates) {
-            const propertiesWithCoords = formattedProperties.filter(p => p.coordinates);
-            
-            if (propertiesWithCoords.length > 0) {
-              const propertiesWithDistance = propertiesWithCoords.map(prop => {
-                const propCoords = JSON.parse(prop.coordinates as string);
-                const distance = calculateDistance(coordinates, {
-                  lat: propCoords.lat,
-                  lng: propCoords.lng
-                });
-                return { ...prop, distance };
-              });
-              
-              // Sort by distance and take closest 4
-              finalProperties = propertiesWithDistance
-                .sort((a, b) => a.distance! - b.distance!)
-                .slice(0, 4);
-            }
-          } else {
-            // For users who denied location, show random properties on each refresh
-            const shuffled = [...formattedProperties].sort(() => Math.random() - 0.5);
-            finalProperties = shuffled.slice(0, 4);
-          }
-          
-          setProperties(finalProperties);
+        // Calculate average rating
+        let averageRating;
+        let reviewCount = 0;
+        
+        if (reviewsData && reviewsData.length > 0) {
+          reviewCount = reviewsData.length;
+          const sum = reviewsData.reduce((total, review) => total + review.rating, 0);
+          averageRating = sum / reviewCount;
         }
-      } catch (error: any) {
-        console.error("Error fetching featured properties:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        
+        return {
+          id: prop.id.toString(),
+          title: prop.title || "Untitled Property",
+          location: prop.location || "Unknown Location",
+          price: prop.price || 0,
+          bedrooms: prop.bedrooms || 0,
+          bathrooms: prop.bathrooms || 0,
+          area: prop.area || 0,
+          image: prop.images?.[0] || "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=500&h=300&q=80",
+          type: prop.type || "Apartment",
+          contact_phone: prop.contact_phone || "",
+          average_rating: averageRating,
+          review_count: reviewCount,
+          is_public: prop.is_public !== false,
+          coordinates: prop.coordinates
+        };
+      }));
+      
+      return formattedProperties;
+    },
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+  });
+  
+  // Process properties when data changes
+  useEffect(() => {
+    if (!propertiesData) return;
     
-    fetchProperties();
-  }, [coordinates, permissionStatus]);
+    let finalProperties = propertiesData;
+    
+    // If user granted location and we have coordinates, sort by distance
+    if (permissionStatus === 'granted' && coordinates) {
+      const propertiesWithCoords = propertiesData.filter(p => p.coordinates);
+      
+      if (propertiesWithCoords.length > 0) {
+        const propertiesWithDistance = propertiesWithCoords.map(prop => {
+          const propCoords = JSON.parse(prop.coordinates as string);
+          const distance = calculateDistance(coordinates, {
+            lat: propCoords.lat,
+            lng: propCoords.lng
+          });
+          return { ...prop, distance };
+        });
+        
+        // Sort by distance and take closest 4
+        finalProperties = propertiesWithDistance
+          .sort((a, b) => a.distance! - b.distance!)
+          .slice(0, 4);
+      }
+    } else {
+      // For users who denied location, show random properties on each refresh
+      const shuffled = [...propertiesData].sort(() => Math.random() - 0.5);
+      finalProperties = shuffled.slice(0, 4);
+    }
+    
+    setProperties(finalProperties);
+  }, [propertiesData, coordinates, permissionStatus]);
 
   return (
     <section className="py-12 px-4 bg-tuleeto-off-white">

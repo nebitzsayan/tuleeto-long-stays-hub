@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,6 +14,8 @@ import { Trash2, Ban, Search, Download, ChevronDown, ChevronUp, Home, Users, Ref
 import { exportUsersToExcel } from "@/lib/adminExport";
 import { Pagination } from "@/components/admin/Pagination";
 import { BulkActions, commonBulkActions } from "@/components/admin/BulkActions";
+import { PROFILES_QUERY_KEY } from "@/hooks/useProfiles";
+import { PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
 
 interface UserWithDetails {
   id: string;
@@ -28,6 +31,7 @@ interface UserWithDetails {
 const ITEMS_PER_PAGE = 15;
 
 export default function UsersManagement() {
+  const queryClient = useQueryClient();
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,6 +42,11 @@ export default function UsersManagement() {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkBanConfirm, setBulkBanConfirm] = useState(false);
+  
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: PROFILES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: PROPERTIES_QUERY_KEY });
+  };
 
   const fetchUsers = async () => {
     try {
@@ -101,6 +110,7 @@ export default function UsersManagement() {
       if (error) throw error;
 
       toast.success("User deleted successfully");
+      invalidateQueries();
       fetchUsers();
       setDeleteUser(null);
     } catch (error: any) {
@@ -123,6 +133,7 @@ export default function UsersManagement() {
 
       if (error) throw error;
       toast.success(`User ${isBanned ? "banned" : "unbanned"} successfully`);
+      invalidateQueries();
       fetchUsers();
       setBanUser(null);
     } catch (error: any) {
@@ -142,6 +153,7 @@ export default function UsersManagement() {
         await supabase.from("profiles").delete().eq("id", userId);
       }
       toast.success(`${selectedUsers.size} users deleted`);
+      invalidateQueries();
       setSelectedUsers(new Set());
       fetchUsers();
     } catch (error) {
@@ -161,6 +173,7 @@ export default function UsersManagement() {
         await supabase.from("profiles").update({ is_banned: true, ban_reason: "Bulk banned by admin" }).eq("id", userId);
       }
       toast.success(`${selectedUsers.size} users banned`);
+      invalidateQueries();
       setSelectedUsers(new Set());
       fetchUsers();
     } catch (error) {
@@ -208,33 +221,35 @@ export default function UsersManagement() {
   const isAllPageSelected = paginatedUsers.every(user => selectedUsers.has(user.id));
 
   return (
-    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl md:text-3xl font-bold tracking-tight">User Management</h2>
-          <p className="text-xs md:text-base text-muted-foreground">
-            {filteredUsers.length} users {searchTerm && `matching "${searchTerm}"`}
-          </p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-3xl font-bold tracking-tight">User Management</h2>
+            <p className="text-[10px] sm:text-xs md:text-base text-muted-foreground truncate">
+              {filteredUsers.length} users {searchTerm && `matching "${searchTerm}"`}
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button onClick={fetchUsers} variant="outline" size="sm" className="h-9 sm:h-10 w-9 sm:w-auto p-0 sm:px-3">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => exportUsersToExcel(users)} variant="outline" size="sm" className="h-9 sm:h-10 flex-1 sm:flex-none">
+              <Download className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={fetchUsers} variant="outline" size="sm" className="h-10">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => exportUsersToExcel(users)} variant="outline" size="sm" className="flex-1 md:flex-none h-10">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 h-10"
-        />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-9 sm:h-10 text-sm"
+          />
+        </div>
       </div>
 
       {/* Bulk Actions */}

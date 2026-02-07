@@ -133,43 +133,43 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
       <div>
-        <h2 className="text-xl md:text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-xs md:text-base text-muted-foreground">Manage admin panel settings and configurations</p>
+        <h2 className="text-lg sm:text-xl md:text-3xl font-bold tracking-tight">Settings</h2>
+        <p className="text-[10px] sm:text-xs md:text-base text-muted-foreground">Manage admin panel settings</p>
       </div>
 
-      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Security Settings */}
         <Card>
-          <CardHeader className="p-4 md:p-6 pb-3">
-            <CardTitle className="flex items-center gap-3 text-base md:text-lg">
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
               <span>Security & Admins</span>
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm">Current administrators with access</CardDescription>
+            <CardDescription className="text-[10px] sm:text-xs md:text-sm">Current administrators</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 md:p-6 pt-0">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
             {loadingAdmins ? (
-              <div className="text-sm text-muted-foreground">Loading...</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Loading...</div>
             ) : admins.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No admins found</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">No admins found</div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {admins.map((admin) => (
-                  <div key={admin.user_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Users className="h-4 w-4 text-primary" />
+                  <div key={admin.user_id} className="flex items-center justify-between p-2 sm:p-3 bg-muted/50 rounded-lg gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{admin.profiles?.full_name || 'Unknown'}</p>
-                        <p className="text-xs text-muted-foreground">{admin.profiles?.email}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium truncate">{admin.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{admin.profiles?.email}</p>
                       </div>
                     </div>
-                    <Badge variant="default" className="text-xs">Admin</Badge>
+                    <Badge variant="default" className="text-[10px] sm:text-xs flex-shrink-0">Admin</Badge>
                   </div>
                 ))}
               </div>
@@ -179,56 +179,56 @@ export default function Settings() {
 
         {/* Data Management */}
         <Card>
-          <CardHeader className="p-4 md:p-6 pb-3">
-            <CardTitle className="flex items-center gap-3 text-base md:text-lg">
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+          <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                 <Database className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
               </div>
               <span>Data Export</span>
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm">Export platform data as Excel files</CardDescription>
+            <CardDescription className="text-[10px] sm:text-xs md:text-sm">Export as Excel</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 md:p-6 pt-0">
-            <div className="grid grid-cols-2 gap-2">
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10"
+                className="h-9 sm:h-10 text-xs sm:text-sm"
                 onClick={() => handleExport('users')}
                 disabled={!!exporting}
               >
-                <Download className="h-4 w-4 mr-2" />
-                {exporting === 'users' ? 'Exporting...' : 'Users'}
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                {exporting === 'users' ? '...' : 'Users'}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10"
+                className="h-9 sm:h-10 text-xs sm:text-sm"
                 onClick={() => handleExport('properties')}
                 disabled={!!exporting}
               >
-                <Download className="h-4 w-4 mr-2" />
-                {exporting === 'properties' ? 'Exporting...' : 'Properties'}
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                {exporting === 'properties' ? '...' : 'Props'}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10"
+                className="h-9 sm:h-10 text-xs sm:text-sm"
                 onClick={() => handleExport('reviews')}
                 disabled={!!exporting}
               >
-                <Download className="h-4 w-4 mr-2" />
-                {exporting === 'reviews' ? 'Exporting...' : 'Reviews'}
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                {exporting === 'reviews' ? '...' : 'Reviews'}
               </Button>
               <Button
                 variant="default"
                 size="sm"
-                className="h-10"
+                className="h-9 sm:h-10 text-xs sm:text-sm"
                 onClick={() => handleExport('all')}
                 disabled={!!exporting}
               >
-                <Download className="h-4 w-4 mr-2" />
-                {exporting === 'all' ? 'Exporting...' : 'Export All'}
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                {exporting === 'all' ? '...' : 'All'}
               </Button>
             </div>
           </CardContent>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,6 +17,7 @@ import { exportPropertiesExcel } from "@/lib/adminExport";
 import { Pagination } from "@/components/admin/Pagination";
 import { BulkActions, commonBulkActions } from "@/components/admin/BulkActions";
 import { getThumbUrl } from "@/lib/imagekitUrl";
+import { PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
 
 type FilterTab = "all" | "reported" | "public" | "private";
 type SortOption = "newest" | "oldest" | "price_high" | "price_low" | "reports";
@@ -23,6 +25,7 @@ type SortOption = "newest" | "oldest" | "price_high" | "price_low" | "reports";
 const ITEMS_PER_PAGE = 15;
 
 export default function PropertiesManagement() {
+  const queryClient = useQueryClient();
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +38,10 @@ export default function PropertiesManagement() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkVisibilityConfirm, setBulkVisibilityConfirm] = useState<"public" | "private" | null>(null);
   const navigate = useNavigate();
+
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: PROPERTIES_QUERY_KEY });
+  };
 
   const fetchProperties = async () => {
     try {
@@ -69,6 +76,7 @@ export default function PropertiesManagement() {
       if (error) throw error;
 
       toast.success("Property deleted successfully");
+      invalidateQueries();
       fetchProperties();
       setDeleteProperty(null);
     } catch (error: any) {
@@ -104,6 +112,7 @@ export default function PropertiesManagement() {
       if (deleteError) console.error("Failed to delete reports:", deleteError);
 
       toast.success("Property verified and published successfully");
+      invalidateQueries();
       fetchProperties();
       setVerifyProperty(null);
     } catch (error: any) {
@@ -126,6 +135,7 @@ export default function PropertiesManagement() {
 
       if (error) throw error;
       toast.success(`Property ${isPublic ? "published" : "unpublished"}`);
+      invalidateQueries();
       fetchProperties();
     } catch (error: any) {
       toast.error("Failed to update property");
@@ -147,6 +157,7 @@ export default function PropertiesManagement() {
 
       if (error) throw error;
       toast.success(`Property ${isFeatured ? "featured" : "unfeatured"}`);
+      invalidateQueries();
       fetchProperties();
     } catch (error: any) {
       toast.error("Failed to update property");
@@ -168,6 +179,7 @@ export default function PropertiesManagement() {
 
       if (error) throw error;
       toast.success(`Property ${isFlagged ? "flagged" : "unflagged"}`);
+      invalidateQueries();
       fetchProperties();
     } catch (error: any) {
       toast.error("Failed to update property");
@@ -186,6 +198,7 @@ export default function PropertiesManagement() {
         await supabase.from("properties").delete().eq("id", propertyId);
       }
       toast.success(`${selectedProperties.size} properties deleted`);
+      invalidateQueries();
       setSelectedProperties(new Set());
       fetchProperties();
     } catch (error) {
@@ -205,6 +218,7 @@ export default function PropertiesManagement() {
         await supabase.from("properties").update({ is_public: isPublic }).eq("id", propertyId);
       }
       toast.success(`${selectedProperties.size} properties made ${isPublic ? 'public' : 'private'}`);
+      invalidateQueries();
       setSelectedProperties(new Set());
       fetchProperties();
     } catch (error) {
@@ -284,72 +298,74 @@ export default function PropertiesManagement() {
   const reportedCount = properties.filter(p => (p.report_count && p.report_count > 0) || p.is_flagged).length;
 
   return (
-    <div className="space-y-4 md:space-y-6 p-3 md:p-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl md:text-3xl font-bold tracking-tight">Property Management</h2>
-          <p className="text-xs md:text-base text-muted-foreground">
-            {filteredAndSortedProperties.length} properties
-          </p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-3xl font-bold tracking-tight">Property Management</h2>
+            <p className="text-[10px] sm:text-xs md:text-base text-muted-foreground">
+              {filteredAndSortedProperties.length} properties
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button onClick={fetchProperties} variant="outline" size="sm" className="h-9 sm:h-10 w-9 sm:w-auto p-0 sm:px-3">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => exportPropertiesExcel(properties)} variant="outline" size="sm" className="h-9 sm:h-10 flex-1 sm:flex-none">
+              <Download className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={fetchProperties} variant="outline" size="sm" className="h-10">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => exportPropertiesExcel(properties)} variant="outline" size="sm" className="flex-1 md:flex-none h-10">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
 
-      {/* Filter Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
-        <div className="overflow-x-auto -mx-3 px-3">
-          <TabsList className="w-auto inline-flex">
-            <TabsTrigger value="all" className="text-xs md:text-sm px-3">
-              All ({properties.length})
-            </TabsTrigger>
-            <TabsTrigger value="reported" className="text-xs md:text-sm px-3 relative">
-              Reported
-              {reportedCount > 0 && (
-                <Badge variant="destructive" className="ml-1.5 h-5 min-w-5 px-1 flex items-center justify-center text-xs">
-                  {reportedCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="public" className="text-xs md:text-sm px-3">
-              Public
-            </TabsTrigger>
-            <TabsTrigger value="private" className="text-xs md:text-sm px-3">
-              Private
-            </TabsTrigger>
-          </TabsList>
-        </div>
-      </Tabs>
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
+          <div className="overflow-x-auto -mx-2 px-2">
+            <TabsList className="w-auto inline-flex gap-0.5">
+              <TabsTrigger value="all" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 min-h-[36px]">
+                All ({properties.length})
+              </TabsTrigger>
+              <TabsTrigger value="reported" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 relative min-h-[36px]">
+                Reported
+                {reportedCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 flex items-center justify-center text-[10px]">
+                    {reportedCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="public" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 min-h-[36px]">
+                Public
+              </TabsTrigger>
+              <TabsTrigger value="private" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 min-h-[36px]">
+                Private
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </Tabs>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by title or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-10"
-          />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search properties..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-9 sm:h-10 text-sm"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+            <SelectTrigger className="w-full sm:w-[140px] md:w-[180px] h-9 sm:h-10 text-xs sm:text-sm">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+              <SelectItem value="price_high">Price: High</SelectItem>
+              <SelectItem value="price_low">Price: Low</SelectItem>
+              <SelectItem value="reports">Reports</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-          <SelectTrigger className="w-full sm:w-[180px] h-10">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest First</SelectItem>
-            <SelectItem value="oldest">Oldest First</SelectItem>
-            <SelectItem value="price_high">Price: High to Low</SelectItem>
-            <SelectItem value="price_low">Price: Low to High</SelectItem>
-            <SelectItem value="reports">Most Reports</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Bulk Actions */}

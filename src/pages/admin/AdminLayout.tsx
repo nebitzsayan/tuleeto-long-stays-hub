@@ -9,9 +9,9 @@
      <SidebarProvider>
        <div className="flex min-h-screen w-full flex-col md:flex-row">
          <AdminSidebar />
-         <div className="flex-1 flex flex-col">
-           <AdminMobileHeader />
-           <main className="flex-1 p-4 md:p-8 bg-background overflow-auto">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <AdminMobileHeader />
+            <main className="flex-1 p-2 sm:p-3 md:p-6 lg:p-8 bg-background overflow-x-hidden overflow-y-auto">
              <Suspense
                fallback={
                  <div className="flex items-center justify-center min-h-[50vh]">
