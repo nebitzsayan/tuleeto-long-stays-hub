@@ -15,7 +15,7 @@ import { exportUsersToExcel } from "@/lib/adminExport";
 import { Pagination } from "@/components/admin/Pagination";
 import { BulkActions, commonBulkActions } from "@/components/admin/BulkActions";
 import { PROFILES_QUERY_KEY } from "@/hooks/useProfiles";
-import { PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
+import { PROPERTIES_QUERY_KEY, FEATURED_PROPERTIES_QUERY_KEY, PROPERTY_REVIEWS_QUERY_KEY } from "@/hooks/useProperties";
 
 interface UserWithDetails {
   id: string;
@@ -46,6 +46,9 @@ export default function UsersManagement() {
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: PROFILES_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: PROPERTIES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: FEATURED_PROPERTIES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: PROPERTY_REVIEWS_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ['reviews'] });
   };
 
   const fetchUsers = async () => {
@@ -318,17 +321,19 @@ export default function UsersManagement() {
                         size="sm"
                         variant={user.is_banned ? "default" : "destructive"}
                         onClick={() => setBanUser(user)}
-                        className="h-9 w-9 p-0"
+                        className="h-11 flex-1 text-xs"
                       >
-                        <Ban className="h-4 w-4" />
+                        <Ban className="h-3.5 w-3.5 mr-1" />
+                        {user.is_banned ? "Unban" : "Ban"}
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => setDeleteUser(user)}
-                        className="h-9 w-9 p-0"
+                        className="h-11 flex-1 text-xs"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                        Delete
                       </Button>
                     </div>
                   </div>

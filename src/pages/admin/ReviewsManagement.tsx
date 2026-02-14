@@ -14,7 +14,7 @@ import { Trash2, Flag, Search, Download, Star, MessageSquare, RefreshCw, CheckCi
 import { exportReviewsExcel } from "@/lib/adminExport";
 import { Pagination } from "@/components/admin/Pagination";
 import { BulkActions, commonBulkActions } from "@/components/admin/BulkActions";
-import { PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
+import { PROPERTIES_QUERY_KEY, FEATURED_PROPERTIES_QUERY_KEY, PROPERTY_REVIEWS_QUERY_KEY } from "@/hooks/useProperties";
 
 type FilterTab = "all" | "pending" | "approved" | "flagged";
 
@@ -35,6 +35,8 @@ export default function ReviewsManagement() {
 
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: PROPERTIES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: FEATURED_PROPERTIES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: PROPERTY_REVIEWS_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: ['reviews'] });
   };
 
@@ -374,12 +376,12 @@ export default function ReviewsManagement() {
                       {new Date(review.created_at).toLocaleDateString()}
                     </p>
 
-                    <div className="flex gap-2 mt-3 pt-3 border-t">
+                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t">
                       <Button
                         size="sm"
                         variant={review.is_approved ? "secondary" : "default"}
                         onClick={() => handleToggleApproved(review.id, !review.is_approved)}
-                        className="flex-1 h-10 text-xs"
+                        className="h-11 text-xs"
                       >
                         {review.is_approved ? "Reject" : "Approve"}
                       </Button>
@@ -387,17 +389,19 @@ export default function ReviewsManagement() {
                         size="sm"
                         variant={review.is_flagged ? "destructive" : "outline"}
                         onClick={() => handleToggleFlagged(review.id, !review.is_flagged)}
-                        className="h-10 w-10 p-0"
+                        className="h-11 text-xs"
                       >
-                        <Flag className="h-4 w-4" />
+                        <Flag className="h-3.5 w-3.5 mr-1" />
+                        Flag
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => setDeleteReview(review)}
-                        className="h-10 w-10 p-0"
+                        className="h-11 text-xs"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                        Delete
                       </Button>
                     </div>
                   </div>

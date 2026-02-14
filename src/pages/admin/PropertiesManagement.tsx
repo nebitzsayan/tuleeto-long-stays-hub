@@ -17,7 +17,7 @@ import { exportPropertiesExcel } from "@/lib/adminExport";
 import { Pagination } from "@/components/admin/Pagination";
 import { BulkActions, commonBulkActions } from "@/components/admin/BulkActions";
 import { getThumbUrl } from "@/lib/imagekitUrl";
-import { PROPERTIES_QUERY_KEY } from "@/hooks/useProperties";
+import { PROPERTIES_QUERY_KEY, FEATURED_PROPERTIES_QUERY_KEY, PROPERTY_REVIEWS_QUERY_KEY } from "@/hooks/useProperties";
 
 type FilterTab = "all" | "reported" | "public" | "private";
 type SortOption = "newest" | "oldest" | "price_high" | "price_low" | "reports";
@@ -41,6 +41,9 @@ export default function PropertiesManagement() {
 
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: PROPERTIES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: FEATURED_PROPERTIES_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: PROPERTY_REVIEWS_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ['reviews'] });
   };
 
   const fetchProperties = async () => {
@@ -440,53 +443,56 @@ export default function PropertiesManagement() {
                   )}
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => navigate(`/property/${property.id}`)}
-                    className="text-xs h-9 flex-1"
+                    className="text-xs h-11"
                   >
                     View
                   </Button>
                   
-                  {(property.report_count > 0 || property.is_flagged) && (
+                  {(property.report_count > 0 || property.is_flagged) ? (
                     <Button
                       size="sm"
                       variant="default"
                       onClick={() => setVerifyProperty(property)}
-                      className="text-xs h-9 bg-green-600 hover:bg-green-700"
+                      className="text-xs h-11 bg-green-600 hover:bg-green-700"
                     >
-                      <CheckCircle className="h-3 w-3 mr-1" />
+                      <CheckCircle className="h-3.5 w-3.5 mr-1" />
                       Verify
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleToggleVisibility(property.id, !property.is_public)}
+                      className="text-xs h-11"
+                    >
+                      {property.is_public ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
+                      {property.is_public ? "Hide" : "Show"}
                     </Button>
                   )}
                   
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => handleToggleVisibility(property.id, !property.is_public)}
-                    className="h-9 w-9 p-0"
-                  >
-                    {property.is_public ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                  
-                  <Button
-                    size="sm"
                     variant={property.is_featured ? "default" : "outline"}
                     onClick={() => handleToggleFeatured(property.id, !property.is_featured)}
-                    className="h-9 w-9 p-0"
+                    className="text-xs h-11"
                   >
-                    <Star className="h-4 w-4" />
+                    <Star className="h-3.5 w-3.5 mr-1" />
+                    {property.is_featured ? "Unfeature" : "Feature"}
                   </Button>
                   
                   <Button
                     size="sm"
                     variant="destructive"
                     onClick={() => setDeleteProperty(property)}
-                    className="h-9 w-9 p-0"
+                    className="text-xs h-11"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Delete
                   </Button>
                 </div>
               </CardContent>
