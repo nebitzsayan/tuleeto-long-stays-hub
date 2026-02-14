@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Star, MessageCircle, ThumbsUp, Reply, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { PROPERTY_REVIEWS_QUERY_KEY } from '@/hooks/useProperties';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
@@ -76,11 +78,10 @@ interface PropertyReviewSystemProps {
 
 const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReviewSystemProps) => {
   const { user } = useAuth();
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [replyContent, setReplyContent] = useState<{ [key: string]: string }>({});
   const [showReplyForm, setShowReplyForm] = useState<{ [key: string]: boolean }>({});
   const [editingReview, setEditingReview] = useState<string | null>(null);
@@ -93,123 +94,117 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
   // Prevent property owners from reviewing their own properties
   const canAddReview = user && !isPropertyOwner;
 
-  useEffect(() => {
-    fetchReviews();
-  }, [propertyId]);
+  const fetchReviewsQuery = async (): Promise<Review[]> => {
+    // Fetch reviews with profiles
+    const { data: reviewsData, error: reviewsError } = await supabase
+      .from('property_reviews')
+      .select(`
+        id,
+        rating,
+        comment,
+        created_at,
+        user_id,
+        property_id
+      `)
+      .eq('property_id', propertyId)
+      .order('created_at', { ascending: false });
 
-  const fetchReviews = async () => {
-    try {
-      setIsLoading(true);
+    if (reviewsError) throw reviewsError;
+
+    if (!reviewsData) return [];
+
+    // Get unique user IDs from reviews
+    const reviewUserIds = reviewsData.map(review => review.user_id);
+    
+    // Fetch profiles for review users
+    const { data: reviewProfilesData, error: reviewProfilesError } = await supabase
+      .from('public_profiles_safe')
+      .select('id, full_name, avatar_url')
+      .in('id', reviewUserIds);
+
+    if (reviewProfilesError) throw reviewProfilesError;
+
+    // Fetch replies for all reviews
+    const reviewIds = reviewsData.map(review => review.id);
+    const { data: repliesData, error: repliesError } = await supabase
+      .from('review_replies')
+      .select(`
+        id,
+        content,
+        created_at,
+        user_id,
+        parent_reply_id,
+        review_id
+      `)
+      .in('review_id', reviewIds)
+      .order('created_at', { ascending: true });
+
+    if (repliesError) throw repliesError;
+
+    // Get unique user IDs from replies
+    const replyUserIds = repliesData?.map(reply => reply.user_id) || [];
+    const allUserIds = [...new Set([...reviewUserIds, ...replyUserIds])];
+    
+    // Fetch profiles for all users (reviews + replies)
+    const { data: allProfilesData, error: allProfilesError } = await supabase
+      .from('public_profiles_safe')
+      .select('id, full_name, avatar_url')
+      .in('id', allUserIds);
+
+    if (allProfilesError) throw allProfilesError;
+
+    // Fetch reactions
+    const { data: reactionsData, error: reactionsError } = await supabase
+      .from('review_reactions')
+      .select(`
+        id,
+        reaction_type,
+        user_id,
+        review_id
+      `)
+      .in('review_id', reviewIds);
+
+    if (reactionsError) throw reactionsError;
+
+    // Create profile lookup map
+    const profilesMap = new Map();
+    allProfilesData?.forEach(profile => {
+      profilesMap.set(profile.id, profile);
+    });
+
+    // Enrich reviews with profiles, replies, and reactions
+    const enrichedReviews: Review[] = reviewsData.map(review => {
+      const reviewProfile = profilesMap.get(review.user_id);
+      const reviewReplies = repliesData?.filter(reply => reply.review_id === review.id) || [];
+      const reviewReactions = reactionsData?.filter(reaction => reaction.review_id === review.id) || [];
+      const userReaction = reviewReactions.find(reaction => reaction.user_id === user?.id)?.reaction_type || null;
       
-      // Fetch reviews with profiles
-      const { data: reviewsData, error: reviewsError } = await supabase
-        .from('property_reviews')
-        .select(`
-          id,
-          rating,
-          comment,
-          created_at,
-          user_id,
-          property_id
-        `)
-        .eq('property_id', propertyId)
-        .order('created_at', { ascending: false });
-
-      if (reviewsError) throw reviewsError;
-
-      if (!reviewsData) {
-        setReviews([]);
-        return;
-      }
-
-      // Get unique user IDs from reviews
-      const reviewUserIds = reviewsData.map(review => review.user_id);
+      // Enrich replies with profiles
+      const enrichedReplies: Reply[] = reviewReplies.map(reply => ({
+        ...reply,
+        profiles: profilesMap.get(reply.user_id) || null
+      }));
       
-      // Fetch profiles for review users
-      const { data: reviewProfilesData, error: reviewProfilesError } = await supabase
-        .from('public_profiles_safe')
-        .select('id, full_name, avatar_url')
-        .in('id', reviewUserIds);
+      return { 
+        ...review, 
+        profiles: reviewProfile || null,
+        replies: enrichedReplies,
+        reactions: reviewReactions,
+        userReaction 
+      };
+    });
+    
+    return enrichedReviews;
+  };
 
-      if (reviewProfilesError) throw reviewProfilesError;
+  const { data: reviews = [], isLoading } = useQuery({
+    queryKey: [...PROPERTY_REVIEWS_QUERY_KEY, propertyId],
+    queryFn: fetchReviewsQuery,
+    staleTime: 30 * 1000,
+  });
 
-      // Fetch replies for all reviews
-      const reviewIds = reviewsData.map(review => review.id);
-      const { data: repliesData, error: repliesError } = await supabase
-        .from('review_replies')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          parent_reply_id,
-          review_id
-        `)
-        .in('review_id', reviewIds)
-        .order('created_at', { ascending: true });
-
-      if (repliesError) throw repliesError;
-
-      // Get unique user IDs from replies
-      const replyUserIds = repliesData?.map(reply => reply.user_id) || [];
-      const allUserIds = [...new Set([...reviewUserIds, ...replyUserIds])];
-      
-      // Fetch profiles for all users (reviews + replies)
-      const { data: allProfilesData, error: allProfilesError } = await supabase
-        .from('public_profiles_safe')
-        .select('id, full_name, avatar_url')
-        .in('id', allUserIds);
-
-      if (allProfilesError) throw allProfilesError;
-
-      // Fetch reactions
-      const { data: reactionsData, error: reactionsError } = await supabase
-        .from('review_reactions')
-        .select(`
-          id,
-          reaction_type,
-          user_id,
-          review_id
-        `)
-        .in('review_id', reviewIds);
-
-      if (reactionsError) throw reactionsError;
-
-      // Create profile lookup map
-      const profilesMap = new Map();
-      allProfilesData?.forEach(profile => {
-        profilesMap.set(profile.id, profile);
-      });
-
-      // Enrich reviews with profiles, replies, and reactions
-      const enrichedReviews: Review[] = reviewsData.map(review => {
-        const reviewProfile = profilesMap.get(review.user_id);
-        const reviewReplies = repliesData?.filter(reply => reply.review_id === review.id) || [];
-        const reviewReactions = reactionsData?.filter(reaction => reaction.review_id === review.id) || [];
-        const userReaction = reviewReactions.find(reaction => reaction.user_id === user?.id)?.reaction_type || null;
-        
-        // Enrich replies with profiles
-        const enrichedReplies: Reply[] = reviewReplies.map(reply => ({
-          ...reply,
-          profiles: profilesMap.get(reply.user_id) || null
-        }));
-        
-        return { 
-          ...review, 
-          profiles: reviewProfile || null,
-          replies: enrichedReplies,
-          reactions: reviewReactions,
-          userReaction 
-        };
-      });
-      
-      setReviews(enrichedReviews);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-      toast.error('Failed to load reviews');
-    } finally {
-      setIsLoading(false);
-    }
+  const invalidateReviews = () => {
+    queryClient.invalidateQueries({ queryKey: [...PROPERTY_REVIEWS_QUERY_KEY, propertyId] });
   };
 
   const validateReview = (reviewRating: number, reviewComment: string | null): boolean => {
@@ -253,7 +248,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
       toast.success('Review submitted successfully!');
       setRating(0);
       setComment('');
-      fetchReviews();
+      invalidateReviews();
     } catch (error: any) {
       console.error('Error submitting review:', error);
       toast.error(`Failed to submit review: ${error.message}`);
@@ -290,7 +285,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
         if (insertError) throw insertError;
       }
 
-      fetchReviews();
+      invalidateReviews();
     } catch (error: any) {
       console.error('Error liking review:', error);
       toast.error(`Failed to like review: ${error.message}`);
@@ -334,7 +329,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
       toast.success('Reply submitted successfully!');
       setReplyContent(prev => ({ ...prev, [reviewId]: '' }));
       setShowReplyForm(prev => ({ ...prev, [reviewId]: false }));
-      fetchReviews();
+      invalidateReviews();
     } catch (error: any) {
       console.error('Error submitting reply:', error);
       toast.error(`Failed to submit reply: ${error.message}`);
@@ -363,7 +358,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
 
       toast.success('Review updated successfully!');
       setEditingReview(null);
-      fetchReviews();
+      invalidateReviews();
     } catch (error: any) {
       console.error('Error updating review:', error);
       toast.error(`Failed to update review: ${error.message}`);
@@ -386,7 +381,7 @@ const PropertyReviewSystem = ({ propertyId, ownerId, className }: PropertyReview
       if (error) throw error;
 
       toast.success('Review deleted successfully!');
-      fetchReviews();
+      invalidateReviews();
     } catch (error: any) {
       console.error('Error deleting review:', error);
       toast.error(`Failed to delete review: ${error.message}`);

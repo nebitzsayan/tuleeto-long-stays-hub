@@ -50,6 +50,8 @@ export function useInvalidateProperties() {
   };
 }
 
+export const PROPERTY_REVIEWS_QUERY_KEY = ['property-reviews'];
+
 export function useInvalidateAllData() {
   const queryClient = useQueryClient();
   
@@ -58,5 +60,6 @@ export function useInvalidateAllData() {
     queryClient.invalidateQueries({ queryKey: FEATURED_PROPERTIES_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: ['profiles'] });
     queryClient.invalidateQueries({ queryKey: ['reviews'] });
+    queryClient.invalidateQueries({ queryKey: PROPERTY_REVIEWS_QUERY_KEY });
   };
 }

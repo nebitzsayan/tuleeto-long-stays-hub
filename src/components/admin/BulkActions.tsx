@@ -27,13 +27,13 @@ export function BulkActions({
 }: BulkActionsProps) {
   if (selectedCount === 0) {
     return (
-      <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg">
+      <div className="flex items-center gap-3 p-2.5 sm:p-3 bg-muted/50 rounded-lg">
         <Checkbox
           checked={isAllSelected}
           onCheckedChange={() => onSelectAll()}
-          className="h-4 w-4"
+          className="h-5 w-5"
         />
-        <span className="text-sm text-muted-foreground">
+        <span className="text-xs sm:text-sm text-muted-foreground">
           Select all ({totalCount})
         </span>
       </div>
@@ -41,9 +41,9 @@ export function BulkActions({
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2 sm:p-3 bg-primary/10 border border-primary/20 rounded-lg animate-in fade-in slide-in-from-top-1 duration-200">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 min-w-0">
+    <div className="flex flex-col gap-2.5 p-2.5 sm:p-3 bg-primary/10 border border-primary/20 rounded-lg animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
           <Checkbox
             checked={isAllSelected}
             onCheckedChange={() => (isAllSelected ? onClearSelection() : onSelectAll())}
@@ -55,7 +55,7 @@ export function BulkActions({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 sm:h-7 sm:w-auto sm:px-2 p-0 text-xs"
+            className="h-9 w-9 sm:h-8 sm:w-auto sm:px-2 p-0 text-xs"
             onClick={onClearSelection}
           >
             <X className="h-4 w-4 sm:mr-1" />
@@ -64,13 +64,13 @@ export function BulkActions({
         </div>
       </div>
       
-      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
         {actions.map((action, idx) => (
           <Button
             key={idx}
             variant={action.variant || "outline"}
             size="sm"
-            className="h-9 sm:h-8 text-xs flex-1 min-w-[80px] max-w-[120px] sm:max-w-none sm:flex-initial gap-1"
+            className="h-11 sm:h-9 text-xs gap-1.5"
             onClick={action.onClick}
             disabled={action.disabled}
           >
