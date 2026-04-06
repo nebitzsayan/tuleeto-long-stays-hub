@@ -111,7 +111,6 @@ const Hero = () => {
                 fetchPriority="high"
                 width="320"
                 height="320"
-                fetchPriority="high"
                 decoding="async"
               />
             </AspectRatio>
