@@ -108,9 +108,9 @@ const Hero = () => {
                 src="/images-resources/8f53d3f9-c672-4dbc-8077-05b6cbfc2723.png" 
                 alt="Person searching for home" 
                 className="w-full h-full object-contain"
+                fetchPriority="high"
                 width="320"
                 height="320"
-                fetchPriority="high"
                 decoding="async"
               />
             </AspectRatio>
